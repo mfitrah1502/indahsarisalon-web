@@ -1,0 +1,65 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Absensi;
+use App\Models\Booking;
+use Illuminate\Support\Facades\Auth;
+
+class PageController extends Controller
+{
+    public function index()
+    {
+        return view('home');
+    }
+
+    public function dashboard()
+    {
+        $user = Auth::user();
+        
+        if ($user->role === 'karyawan') {
+            $today = now()->format('Y-m-d');
+            $absensi = Absensi::where('user_id', $user->id)
+                             ->where('tanggal', $today)
+                             ->first();
+
+            // Ambil ringkasan booking hari ini yang perlu diproses
+            $todayBookings = Booking::whereDate('reservation_datetime', $today)
+                                    ->where('status', 'proses')
+                                    ->with(['treatment', 'user'])
+                                    ->orderBy('reservation_datetime', 'asc')
+                                    ->take(5)
+                                    ->get();
+
+            return view('dashboard.homepage-karyawan', compact('absensi', 'todayBookings'));
+        }
+
+        if ($user->role === 'admin') {
+            // Stats untuk admin dashboard
+            $stats = [
+                'total_pelanggan' => \App\Models\User::where('role', 'pelanggan')->count(),
+                'total_pemasukan' => Booking::where('payment_status', 'paid')->sum('total_price'),
+                'today_bookings' => Booking::whereDate('reservation_datetime', now()->toDateString())->count(),
+            ];
+            return view('dashboard.homepage', compact('stats'));
+        }
+
+        // Dashboard untuk Pelanggan (User)
+        $latestBooking = Booking::where('user_id', $user->id)
+                                ->with(['treatment', 'stylist'])
+                                ->latest()
+                                ->first();
+
+        $categories = \App\Models\Category::with(['treatments' => function($q) {
+            $q->where('is_promo', false); // Optional: filter if needed
+        }])->get();
+
+        return view('dashboard.homepage-user', compact('latestBooking', 'categories'));
+    }
+
+    public function about()
+    {
+        return view('about'); // file: resources/views/about.blade.php
+    }
+}

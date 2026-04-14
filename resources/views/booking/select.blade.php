@@ -682,7 +682,7 @@
                     return;
                 }
 
-                if(selectedDetails.some(item => !item.stylistId)) {
+                if(selectedDetails.some(item => item.hasStylistPrice && !item.stylistId)) {
                     if(!confirm('Ada layanan yang belum dipilih stylist-nya. Lanjutkan?')) return;
                 }
 
@@ -692,7 +692,9 @@
                     const price = calculateDetailPrice(d);
                     // Find stylist name
                     const sSelect = document.querySelector(`.stylist-selector[data-id="${d.id}"]`);
-                    const sName = (sSelect && sSelect.selectedIndex > 0) ? sSelect.selectedOptions[0].text : 'Belum dipilih';
+                    const sName = d.hasStylistPrice 
+                        ? ((sSelect && sSelect.selectedIndex > 0) ? sSelect.selectedOptions[0].text : 'Belum dipilih')
+                        : 'Tidak tersedia (Tanpa Stylist)';
 
                     summaryHtml += `
                         <div class="list-group-item px-0 py-1 d-flex justify-content-between align-items-center border-0 border-bottom">
@@ -770,11 +772,30 @@
 
         function handleMidtrans(token, bookingId) {
             snap.pay(token, {
-                onSuccess: function(result) { showSuccessFinal('transfer'); },
-                onPending: function(result) { showSuccessFinal('transfer'); },
-                onError: function(result) { showSuccessFinal('transfer'); },
+                onSuccess: function(result) { 
+                    // Update database secara frontend (karena webhook midtrans tidak jalan di localhost)
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/booking/pay/${bookingId}`;
+                    const csrf = document.createElement('input');
+                    csrf.type = 'hidden';
+                    csrf.name = '_token';
+                    csrf.value = '{{ csrf_token() }}';
+                    form.appendChild(csrf);
+                    document.body.appendChild(form);
+                    form.submit();
+                },
+                onPending: function(result) { 
+                    showSuccessFinal('transfer'); 
+                },
+                onError: function(result) { 
+                    $('#modalStatusTitle').text('Pembayaran Gagal ❌');
+                    $('#modalStatusDesc').text('Mohon maaf, transaksi Anda gagal diproses.');
+                    $('#modalStatusAction').html('<a href="{{ route("booking.history") }}" class="btn btn-primary px-4">Lihat Riwayat Booking</a>');
+                    $('#modalProses').modal('show'); 
+                },
                 onClose: function() { 
-                    showPendingPayment(bookingId);
+                    showSuccessFinal('transfer'); // Menampilkan pesan 'Booking Menunggu Pembayaran'
                 }
             });
         }

@@ -39,7 +39,8 @@ class AuthController extends Controller
     // Menampilkan form register
     public function showRegisterForm()
     {
-        return view('auth'); // resources/views/register.blade.php
+        session()->now('showRegister', true);
+        return view('auth');
     }
 
     // Memproses register

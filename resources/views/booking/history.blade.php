@@ -327,6 +327,10 @@
                     <span class="text-muted">Total Tagihan</span>
                     <span class="fw-bold text-primary">Rp ${new Intl.NumberFormat('id-ID').format(booking.total_price)}</span>
                 </div>
+                <div class="list-group-item d-flex justify-content-between px-0">
+                    <span class="text-muted">Status Pembayaran</span>
+                    <span class="fw-bold text-dark">${booking.payment_status === 'paid' ? '<span class="badge bg-success">Lunas (Berhasil)</span>' : '<span class="badge bg-warning text-dark">Belum Dibayar</span>'}</span>
+                </div>
             </div>
             <div class="alert alert-light-info border-0 d-flex align-items-center mb-0">
                 <i class="ti ti-info-circle me-2 h4 mb-0"></i>

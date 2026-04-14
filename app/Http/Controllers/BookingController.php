@@ -182,7 +182,10 @@ class BookingController extends Controller
     {
         $booking = Booking::findOrFail($bookingId);
         $booking->payment_status = 'paid';
-        $booking->status = 'confirmed';
+        // Status tetap 'proses' agar muncul di "Dalam Proses", hanya payment_status yang lunas
+        if ($booking->status === 'confirmed') {
+            $booking->status = 'proses'; // kembalikan ke proses agar bisa dikelola admin
+        }
         $booking->save();
 
         return redirect()->route('booking.history')->with('success','Pembayaran berhasil!');
@@ -206,7 +209,7 @@ class BookingController extends Controller
         $allBookings = $query->orderBy('reservation_datetime', 'desc')->get();
 
         // Bagi data untuk Pelanggan (Proses vs Riwayat)
-        $inProcess = $allBookings->whereIn('status', ['proses', 'pending']);
+        $inProcess = $allBookings->whereIn('status', ['proses', 'pending', 'confirmed']);
         $history = $allBookings->whereIn('status', ['berhasil', 'dibatalkan']);
 
         return view('booking.history', compact('inProcess', 'history', 'allBookings'));

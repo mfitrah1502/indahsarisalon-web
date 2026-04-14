@@ -43,7 +43,7 @@
                                 @forelse($inProcess as $booking)
                                     <div class="col-md-6 col-xl-4">
                                         <div class="card border border-light-subtle shadow-none h-100 booking-card-user" 
-                                             onclick="showBookingDetail({{ json_encode($booking->load('treatment', 'stylist')) }})" 
+                                             onclick="showBookingDetail({{ json_encode($booking->load('treatment', 'stylist', 'details.treatmentDetail.treatment', 'details.stylist')) }})" 
                                              style="cursor: pointer; transition: transform 0.2s;">
                                             <div class="card-body">
                                                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -86,8 +86,19 @@
                                         @forelse($history as $booking)
                                             <tr>
                                                 <td>
-                                                    <div class="fw-bold text-dark">{{ $booking->treatment->name }}</div>
-                                                    <small class="text-muted">Stylist: {{ $booking->stylist->name ?? '-' }}</small>
+                                                    <div class="fw-bold text-dark">
+                                                        @php
+                                                            $treatments = $booking->details->map(fn($d) => $d->treatmentDetail->treatment->name)->unique();
+                                                        @endphp
+                                                        {{ $treatments->implode(', ') }}
+                                                    </div>
+                                                    <small class="text-muted d-block mt-1">
+                                                        <i class="ti ti-users me-1"></i>
+                                                        @php
+                                                            $stylistNames = $booking->details->map(fn($d) => $d->stylist->name ?? '-')->unique();
+                                                        @endphp
+                                                        {{ $stylistNames->implode(', ') }}
+                                                    </small>
                                                 </td>
                                                 <td>
                                                     <div class="small">{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('d M Y') }}</div>
@@ -160,9 +171,17 @@
                                             data-month="{{ $resDateTime->format('Y-m') }}" 
                                             data-year="{{ $resDateTime->format('Y') }}">
                                             <td>
-                                                <div class="fw-bold text-dark">{{ $booking->treatment->name }}</div>
+                                                <div class="fw-bold text-dark">
+                                                    @php
+                                                        $treatments = $booking->details->map(fn($d) => $d->treatmentDetail->treatment->name)->unique();
+                                                    @endphp
+                                                    {{ $treatments->implode(', ') }}
+                                                </div>
                                                 <div class="badge bg-light-primary text-primary border border-primary border-opacity-25 small mt-1">
                                                     <i class="ti ti-user me-1"></i>{{ $booking->customer_name }} {{ $booking->user_id ? '' : '(Offline)' }}
+                                                </div>
+                                                <div class="extra-small text-muted mt-1">
+                                                    <i class="ti ti-users me-1"></i>{{ $booking->details->map(fn($d) => $d->stylist->name ?? '-')->unique()->implode(', ') }}
                                                 </div>
                                             </td>
                                             <td>
@@ -268,12 +287,29 @@
 
         let html = `
             <div class="text-center mb-4">
-                <div class="avtar avtar-xl bg-light-primary text-primary mx-auto mb-3">
-                    <i class="ti ti-calendar-check" style="font-size: 2rem;"></i>
-                </div>
-                <h5 class="fw-bold mb-0">${booking.treatment.name}</h5>
-                <span class="text-muted">#BOOK-${booking.id}</span>
-            </div>
+                                <div class="avtar avtar-xl bg-light-primary text-primary mx-auto mb-3">
+                                    <i class="ti ti-calendar-check" style="font-size: 2rem;"></i>
+                                </div>
+                                <h5 class="fw-bold mb-0">Detail Pesanan</h5>
+                                <span class="text-muted">#BOOK-${booking.id}</span>
+                            </div>
+                            <div class="mb-3">
+                                <h6 class="fw-bold small text-muted text-uppercase mb-2">Layanan yang dipilih:</h6>
+                                <div class="list-group list-group-flush border rounded">
+                                    ${booking.details.map(d => `
+                                        <div class="list-group-item py-2">
+                                            <div class="d-flex justify-content-between">
+                                                <span class="small fw-bold">${d.treatment_detail.treatment.name}</span>
+                                                <span class="small text-primary">Rp ${new Intl.NumberFormat('id-ID').format(d.price)}</span>
+                                            </div>
+                                            <div class="extra-small text-muted d-flex justify-content-between">
+                                                <span>${d.treatment_detail.name}</span>
+                                                <span class="fw-bold"><i class="ti ti-user-check me-1"></i>${d.stylist ? d.stylist.name : 'N/A'}</span>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
             <div class="list-group list-group-flush border-top border-bottom mb-3">
                 <div class="list-group-item d-flex justify-content-between px-0">
                     <span class="text-muted">Jadwal</span>

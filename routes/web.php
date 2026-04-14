@@ -102,6 +102,7 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         // Booking Management (Shared Logic)
         Route::get('/admin/bookings', [BookingController::class, 'adminIndex'])->name('admin.bookings.index');
         Route::get('/karyawan/bookings', [BookingController::class, 'adminIndex'])->name('karyawan.bookings.index');
+        Route::get('/admin/bookings/{id}', [BookingController::class, 'show'])->name('admin.bookings.show');
         Route::patch('/admin/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('admin.bookings.updateStatus');
     });
 
@@ -153,6 +154,7 @@ Route::middleware(['auth', 'prevent-back'])->group(function () {
     Route::post('/booking/pay/{bookingId}', [BookingController::class, 'pay'])->name('booking.pay'); // bayar
     Route::get('/booking/history', [BookingController::class, 'history'])->name('booking.history'); // riwayat
     Route::post('/booking/{id}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');
+    Route::post('/booking/{id}/update-payment-method', [BookingController::class, 'updatePaymentMethod'])->name('booking.updatePaymentMethod');
     Route::post('/booking/notification', [BookingController::class, 'handleNotification'])->name('booking.notification'); // webhook
 });
 });

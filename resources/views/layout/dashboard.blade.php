@@ -31,28 +31,53 @@
     <style>
         :root, [data-pc-preset=preset-1] {
             --pc-sidebar-active-color: #EA8290 !important;
+            --bs-primary: #EA8290 !important;
+            --bs-primary-rgb: 234, 130, 144 !important;
+            --bs-primary-bg-subtle: #fcebed !important;
             --bs-secondary: #EA8290 !important;
             --bs-secondary-rgb: 234, 130, 144 !important;
             --bs-secondary-light: #fce4e7 !important;
         }
-        
-        /* Header & Icon Colors */
-        .pc-header {
-            z-index: 1050 !important; /* Ensure header is above content */
+
+        /* Global Button Overrides */
+        .btn-primary {
+            --bs-btn-bg: #EA8290 !important;
+            --bs-btn-border-color: #EA8290 !important;
+            --bs-btn-hover-bg: #d6717e !important;
+            --bs-btn-hover-border-color: #d6717e !important;
+            --bs-btn-active-bg: #d6717e !important;
+            --bs-btn-active-border-color: #d6717e !important;
         }
-        .pc-header .pc-head-link.head-link-secondary {
-            background: #fce4e7 !important;
+
+        .btn-light-primary {
+            background: #fcebed !important;
             color: #EA8290 !important;
         }
-        .pc-header .pc-head-link.head-link-secondary:hover {
+
+        .btn-light-primary:hover {
             background: #EA8290 !important;
             color: #fff !important;
         }
         
-        /* Ensure dropdown is visible */
-        .dropdown-user-profile.show {
-            display: block !important;
-            z-index: 9999 !important;
+        /* Header & Icon Colors */
+        .pc-header {
+            z-index: 1050 !important;
+        }
+        .pc-header .pc-head-link.head-link-secondary,
+        .pc-header .pc-head-link.head-link-primary {
+            background: #fcebed !important;
+            color: #EA8290 !important;
+        }
+        .pc-header .pc-head-link.head-link-secondary i,
+        .pc-header .pc-head-link.head-link-primary i {
+            color: #EA8290 !important;
+        }
+        .pc-header .pc-head-link.head-link-secondary:hover,
+        .pc-header .pc-head-link.head-link-primary:hover,
+        .pc-header .pc-head-link.head-link-secondary:hover i,
+        .pc-header .pc-head-link.head-link-primary:hover i {
+            background: #EA8290 !important;
+            color: #fff !important;
         }
         
         /* Sidebar Active State icon/text */
@@ -68,6 +93,15 @@
         /* Secondary Backgrounds */
         .bg-secondary-dark {
             background: #D96A79 !important;
+        }
+
+        /* Profile Dropdown Hover Override */
+        .dropdown-user-profile .dropdown-item:hover {
+            background-color: #fcebed !important;
+            color: #EA8290 !important;
+        }
+        .dropdown-user-profile .dropdown-item:hover i {
+            color: #EA8290 !important;
         }
     </style>
     @stack('styles')

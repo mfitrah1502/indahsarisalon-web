@@ -77,7 +77,7 @@
 
         /* Greeting Section */
         @php
-            $hour = date('H');
+            $hour = now()->hour;
             if ($hour >= 5 && $hour < 11) {
                 $greeting = 'Selamat Pagi';
             } elseif ($hour >= 11 && $hour < 15) {

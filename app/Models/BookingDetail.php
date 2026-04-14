@@ -10,12 +10,17 @@ class BookingDetail extends Model
     use HasFactory;
 
     protected $fillable = [
-        'booking_id', 'treatment_detail_id', 'price'
+        'booking_id', 'treatment_detail_id', 'stylist_id', 'price'
     ];
 
     public function booking()
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    public function stylist()
+    {
+        return $this->belongsTo(User::class, 'stylist_id');
     }
 
     public function treatmentDetail()

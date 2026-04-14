@@ -61,30 +61,7 @@
 
                     <!-- Daftar treatment -->
                     <div class="row" id="treatmentList">
-                        @foreach($treatments as $treatment)
-                            <div class="col-md-4 mb-4">
-                                <div class="card treatment-card h-100 border-0 shadow-sm">
-                                    @php
-                                        $imageUrl = $treatment->image 
-                                            ? env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $treatment->image 
-                                            : asset('assets/images/no-image.jpg');
-                                    @endphp
-                                    <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $treatment->name }}">
-                                    <div class="card-body">
-                                        <h5 class="card-title">{{ $treatment->name }}</h5>
-                                        <p class="card-text">
-                                            Kategori: {{ $treatment->category->name ?? '-' }} <br>
-                                            @foreach($treatment->details as $detail)
-                                                - {{ $detail->name }}: {{ $detail->duration }} menit, Rp
-                                                {{ number_format($detail->price, 0) }} <br>
-                                            @endforeach
-                                        </p>
-                                        <a href="{{ route('booking.select', $treatment->id) }}" class="btn btn-primary">Pilih
-                                            Treatment</a>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
+                        @include('booking.partials._treatment_list')
                     </div>
 
                 </div>
@@ -92,38 +69,55 @@
         </div>
     </div>
 
-    <!-- Required JS -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
+@push('scripts')
     <script>
-        layout_change('light');
-        font_change('Roboto');
-        change_box_container('false');
-        layout_caption_change('true');
-        layout_rtl_change('false');
-        preset_change('preset-1');
-
         $(document).ready(function () {
+            // Theme Config (Safe Check) - only if functions exist
+            if (typeof layout_change === 'function') {
+                layout_change('light');
+                font_change('Roboto');
+                change_box_container('false');
+                layout_caption_change('true');
+                layout_rtl_change('false');
+                preset_change('preset-1');
+            }
+
+            let searchTimer;
+
             function loadTreatments() {
                 let category = $('#categoryFilter').val();
                 let search = $('#searchInput').val();
+                
+                // Show a subtle loading state
+                $('#treatmentList').css('opacity', '0.5');
 
                 $.ajax({
                     url: "{{ route('booking.index') }}",
                     type: 'GET',
-                    data: { category: category, search: search },
-                    success: function (data) {
-                        let list = $(data).find('#treatmentList').html();
-                        $('#treatmentList').html(list);
+                    data: { 
+                        category: category, 
+                        search: search,
+                        is_ajax: 1 // Helper for backend detection
+                    },
+                    success: function (html) {
+                        $('#treatmentList').html(html).css('opacity', '1');
                     },
                     error: function (err) {
-                        console.log('AJAX Error:', err);
+                        console.error('AJAX Error:', err);
+                        $('#treatmentList').css('opacity', '1');
+                        // Optional: trigger a small alert or toast
                     }
                 });
             }
 
-            $('#searchInput').on('keyup', loadTreatments);
+            // Use debounce for search to reduce server requests (500ms)
+            $('#searchInput').on('keyup', function() {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(loadTreatments, 500);
+            });
+
             $('#categoryFilter').on('change', loadTreatments);
         });
     </script>
+@endpush
 @endsection

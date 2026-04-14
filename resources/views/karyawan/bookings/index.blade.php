@@ -1,22 +1,60 @@
 @extends('layout.dashboard')
 
 @section('title', 'Status Pemesanan | Staf')
+
 <style>
-    .table > :not(caption) > * > * {
-        padding: 1.25rem 1rem;
+    .booking-card-table {
+        border-collapse: separate;
+        border-spacing: 0 12px;
     }
-    .badge {
-        font-size: 0.85rem;
-        padding: 0.5em 1em;
-    }
-    .dropdown-menu {
-        border: none;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    .booking-card-table tr {
+        background: #fff;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.04);
         border-radius: 12px;
-        margin-top: 10px !important;
+        transition: all 0.2s ease;
     }
-    .fw-bold {
-        font-size: 1.05rem;
+    .booking-card-table tr:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+    .booking-card-table td {
+        padding: 1.2rem 1rem !important;
+        vertical-align: middle;
+        border: none !important;
+    }
+    .booking-card-table td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+    .booking-card-table td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+
+    .action-btn {
+        width: 38px;
+        height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        transition: all 0.2s;
+    }
+    .badge-status {
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+    /* Pink Branding */
+    .text-pink { color: #EA8290 !important; }
+    .bg-pink { background-color: #EA8290 !important; }
+    .btn-pink { background: #EA8290 !important; color: #fff !important; border: none; }
+    .btn-light-pink { background: #fcebed !important; color: #EA8290 !important; border: none; }
+    
+    .modal-detail-item {
+        padding: 12px;
+        border-bottom: 1px solid #f1f1f1;
+    }
+    .modal-detail-item:last-child { border-bottom: none; }
+
+    /* Fix SweetAlert2 appearing behind modal */
+    .swal2-container {
+        z-index: 9999 !important;
     }
 </style>
 
@@ -24,15 +62,15 @@
 <div class="row mb-4">
     <!-- STATS CARDS -->
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm bg-primary text-white">
+        <div class="card border-0 shadow-sm bg-pink text-white">
             <div class="card-body">
                 <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 avatar-sm bg-white bg-opacity-25 rounded">
+                    <div class="flex-shrink-0 avatar-sm bg-white bg-opacity-25 rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                         <i class="ti ti-calendar-event fs-3"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h6 class="text-white mb-0 opacity-75">Semua Pesanan</h6>
-                        <h4 class="text-white mb-0">{{ $stats['total'] }}</h4>
+                        <h6 class="text-white mb-0 opacity-75 small">Total Booking</h6>
+                        <h4 class="text-white mb-0 fw-bold">{{ $stats['total'] }}</h4>
                     </div>
                 </div>
             </div>
@@ -42,12 +80,12 @@
         <div class="card border-0 shadow-sm bg-warning text-dark">
             <div class="card-body">
                 <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 avatar-sm bg-white bg-opacity-25 rounded">
+                    <div class="flex-shrink-0 avatar-sm bg-white bg-opacity-25 rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                         <i class="ti ti-loader fs-3"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h6 class="text-dark mb-0 opacity-75">Perlu Diproses</h6>
-                        <h4 class="text-dark mb-0">{{ $stats['proses'] }}</h4>
+                        <h6 class="text-dark mb-0 opacity-75 small">Pending / Proses</h6>
+                        <h4 class="text-dark mb-0 fw-bold">{{ $stats['proses'] }}</h4>
                     </div>
                 </div>
             </div>
@@ -57,12 +95,12 @@
         <div class="card border-0 shadow-sm bg-success text-white">
             <div class="card-body">
                 <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 avatar-sm bg-white bg-opacity-25 rounded">
+                    <div class="flex-shrink-0 avatar-sm bg-white bg-opacity-25 rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                         <i class="ti ti-check fs-3"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h6 class="text-white mb-0 opacity-75">Sudah Selesai</h6>
-                        <h4 class="text-white mb-0">{{ $stats['berhasil'] }}</h4>
+                        <h6 class="text-white mb-0 opacity-75 small">Selesai / Berhasil</h6>
+                        <h4 class="text-white mb-0 fw-bold">{{ $stats['berhasil'] }}</h4>
                     </div>
                 </div>
             </div>
@@ -72,12 +110,12 @@
         <div class="card border-0 shadow-sm bg-danger text-white">
             <div class="card-body">
                 <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0 avatar-sm bg-white bg-opacity-25 rounded">
+                    <div class="flex-shrink-0 avatar-sm bg-white bg-opacity-25 rounded d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                         <i class="ti ti-x fs-3"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h6 class="text-white mb-0 opacity-75">Dibatalkan</h6>
-                        <h4 class="text-white mb-0">{{ $stats['dibatalkan'] }}</h4>
+                        <h6 class="text-white mb-0 opacity-75 small">Dibatalkan</h6>
+                        <h4 class="text-white mb-0 fw-bold">{{ $stats['dibatalkan'] }}</h4>
                     </div>
                 </div>
             </div>
@@ -87,16 +125,19 @@
 
 <div class="row">
     <div class="col-12">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white border-bottom pt-3 pb-0">
-                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-                    <h4 class="mb-0">📋 Panel Operasional Booking</h4>
+        <div class="card shadow-sm border-0 rounded-4 overlay-hidden">
+            <div class="card-header bg-white border-bottom pt-4 pb-0">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 px-2">
+                    <div>
+                        <h4 class="fw-bold text-dark mb-1">📋 Panel Operasional Booking</h4>
+                        <p class="text-muted small mb-0">Kelola pengerjaan treatment pelanggan secara efisien.</p>
+                    </div>
                     
                     <!-- DATE FILTER SECTION -->
                     <form action="{{ route('admin.bookings.index') }}" method="GET" id="filterForm" class="row g-2 align-items-center">
                         <input type="hidden" name="status" value="{{ request('status', 'proses') }}">
                         <div class="col-auto">
-                            <select name="filter_mode" id="filterMode" class="form-select form-select-sm shadow-none">
+                            <select name="filter_mode" id="filterMode" class="form-select form-select-sm border-light shadow-none rounded-pill px-3">
                                 <option value="all" {{ request('filter_mode') == 'all' ? 'selected' : '' }}>Semua Riwayat</option>
                                 <option value="daily" {{ request('filter_mode') == 'daily' ? 'selected' : '' }}>Harian</option>
                                 <option value="monthly" {{ request('filter_mode') == 'monthly' ? 'selected' : '' }}>Bulanan</option>
@@ -105,42 +146,42 @@
                         </div>
                         <div class="col-auto" id="filterInputCol" style="{{ in_array(request('filter_mode'), ['daily','monthly','yearly']) ? '' : 'display:none;' }}">
                             @if(request('filter_mode') == 'daily')
-                                <input type="date" name="filter_value" class="form-control form-control-sm" value="{{ request('filter_value') }}">
+                                <input type="date" name="filter_value" class="form-control form-control-sm rounded-pill" value="{{ request('filter_value') }}">
                             @elseif(request('filter_mode') == 'monthly')
-                                <input type="month" name="filter_value" class="form-control form-control-sm" value="{{ request('filter_value') }}">
+                                <input type="month" name="filter_value" class="form-control form-control-sm rounded-pill" value="{{ request('filter_value') }}">
                             @elseif(request('filter_mode') == 'yearly')
-                                <input type="number" name="filter_value" class="form-control form-control-sm" placeholder="Tahun" min="2020" max="2030" value="{{ request('filter_value') }}">
+                                <input type="number" name="filter_value" class="form-control form-control-sm rounded-pill" placeholder="Tahun" min="2020" max="2030" value="{{ request('filter_value') }}">
                             @endif
                         </div>
                         <div class="col-auto">
-                            <button type="submit" class="btn btn-primary btn-sm px-3"><i class="ti ti-search me-1"></i>Filter</button>
-                            <a href="{{ route('admin.bookings.index', ['status' => request('status', 'proses')]) }}" class="btn btn-light-secondary btn-sm px-3"><i class="ti ti-refresh me-1"></i>Reset</a>
+                            <button type="submit" class="btn btn-pink btn-sm rounded-pill px-3"><i class="ti ti-search me-1"></i>Filter</button>
+                            <a href="{{ route('admin.bookings.index', ['status' => request('status', 'proses')]) }}" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="ti ti-refresh me-1"></i>Reset</a>
                         </div>
                     </form>
                 </div>
                 
                 <!-- TABS -->
-                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                <ul class="nav nav-tabs card-header-tabs px-3 border-bottom-0" role="tablist">
                     <li class="nav-item">
-                        <a class="nav-link {{ $status == 'proses' ? 'active font-weight-bold' : '' }}" 
+                        <a class="nav-link {{ $status == 'proses' ? 'active fw-bold' : '' }}" 
                            href="{{ route('admin.bookings.index', ['status' => 'proses']) }}">
                             ⏳ Pending / Proses
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ $status == 'berhasil' ? 'active font-weight-bold' : '' }}" 
+                        <a class="nav-link {{ $status == 'berhasil' ? 'active fw-bold' : '' }}" 
                            href="{{ route('admin.bookings.index', ['status' => 'berhasil']) }}">
                             ✅ Selesai (Berhasil)
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ $status == 'dibatalkan' ? 'active font-weight-bold' : '' }}" 
+                        <a class="nav-link {{ $status == 'dibatalkan' ? 'active fw-bold' : '' }}" 
                            href="{{ route('admin.bookings.index', ['status' => 'dibatalkan']) }}">
                             ❌ Dibatalkan
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ $status == 'all' ? 'active font-weight-bold' : '' }}" 
+                        <a class="nav-link {{ $status == 'all' ? 'active fw-bold' : '' }}" 
                            href="{{ route('admin.bookings.index', ['status' => 'all']) }}">
                             Semua
                         </a>
@@ -148,116 +189,77 @@
                 </ul>
             </div>
 
-            @if(session('success'))
-                <div class="alert alert-success m-3">{{ session('success') }}</div>
-            @endif
-
-            <div class="card-body">
+            <div class="card-body p-4 bg-light bg-opacity-50">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>No</th>
-                                <th>Informasi Pelanggan</th>
-                                <th>Layanan</th>
-                                <th>Waktu & Petugas</th>
-                                <th>Biaya & Bayar</th>
-                                <th>Status Bayar</th>
-                                <th class="text-center">Aksi Staf</th>
+                    <table class="table booking-card-table align-middle">
+                        <thead>
+                            <tr class="bg-transparent shadow-none">
+                                <th class="text-muted small fw-bold px-3 py-2">PELANGGAN</th>
+                                <th class="text-muted small fw-bold py-2 text-center">LAYANAN</th>
+                                <th class="text-muted small fw-bold py-2 text-center">WAKTU</th>
+                                <th class="text-muted small fw-bold py-2 text-center">BIAYA</th>
+                                <th class="text-muted small fw-bold py-2 text-center">PEMBAYARAN</th>
+                                <th class="text-muted small fw-bold py-2 text-end px-3">DETAIL</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($bookings as $index => $booking)
-                                <tr>
-                                    <td>{{ $bookings->firstItem() + $index }}</td>
-                                    <td>
-                                        <div class="d-flex flex-column">
-                                            <span class="fw-bold text-dark">{{ $booking->customer_name }}</span>
-                                            @if($booking->user)
-                                                <small class="text-muted"><i class="ti ti-mail me-1"></i>{{ $booking->user->email }}</small>
-                                            @else
-                                                <small class="text-muted text-uppercase" style="font-size: 0.7rem;"><i class="ti ti-user me-1"></i>OFFLINE CUSTOMER</small>
-                                            @endif
-                                            @if($booking->cashier)
-                                                <small class="text-success"><i class="ti ti-id me-1"></i>Oleh: {{ $booking->cashier->name }}</small>
-                                            @endif
-                                            <small class="text-info">#BOOK-{{ $booking->id }}</small>
+                            @forelse($bookings as $booking)
+                                <tr class="booking-row" data-id="{{ $booking->id }}">
+                                    <td class="px-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm bg-light-pink rounded-pill d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                                <i class="ti ti-user text-pink fs-4"></i>
+                                            </div>
+                                            <div class="d-flex flex-column">
+                                                <span class="fw-bold text-dark">{{ $booking->customer_name }}</span>
+                                                <small class="text-info" style="font-size: 0.75rem;">#BOOK-{{ $booking->id }}</small>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td class="text-center">
                                         <div class="d-flex flex-column">
-                                            <span class="text-primary fw-bold">{{ $booking->treatment->name }}</span>
+                                            <span class="text-dark fw-bold">{{ $booking->treatment->name }}</span>
                                             <small class="text-muted">{{ $booking->details->count() }} Detail</small>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td class="text-center">
                                         <div class="d-flex flex-column">
-                                            <span><i class="ti ti-clock me-1 text-warning"></i>{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('d M Y, H:i') }}</span>
-                                            <small class="text-muted"><i class="ti ti-user me-1 text-secondary"></i>Stylist: {{ $booking->stylist->name ?? 'None' }}</small>
+                                            <span class="fw-medium text-pink">{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('d/m/Y') }}</span>
+                                            <small class="text-muted">{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('H:i') }}</small>
                                         </div>
                                     </td>
-                                    <td>
-                                        <div class="d-flex flex-column">
-                                            <span class="fw-bold">Rp {{ number_format($booking->total_price, 0) }}</span>
-                                            <span class="badge {{ $booking->payment_method == 'transfer' ? 'bg-light-info' : 'bg-light-secondary' }} text-dark mt-1">
-                                                <i class="ti ti-{{ $booking->payment_method == 'transfer' ? 'credit-card' : 'wallet' }} me-1"></i>
-                                                {{ ucfirst($booking->payment_method) }}
-                                            </span>
-                                        </div>
+                                    <td class="text-center">
+                                        <span class="fw-bold text-dark">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</span>
                                     </td>
-                                    <td>
+                                    <td class="text-center">
                                         @php
-                                            $payClass = [
+                                            $payBadge = [
                                                 'paid' => 'bg-success',
                                                 'pending' => 'bg-warning text-dark',
                                                 'failed' => 'bg-danger'
                                             ][$booking->payment_status] ?? 'bg-secondary';
                                         @endphp
-                                        <span class="badge {{ $payClass }} rounded-pill px-3">
-                                            {{ ucfirst($booking->payment_status) }}
-                                        </span>
-                                    </td>
-                                    <td class="text-center">
-                                        <div class="dropdown">
-                                            <button class="btn btn-sm btn-primary border dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                                Update Status
-                                            </button>
-                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
-                                                <li class="dropdown-header">Ubah Status Pengerjaan</li>
-                                                <li>
-                                                    <form action="{{ route('admin.bookings.updateStatus', $booking->id) }}" method="POST">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <input type="hidden" name="status" value="proses">
-                                                        <button type="submit" class="dropdown-item">⏳ Sedang Proses</button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form action="{{ route('admin.bookings.updateStatus', $booking->id) }}" method="POST">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <input type="hidden" name="status" value="berhasil">
-                                                        <button type="submit" class="dropdown-item text-success">✅ Selesai</button>
-                                                    </form>
-                                                </li>
-                                                <li>
-                                                    <form action="{{ route('admin.bookings.updateStatus', $booking->id) }}" method="POST">
-                                                        @csrf
-                                                        @method('PATCH')
-                                                        <input type="hidden" name="status" value="dibatalkan">
-                                                        <button type="submit" class="dropdown-item text-danger">❌ Batalkan</button>
-                                                    </form>
-                                                </li>
-                                            </ul>
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span class="badge {{ $payBadge }} rounded-pill px-3 mb-1" style="font-size: 0.7rem;">
+                                                {{ strtoupper($booking->payment_status) }}
+                                            </span>
+                                            <small class="text-muted" style="font-size: 0.65rem;">
+                                                <i class="ti ti-{{ $booking->payment_method == 'transfer' ? 'credit-card' : 'wallet' }} me-1"></i>{{ ucfirst($booking->payment_method) }}
+                                            </small>
                                         </div>
+                                    </td>
+                                    <td class="text-end px-3">
+                                        <button class="btn btn-light-pink action-btn btn-view-detail" data-id="{{ $booking->id }}">
+                                            <i class="ti ti-eye fs-5"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-5">
-                                        <div class="text-muted">
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="text-muted py-4">
                                             <i class="ti ti-clipboard-x fs-1 opacity-25"></i>
-                                            <p class="mt-2">Belum ada pemesanan dalam kategori ini.</p>
+                                            <p class="mt-3">Belum ada pemesanan masuk.</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -267,49 +269,181 @@
                 </div>
 
                 <div class="mt-4 d-flex justify-content-center">
-                    {{ $bookings->appends(['status' => $status])->links() }}
+                    {{ $bookings->appends(['status' => $status, 'filter_mode' => request('filter_mode'), 'filter_value' => request('filter_value')])->links() }}
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- MODAL DETAIL BOOKING -->
+<div class="modal fade" id="bookingDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header bg-pink text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="ti ti-clipboard-list me-2"></i>Detail Pemesanan <span id="mdl_id"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="row g-0">
+                    <div class="col-md-5 bg-light p-4 border-end">
+                        <div class="text-center mb-4">
+                            <div class="avatar-lg bg-white rounded-circle shadow-sm mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 80px; height: 80px;">
+                                <i class="ti ti-user text-pink" style="font-size: 3rem;"></i>
+                            </div>
+                            <h4 id="mdl_customer" class="fw-bold text-dark mb-1"></h4>
+                            <span id="mdl_role_badge" class="badge bg-light-pink text-pink rounded-pill px-3"></span>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h6 class="fw-bold small text-muted text-uppercase mb-3">Informasi Status</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Status Booking:</span>
+                                <span id="mdl_status" class="badge-status"></span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Pembayaran:</span>
+                                <span id="mdl_payment_status" class="badge-status"></span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="text-muted">Waktu:</span>
+                                <span id="mdl_time" class="fw-bold"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-7 p-4 bg-white">
+                        <h6 class="fw-bold text-dark mb-3">Layanan yang Diambil:</h6>
+                        <div id="mdl_services_list" class="list-group list-group-flush rounded-3 border overflow-hidden mb-4">
+                        </div>
+                        
+                        <div class="bg-light p-3 rounded-3 mb-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold text-dark fs-5">Total Biaya</span>
+                                <span id="mdl_total" class="fw-bold text-pink fs-4"></span>
+                            </div>
+                        </div>
+
+                        <div id="mdl_actions" class="d-flex gap-2">
+                            <button class="btn btn-success flex-grow-1 rounded-pill py-2 shadow-sm" id="btnMarkFinished">
+                                <i class="ti ti-check me-1"></i> Tandai Selesai
+                            </button>
+                            <button class="btn btn-outline-danger flex-grow-1 rounded-pill py-2" id="btnCancelBooking">
+                                <i class="ti ti-x me-1"></i> Batalkan
+                            </button>
+                        </div>
+                        <div id="mdl_status_info" class="text-center p-3 bg-light rounded-pill d-none">
+                            <span class="text-muted fw-bold small">Status pesanan ini sudah bersifat final.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-    // Initial Config (Safe Check)
-    if (typeof layout_change === 'function') {
-        layout_change('light');
-        font_change('Roboto');
-        change_box_container('false');
-        layout_caption_change('true');
-        layout_rtl_change('false');
-        preset_change('preset-1');
-    }
-
     $(document).ready(function() {
-        $('#filterMode').on('change', function() {
-            const mode = $(this).val();
-            const $container = $('#filterInputCol');
+        const detailModal = new bootstrap.Modal(document.getElementById('bookingDetailModal'));
+        let currentBookingId = null;
+
+        $(document).on('click', '.btn-view-detail', function() {
+            const id = $(this).data('id');
+            currentBookingId = id;
             
-            if (mode === 'all') {
-                $container.hide().empty();
-                $('#filterForm').submit();
-            } else {
-                $container.show();
-                let inputHtml = '';
-                if (mode === 'daily') {
-                    inputHtml = '<input type="date" name="filter_value" class="form-control form-control-sm" value="{{ date('Y-m-d') }}">';
-                } else if (mode === 'monthly') {
-                    inputHtml = '<input type="month" name="filter_value" class="form-control form-control-sm" value="{{ date('Y-m') }}">';
-                } else if (mode === 'yearly') {
-                    inputHtml = '<input type="number" name="filter_value" class="form-control form-control-sm" placeholder="Tahun" min="2020" max="2030" value="{{ date('Y') }}">';
+            $.ajax({
+                url: `/admin/bookings/${id}`,
+                type: 'GET',
+                success: function(data) {
+                    $('#mdl_id').text('#' + data.id);
+                    $('#mdl_customer').text(data.customer_name);
+                    $('#mdl_role_badge').text(data.user ? 'Pelanggan Online' : 'Pelanggan Offline');
+                    
+                    const statusMap = {
+                        'proses': { label: '⏳ Proses', class: 'bg-warning text-dark' },
+                        'berhasil': { label: '✅ Selesai', class: 'bg-success text-white' },
+                        'dibatalkan': { label: '❌ Batal', class: 'bg-danger text-white' }
+                    };
+                    const payMap = {
+                        'paid': { label: 'LUNAS', class: 'bg-success' },
+                        'pending': { label: 'PENDING', class: 'bg-warning text-dark' },
+                        'failed': { label: 'GAGAL', class: 'bg-danger' }
+                    };
+
+                    const s = statusMap[data.status] || { label: data.status, class: 'bg-secondary' };
+                    $('#mdl_status').text(s.label).removeClass().addClass('badge-status ' + s.class);
+                    
+                    const ps = payMap[data.payment_status] || { label: data.payment_status, class: 'bg-secondary' };
+                    $('#mdl_payment_status').text(ps.label).removeClass().addClass('badge-status ' + ps.class);
+                    
+                    $('#mdl_time').text(data.reservation_datetime);
+                    $('#mdl_total').text('Rp ' + new Intl.NumberFormat('id-ID').format(data.total_price));
+
+                    let servicesHtml = '';
+                    data.details.forEach(detail => {
+                        servicesHtml += `
+                            <div class="list-group-item p-3 border-0 border-bottom">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="fw-bold text-dark">${detail.treatment_detail.name}</span>
+                                    <span class="fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(detail.price)}</span>
+                                </div>
+                                <small class="text-muted">Stylist: ${detail.stylist ? detail.stylist.name : 'None'}</small>
+                            </div>
+                        `;
+                    });
+                    $('#mdl_services_list').html(servicesHtml);
+
+                    if(data.status === 'proses') {
+                        $('#mdl_actions').removeClass('d-none').addClass('d-flex');
+                        $('#mdl_status_info').addClass('d-none');
+                    } else {
+                        $('#mdl_actions').removeClass('d-flex').addClass('d-none');
+                        $('#mdl_status_info').removeClass('d-none');
+                    }
+
+                    detailModal.show();
                 }
-                $container.html(inputHtml);
-            }
+            });
         });
+
+        function updateBookingStatus(status) {
+            Swal.fire({
+                title: status === 'berhasil' ? 'Selesaikan Pesanan?' : 'Batalkan Pesanan?',
+                text: "Status akan diperbarui secara permanen.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: status === 'berhasil' ? '#2ecc71' : '#e74c3c',
+                cancelButtonColor: '#95a5a6',
+                confirmButtonText: 'Ya, Lanjutkan!',
+                cancelButtonText: 'Kembali'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/admin/bookings/${currentBookingId}/status`,
+                        type: 'PATCH',
+                        data: {
+                            _token: '{{ csrf_token() }}',
+                            status: status
+                        },
+                        success: function(res) {
+                            Swal.fire('Berhasil!', res.message, 'success').then(() => {
+                                location.reload();
+                            });
+                        },
+                        error: function() {
+                            Swal.fire('Error!', 'Terjadi kesalahan sistem.', 'error');
+                        }
+                    });
+                }
+            });
+        }
+
+        $('#btnMarkFinished').click(() => updateBookingStatus('berhasil'));
+        $('#btnCancelBooking').click(() => updateBookingStatus('dibatalkan'));
     });
 </script>
 @endpush
-
 @endsection

@@ -8,6 +8,7 @@ use App\Models\Booking;
 use App\Models\BookingDetail;
 use App\Models\User;
 use App\Models\Treatment;
+use App\Models\TreatmentDetail;
 use Carbon\Carbon;
 use Midtrans\Config;
 use Midtrans\Snap;
@@ -27,59 +28,73 @@ class BookingController extends Controller
         $categories = Category::all();
         $query = Treatment::with(['details','category']);
 
-        if ($request->category) {
+        if ($request->filled('category')) {
             $query->where('category_id', $request->category);
         }
 
-        if ($request->search) {
+        if ($request->filled('search')) {
             $query->where('name', 'like', '%'.$request->search.'%');
         }
 
-        $treatments = $query->get();
+        $treatments = $query->orderBy('name', 'asc')->get();
+
+        if ($request->ajax() || $request->has('is_ajax')) {
+            return view('booking.partials._treatment_list', compact('treatments'));
+        }
 
         return view('booking.index', compact('treatments', 'categories'));
     }
 
     // STEP 1: Pilih stylist & waktu
     public function select($treatmentId)
-{
-    $treatment = Treatment::with('details')->findOrFail($treatmentId);
-    $stylists = User::where('role', 'karyawan')->get();
+    {
+        $treatment = Treatment::with('details')->findOrFail($treatmentId);
+        $stylists = User::where('role', 'karyawan')->get();
+        $allTreatments = Treatment::with(['details', 'category'])->get();
+        $categories = Category::all();
 
-    return view('booking.select', compact('treatment', 'stylists'));
-}
+        return view('booking.select', compact('treatment', 'stylists', 'allTreatments', 'categories'));
+    }
     // STEP 2: Simpan booking
     public function store(Request $request)
     {
         $request->validate([
             'customer_name' => 'required|string|max:255',
-            'treatment_id' => 'required|exists:treatments,id',
-            'stylist_id' => 'nullable|exists:users,id',
+            'treatment_detail_ids' => 'required|array',
+            'treatment_detail_ids.*' => 'exists:treatment_details,id',
+            'stylist_ids' => 'required|array',
+            'stylist_ids.*' => 'nullable|exists:users,id',
             'reservation_date' => 'required|date',
             'reservation_time' => 'required',
             'payment_method' => 'required|in:cash,transfer'
         ]);
 
-        $treatment = Treatment::with('details')->findOrFail($request->treatment_id);
-        $stylist = $request->stylist_id ? User::find($request->stylist_id) : null;
+        $detailIds = $request->treatment_detail_ids;
+        $stylistIds = $request->stylist_ids;
 
         $total_price = 0;
-        $booking_details = [];
+        $booking_details_data = [];
 
-        foreach ($treatment->details as $detail) {
+        foreach ($detailIds as $index => $dId) {
+            $detail = TreatmentDetail::findOrFail($dId);
+            $sId = $stylistIds[$index] ?? null;
+            $stylist = $sId ? User::find($sId) : null;
+            
             $price = $detail->price;
             
-            if ($detail->has_stylist_price) {
-                if ($stylist && strtolower($stylist->kategori) == 'senior') {
+            if ($detail->has_stylist_price && $stylist) {
+                if (strtolower($stylist->kategori) == 'senior') {
                     $price = $detail->price_senior ?? $price;
-                } elseif ($stylist && strtolower($stylist->kategori) == 'junior') {
+                } elseif (strtolower($stylist->kategori) == 'junior') {
                     $price = $detail->price_junior ?? $price;
                 }
             }
 
-            $booking_details[] = [
+            $booking_details_data[] = [
                 'treatment_detail_id' => $detail->id,
-                'price' => $price
+                'stylist_id' => $sId,
+                'price' => $price,
+                'parent_treatment_id' => $detail->treatment_id
             ];
             $total_price += $price;
         }
@@ -91,8 +106,8 @@ class BookingController extends Controller
             'user_id' => $isStaff ? null : Auth::id(),
             'customer_name' => $request->customer_name,
             'cashier_id' => $isStaff ? Auth::id() : null,
-            'stylist_id' => $request->stylist_id,
-            'treatment_id' => $request->treatment_id,
+            'stylist_id' => $booking_details_data[0]['stylist_id'], // Primary stylist fallback
+            'treatment_id' => $booking_details_data[0]['parent_treatment_id'], // Primary treatment
             'reservation_datetime' => Carbon::parse($request->reservation_date.' '.$request->reservation_time),
             'total_price' => $total_price,
             'status' => 'proses',
@@ -100,10 +115,11 @@ class BookingController extends Controller
             'payment_method' => $request->payment_method
         ]);
 
-        foreach ($booking_details as $item) {
+        foreach ($booking_details_data as $item) {
             BookingDetail::create([
                 'booking_id' => $booking->id,
                 'treatment_detail_id' => $item['treatment_detail_id'],
+                'stylist_id' => $item['stylist_id'],
                 'price' => $item['price']
             ]);
         }
@@ -176,7 +192,7 @@ class BookingController extends Controller
     public function history()
     {
         $user = Auth::user();
-        $query = Booking::with(['treatment', 'stylist', 'cashier']);
+        $query = Booking::with(['treatment', 'stylist', 'cashier', 'details.treatmentDetail.treatment', 'details.stylist']);
 
         if ($user->role === 'pelanggan') {
             $query->where('user_id', $user->id);
@@ -301,6 +317,43 @@ class BookingController extends Controller
 
         $booking->update(['status' => $request->status]);
 
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Status booking berhasil diperbarui.',
+                'status' => $booking->status
+            ]);
+        }
+
         return redirect()->back()->with('success', 'Status booking berhasil diperbarui.');
+    }
+
+    // ADMIN: View detail booking (JSON)
+    public function show($id)
+    {
+        $booking = Booking::with(['user', 'stylist', 'treatment', 'cashier', 'details.treatmentDetail', 'details.stylist'])->findOrFail($id);
+        return response()->json($booking);
+    }
+
+    // Update metode pembayaran (untuk fitur ganti mind/cancel midtrans)
+    public function updatePaymentMethod(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+        $request->validate(['payment_method' => 'required|in:cash,transfer']);
+
+        $isStaff = in_array(Auth::user()->role, ['admin', 'karyawan']);
+        $paymentStatus = ($isStaff && $request->payment_method === 'cash') ? 'paid' : 'unpaid';
+
+        $booking->update([
+            'payment_method' => $request->payment_method,
+            'payment_status' => $paymentStatus
+        ]);
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Metode pembayaran berhasil diubah ke ' . strtoupper($request->payment_method),
+            'payment_method' => $request->payment_method,
+            'is_staff' => $isStaff
+        ]);
     }
 }

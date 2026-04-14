@@ -31,13 +31,16 @@
                     <a href="{{ route('booking.index') }}" class="btn btn-secondary btn-sm">Kembali ke Daftar Treatment</a>
                 </div>
                 <div class="card-body">
-                    <h5>Treatment</h5>
-                    <p>
-                        <strong>{{ $treatment->name }}</strong> <br>
-                        @foreach($treatment->details as $detail)
-                            - {{ $detail->name }}: {{ $detail->duration }} menit, Rp {{ number_format($detail->price, 0) }} <br>
+                    <h5>Detail Layanan</h5>
+                    <ul class="list-unstyled">
+                        @foreach($booking->details as $item)
+                        <li>
+                            <strong>{{ $item->treatmentDetail->treatment->name }}</strong>: 
+                            {{ $item->treatmentDetail->name }} - {{ $item->treatmentDetail->duration }} menit 
+                            (Rp {{ number_format($item->price, 0) }})
+                        </li>
                         @endforeach
-                    </p>
+                    </ul>
 
                     <h5>Stylist</h5>
                     <p>{{ $stylist->name ?? '-' }}</p>

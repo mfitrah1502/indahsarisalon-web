@@ -6,7 +6,7 @@
 
     <style>
         .profile-card {
-            background: linear-gradient(135deg, #6610f2 0%, #007bff 100%);
+            background: linear-gradient(135deg, #EA8290 0%, #f7a7b3 100%);
             border: none;
             border-radius: 15px;
             color: white;
@@ -33,7 +33,7 @@
             bottom: 5px;
             right: 5px;
             background: #fff;
-            color: #6610f2;
+            color: #EA8290;
             width: 32px;
             height: 32px;
             border-radius: 50%;
@@ -62,6 +62,33 @@
             text-transform: uppercase;
             color: #6c757d;
             letter-spacing: 1px;
+        }
+
+        .btn-pink {
+            background-color: #EA8290;
+            border-color: #EA8290;
+            color: white;
+        }
+
+        .btn-pink:hover {
+            background-color: #d6717e;
+            border-color: #d6717e;
+            color: white;
+        }
+
+        .btn-light-pink {
+            background-color: #fcebed;
+            color: #EA8290;
+            border: none;
+        }
+
+        .btn-light-pink:hover {
+            background-color: #f7d7db;
+            color: #EA8290;
+        }
+
+        .text-pink {
+            color: #EA8290 !important;
         }
     </style>
 
@@ -95,11 +122,11 @@
                     <div class="list-group list-group-flush">
                         <a href="{{ route('booking.history') }}"
                             class="list-group-item list-group-item-action border-0 px-0 d-flex align-items-center">
-                            <i class="ti ti-history fs-4 me-3 text-info"></i> History Booking
+                            <i class="ti ti-history fs-4 me-3 text-pink"></i> History Booking
                         </a>
                         <a href="{{ route('dashboard') }}"
                             class="list-group-item list-group-item-action border-0 px-0 d-flex align-items-center">
-                            <i class="ti ti-smart-home fs-4 me-3 text-primary"></i> Kembali ke Beranda
+                            <i class="ti ti-smart-home fs-4 me-3 text-pink"></i> Kembali ke Beranda
                         </a>
                     </div>
                 </div>
@@ -111,7 +138,7 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">🔍 Detail Akun Saya</h4>
-                    <button class="btn btn-sm btn-light-primary" data-bs-toggle="modal" data-bs-target="#modalEditProfile">
+                    <button class="btn btn-sm btn-light-pink" data-bs-toggle="modal" data-bs-target="#modalEditProfile">
                         <i class="ti ti-edit me-1"></i> Edit Info
                     </button>
                 </div>
@@ -156,7 +183,7 @@
 
                     <div class="mt-4 pt-3 border-top">
                         <h5 class="mb-3">Tindakan Keamanan</h5>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalPassword">
+                        <button class="btn btn-pink" data-bs-toggle="modal" data-bs-target="#modalPassword">
                             <i class="ti ti-lock me-1"></i> Ubah Password
                         </button>
 
@@ -200,7 +227,7 @@
                         </div>
                         <div class="text-end mt-4">
                             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
-                            <button type="submit" class="btn btn-primary px-4">Simpan Perubahan</button>
+                            <button type="submit" class="btn btn-pink px-4">Simpan Perubahan</button>
                         </div>
                     </form>
                 </div>
@@ -235,8 +262,8 @@
                             <input type="password" name="new_password_confirmation" class="form-control" required placeholder="Ulangi kata sandi baru">
                         </div>
                         <div class="d-flex justify-content-between align-items-center mt-4">
-                            <a href="javascript:void(0)" id="btnToOtp" class="text-primary small fw-bold text-decoration-underline">Lupa kata sandi?</a>
-                            <button type="submit" class="btn btn-primary px-4">Simpan Perubahan</button>
+                            <a href="javascript:void(0)" id="btnToOtp" class="text-pink small fw-bold text-decoration-underline">Lupa kata sandi?</a>
+                            <button type="submit" class="btn btn-pink px-4">Simpan Perubahan</button>
                         </div>
                     </form>
                 </div>

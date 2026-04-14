@@ -88,6 +88,7 @@ class TreatmentController extends Controller
         'promo_type' => 'nullable|string',
         'promo_value' => 'nullable|numeric',
         'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+        'allow_multi_select' => 'nullable|boolean',
     ]);
 
     
@@ -109,6 +110,7 @@ class TreatmentController extends Controller
     $treatment->is_promo = $request->has('is_promo') ? 1 : 0;
     $treatment->promo_type = $request->promo_type;
     $treatment->promo_value = $request->promo_value;
+    $treatment->allow_multi_select = $request->has('allow_multi_select') ? 1 : 0;
     // Upload gambar ke Supabase
         if ($request->hasFile('image')) {
             $file = $request->file('image');
@@ -163,6 +165,7 @@ class TreatmentController extends Controller
         $treatment->is_promo = $request->has('is_promo') ? 1 : 0;
         $treatment->promo_type = $request->promo_type;
         $treatment->promo_value = $request->promo_value;
+        $treatment->allow_multi_select = $request->has('allow_multi_select') ? 1 : 0;
          // Upload gambar baru
         if ($request->hasFile('image')) {
             // Hapus gambar lama di Supabase (opsional)

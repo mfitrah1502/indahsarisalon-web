@@ -3,10 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\PelangganController;
-use App\Http\Controllers\ProdukController; 
+use App\Http\Controllers\ProdukController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PageController;
-use App\Http\Controllers\AuthController; 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\AbsensiController;
@@ -16,7 +16,7 @@ use App\Http\Controllers\CategoryController;
 // ------------------------------
 // Home & Landing
 // ------------------------------
-Route::get('/home', fn() => view('home'));
+Route::get('/', [PageController::class, 'landing'])->name('landing');
 
 // ------------------------------
 // Form login & register
@@ -133,28 +133,28 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         // Pelanggan
         Route::resource('pelanggan', PelangganController::class);
     });
-    
+
     //Booking
     // Route::get('/booking', [BookingController::class, 'index'])->name('booking.index');
     // Booking routes
 // Route::prefix('booking')->name('booking.')->group(function () {
 //     Route::get('/', [App\Http\Controllers\BookingController::class, 'index'])->name('index');
-    
-//     // Route untuk pilih treatment -> stylist & jadwal
+
+    //     // Route untuk pilih treatment -> stylist & jadwal
 //     Route::get('/select/{treatment}', [App\Http\Controllers\BookingController::class, 'select'])
 //         ->name('select');
 // });
 // // Route baru untuk summary
 //     Route::post('/summary', [BookingController::class, 'summary'])->name('booking.summary');
-Route::middleware(['auth', 'prevent-back'])->group(function () {
-    Route::get('/booking', [BookingController::class, 'index'])->name('booking.index'); // halaman daftar treatment
-    Route::get('/booking/select/{treatmentId?}', [BookingController::class, 'select'])->name('booking.select'); // step 1
-    Route::post('/booking/store', [BookingController::class, 'store'])->name('booking.store'); // simpan booking
-    Route::get('/booking/summary/{bookingId}', [BookingController::class, 'summary'])->name('booking.summary'); // step summary
-    Route::post('/booking/pay/{bookingId}', [BookingController::class, 'pay'])->name('booking.pay'); // bayar
-    Route::get('/booking/history', [BookingController::class, 'history'])->name('booking.history'); // riwayat
-    Route::post('/booking/{id}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');
-    Route::post('/booking/{id}/update-payment-method', [BookingController::class, 'updatePaymentMethod'])->name('booking.updatePaymentMethod');
-    Route::post('/booking/notification', [BookingController::class, 'handleNotification'])->name('booking.notification'); // webhook
-});
+    Route::middleware(['auth', 'prevent-back'])->group(function () {
+        Route::get('/booking', [BookingController::class, 'index'])->name('booking.index'); // halaman daftar treatment
+        Route::get('/booking/select/{treatmentId?}', [BookingController::class, 'select'])->name('booking.select'); // step 1
+        Route::post('/booking/store', [BookingController::class, 'store'])->name('booking.store'); // simpan booking
+        Route::get('/booking/summary/{bookingId}', [BookingController::class, 'summary'])->name('booking.summary'); // step summary
+        Route::post('/booking/pay/{bookingId}', [BookingController::class, 'pay'])->name('booking.pay'); // bayar
+        Route::get('/booking/history', [BookingController::class, 'history'])->name('booking.history'); // riwayat
+        Route::post('/booking/{id}/cancel', [BookingController::class, 'cancel'])->name('booking.cancel');
+        Route::post('/booking/{id}/update-payment-method', [BookingController::class, 'updatePaymentMethod'])->name('booking.updatePaymentMethod');
+        Route::post('/booking/notification', [BookingController::class, 'handleNotification'])->name('booking.notification'); // webhook
+    });
 });

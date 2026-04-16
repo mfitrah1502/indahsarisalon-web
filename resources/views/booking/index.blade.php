@@ -44,6 +44,19 @@
                 </div>
 
                 <div class="card-body">
+                    @if(!$isOpen)
+                        <div class="alert alert-warning border-0 shadow-sm mb-4 d-flex align-items-center rounded-3">
+                            <div class="flex-shrink-0">
+                                <i class="ti ti-clock-off fs-1 text-warning me-3"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="alert-heading fw-bold mb-1">Hari ini sedang tutup</h5>
+                                <p class="mb-0 small">Mohon maaf, jam operasional salon adalah <strong>09:00 - 18:00</strong>.
+                                    Anda tetap dapat melakukan booking untuk waktu operasional yang tersedia.</p>
+                            </div>
+                        </div>
+                    @endif
+
                     <!-- Filter kategori & search -->
                     <div class="row g-2 mb-3">
                         <div class="col-md-4">
@@ -69,55 +82,55 @@
         </div>
     </div>
 
-@push('scripts')
-    <script>
-        $(document).ready(function () {
-            // Theme Config (Safe Check) - only if functions exist
-            if (typeof layout_change === 'function') {
-                layout_change('light');
-                font_change('Roboto');
-                change_box_container('false');
-                layout_caption_change('true');
-                layout_rtl_change('false');
-                preset_change('preset-1');
-            }
+    @push('scripts')
+        <script>
+            $(document).ready(function () {
+                // Theme Config (Safe Check) - only if functions exist
+                if (typeof layout_change === 'function') {
+                    layout_change('light');
+                    font_change('Roboto');
+                    change_box_container('false');
+                    layout_caption_change('true');
+                    layout_rtl_change('false');
+                    preset_change('preset-1');
+                }
 
-            let searchTimer;
+                let searchTimer;
 
-            function loadTreatments() {
-                let category = $('#categoryFilter').val();
-                let search = $('#searchInput').val();
-                
-                // Show a subtle loading state
-                $('#treatmentList').css('opacity', '0.5');
+                function loadTreatments() {
+                    let category = $('#categoryFilter').val();
+                    let search = $('#searchInput').val();
 
-                $.ajax({
-                    url: "{{ route('booking.index') }}",
-                    type: 'GET',
-                    data: { 
-                        category: category, 
-                        search: search,
-                        is_ajax: 1 // Helper for backend detection
-                    },
-                    success: function (html) {
-                        $('#treatmentList').html(html).css('opacity', '1');
-                    },
-                    error: function (err) {
-                        console.error('AJAX Error:', err);
-                        $('#treatmentList').css('opacity', '1');
-                        // Optional: trigger a small alert or toast
-                    }
+                    // Show a subtle loading state
+                    $('#treatmentList').css('opacity', '0.5');
+
+                    $.ajax({
+                        url: "{{ route('booking.index') }}",
+                        type: 'GET',
+                        data: {
+                            category: category,
+                            search: search,
+                            is_ajax: 1 // Helper for backend detection
+                        },
+                        success: function (html) {
+                            $('#treatmentList').html(html).css('opacity', '1');
+                        },
+                        error: function (err) {
+                            console.error('AJAX Error:', err);
+                            $('#treatmentList').css('opacity', '1');
+                            // Optional: trigger a small alert or toast
+                        }
+                    });
+                }
+
+                // Use debounce for search to reduce server requests (500ms)
+                $('#searchInput').on('keyup', function () {
+                    clearTimeout(searchTimer);
+                    searchTimer = setTimeout(loadTreatments, 500);
                 });
-            }
 
-            // Use debounce for search to reduce server requests (500ms)
-            $('#searchInput').on('keyup', function() {
-                clearTimeout(searchTimer);
-                searchTimer = setTimeout(loadTreatments, 500);
+                $('#categoryFilter').on('change', loadTreatments);
             });
-
-            $('#categoryFilter').on('change', loadTreatments);
-        });
-    </script>
-@endpush
+        </script>
+    @endpush
 @endsection

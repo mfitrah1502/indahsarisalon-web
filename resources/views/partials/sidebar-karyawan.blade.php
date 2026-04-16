@@ -38,6 +38,18 @@
                                 href="{{ route('booking.history') }}">Riwayat Pemesanan</a></li>
                     </ul>
                 </li>
+
+                <!-- MENU ABSENSI -->
+                <li class="pc-item pc-caption">
+                    <label>Absensi</label>
+                    <i class="ti ti-clock"></i>
+                </li>
+                <li class="pc-item">
+                    <a href="{{ route('absensi.scan') }}" class="pc-link {{ request()->is('absensi/scan') ? 'active' : '' }}">
+                        <span class="pc-micon"><i class="ti ti-scan"></i></span>
+                        <span class="pc-mtext">Scan Presensi</span>
+                    </a>
+                </li>
             </ul>
         </div>
     </div>

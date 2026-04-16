@@ -31,6 +31,7 @@
                         <li class="pc-item"><a href="{{ route('karyawan.index') }}" class="pc-link">Manajemen Karyawan</a></li>
                         <li class="pc-item"><a href="{{ route('pelanggan.index') }}" class="pc-link">Manajemen Pelanggan</a></li>
                         <li class="pc-item"><a href="{{ route('treatment.index') }}" class="pc-link">Manajemen Treatment</a></li>
+                        <li class="pc-item"><a href="{{ route('holidays.index') }}" class="pc-link">Manajemen Hari Libur</a></li>
                     </ul>
                 </li>
                 <li class="pc-item pc-hasmenu">
@@ -62,25 +63,19 @@
                     </ul>
                 </li>
 
-                {{-- <li class="pc-item">
-                    <a href="../pages/register-v3.html" target="_blank" class="pc-link">
-                        <span class="pc-micon"><i class="ti ti-user-plus"></i></span>
-                        <span class="pc-mtext">Register</span>
+                <!-- MENU ABSENSI -->
+                <li class="pc-item pc-caption">
+                    <label>Absensi</label>
+                    <i class="ti ti-clock"></i>
+                </li>
+                <li class="pc-item">
+                    <a href="{{ route('admin.absensi.qr') }}" class="pc-link {{ request()->is('admin/absensi/qr') ? 'active' : '' }}">
+                        <span class="pc-micon"><i class="ti ti-qrcode"></i></span>
+                        <span class="pc-mtext">QR Presensi Harian</span>
                     </a>
-                </li> --}}
+                </li>
 
             </ul>
-            {{-- <div class="pc-navbar-card bg-primary rounded">
-                <h4 class="text-white">Explore full code</h4>
-                <p class="text-white opacity-75">Buy now to get full access of code files</p>
-                <a href="https://codedthemes.com/item/berry-bootstrap-5-admin-template/" target="_blank"
-                    class="btn btn-light text-primary">
-                    Buy Now
-                </a>
-            </div>
-            <div class="w-100 text-center">
-                <div class="badge theme-version badge rounded-pill bg-light text-dark f-12"></div>
-            </div> --}}
         </div>
     </div>
 </nav>

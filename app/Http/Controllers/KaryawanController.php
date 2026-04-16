@@ -103,4 +103,29 @@ class KaryawanController extends Controller
 
     return response()->json($absensi); // wajib pakai JSON agar AJAX bisa menampilkan modal
 }
+
+    public function filter(Request $request)
+    {
+        $query = User::whereIn('role', ['admin', 'karyawan']);
+
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%")
+                  ->orWhere('username', 'like', "%{$request->search}%")
+                  ->orWhere('email', 'like', "%{$request->search}%");
+            });
+        }
+
+        if ($request->role) {
+            $query->where('role', $request->role);
+        }
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        $karyawans = $query->get();
+
+        return view('karyawan.table', compact('karyawans'));
+    }
 }

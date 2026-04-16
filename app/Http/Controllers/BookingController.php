@@ -38,11 +38,17 @@ class BookingController extends Controller
 
         $treatments = $query->orderBy('name', 'asc')->get();
 
+        // Cek jam operasional (09:00 - 18:00)
+        $now = Carbon::now();
+        $start = Carbon::createFromTime(9, 0, 0);
+        $end = Carbon::createFromTime(18, 0, 0);
+        $isOpen = $now->between($start, $end);
+
         if ($request->ajax() || $request->has('is_ajax')) {
             return view('booking.partials._treatment_list', compact('treatments'));
         }
 
-        return view('booking.index', compact('treatments', 'categories'));
+        return view('booking.index', compact('treatments', 'categories', 'isOpen'));
     }
 
     // STEP 1: Pilih stylist & waktu
@@ -52,8 +58,11 @@ class BookingController extends Controller
         $stylists = User::where('role', 'karyawan')->get();
         $allTreatments = Treatment::with(['details', 'category'])->get();
         $categories = Category::all();
+        
+        // Ambil tanggal libur
+        $holidays = \App\Models\Holiday::pluck('date')->toArray();
 
-        return view('booking.select', compact('treatment', 'stylists', 'allTreatments', 'categories'));
+        return view('booking.select', compact('treatment', 'stylists', 'allTreatments', 'categories', 'holidays'));
     }
     // STEP 2: Simpan booking
     public function store(Request $request)
@@ -68,6 +77,74 @@ class BookingController extends Controller
             'reservation_time' => 'required',
             'payment_method' => 'required|in:cash,transfer'
         ]);
+
+        // Validasi Hari Libur
+        $isHoliday = \App\Models\Holiday::where('date', $request->reservation_date)->exists();
+        if ($isHoliday) {
+            $msg = 'Mohon maaf, salon tutup pada tanggal tersebut (Hari Libur).';
+            if ($request->ajax()) return response()->json(['message' => $msg], 422);
+            return redirect()->back()->with('error', $msg);
+        }
+
+        // Validasi Jam Operasional (09:00 - 18:00)
+        $dateTime = Carbon::parse($request->reservation_date.' '.$request->reservation_time);
+        $hour = $dateTime->hour;
+        
+        if ($hour < 9 || $hour >= 18) {
+            if ($request->ajax()) {
+                return response()->json(['message' => 'Mohon maaf, jam reservasi harus di antara 09:00 - 18:00.'], 400);
+            }
+            return redirect()->back()->with('error', 'Mohon maaf, jam reservasi harus di antara 09:00 - 18:00.');
+        }
+
+        
+        // VALIDASI KETERSEDIAAN STYLIST
+        $requestedDate = $request->reservation_date;
+        $requestedTime = $request->reservation_time;
+        $startCheckpoint = \Carbon\Carbon::parse($requestedDate . ' ' . $requestedTime);
+
+        // Ambil semua booking yang aktif hari ini
+        $existingBookings = \App\Models\Booking::whereDate('reservation_datetime', $requestedDate)
+            ->whereNotIn('status', ['dibatalkan'])
+            ->with(['details.treatmentDetail'])
+            ->get();
+
+        $stylistWindows = [];
+        foreach ($existingBookings as $b) {
+            $currStart = \Carbon\Carbon::parse($b->reservation_datetime);
+            foreach ($b->details as $d) {
+                if ($d->stylist_id && $d->treatmentDetail) {
+                    $dur = $d->treatmentDetail->duration;
+                    $currEnd = $currStart->copy()->addMinutes($dur);
+                    $stylistWindows[$d->stylist_id][] = ['start' => $currStart->copy(), 'end' => $currEnd->copy()];
+                    $currStart = $currEnd->copy();
+                }
+            }
+        }
+
+        $tempRequestedStart = $startCheckpoint->copy();
+        foreach ($request->treatment_detail_ids as $index => $dId) {
+            $sId = $request->stylist_ids[$index] ?? null;
+            if (!$sId) continue;
+
+            $detail = \App\Models\TreatmentDetail::find($dId);
+            if (!$detail) continue;
+
+            $dur = $detail->duration;
+            $tempRequestedEnd = $tempRequestedStart->copy()->addMinutes($dur);
+
+            if (isset($stylistWindows[$sId])) {
+                foreach ($stylistWindows[$sId] as $win) {
+                    if ($tempRequestedStart->lt($win['end']) && $tempRequestedEnd->gt($win['start'])) {
+                        $stylistName = \App\Models\User::find($sId)->name ?? 'Stylist';
+                        $msg = "Mohon maaf, $stylistName sudah memiliki jadwal pada jam tersebut (layanan ke-" . ($index+1) . "). Silakan pilih stylist lain atau geser jam reservasi.";
+                        if ($request->ajax()) return response()->json(['message' => $msg], 422);
+                        return redirect()->back()->with('error', $msg);
+                    }
+                }
+            }
+            $tempRequestedStart = $tempRequestedEnd->copy();
+        }
 
         $detailIds = $request->treatment_detail_ids;
         $stylistIds = $request->stylist_ids;
@@ -182,7 +259,10 @@ class BookingController extends Controller
     {
         $booking = Booking::findOrFail($bookingId);
         $booking->payment_status = 'paid';
-        $booking->status = 'confirmed';
+        // Status tetap 'proses' agar muncul di "Dalam Proses", hanya payment_status yang lunas
+        if ($booking->status === 'confirmed') {
+            $booking->status = 'proses'; // kembalikan ke proses agar bisa dikelola admin
+        }
         $booking->save();
 
         return redirect()->route('booking.history')->with('success','Pembayaran berhasil!');
@@ -206,7 +286,7 @@ class BookingController extends Controller
         $allBookings = $query->orderBy('reservation_datetime', 'desc')->get();
 
         // Bagi data untuk Pelanggan (Proses vs Riwayat)
-        $inProcess = $allBookings->whereIn('status', ['proses', 'pending']);
+        $inProcess = $allBookings->whereIn('status', ['proses', 'pending', 'confirmed']);
         $history = $allBookings->whereIn('status', ['berhasil', 'dibatalkan']);
 
         return view('booking.history', compact('inProcess', 'history', 'allBookings'));
@@ -355,5 +435,100 @@ class BookingController extends Controller
             'payment_method' => $request->payment_method,
             'is_staff' => $isStaff
         ]);
+    }
+
+    /**
+     * AJAX: Check stylist availability based on date, time, and selection duration.
+     */
+    public function checkStylistAvailability(Request $request)
+    {
+        $date = $request->reservation_date;
+        $time = $request->reservation_time;
+        $selection = $request->selected_details; 
+
+        if (!$date || !$time || empty($selection)) {
+            return response()->json(['conflicts' => []]);
+        }
+
+        try {
+            $startTime = Carbon::parse($date . ' ' . $time);
+            
+            // 0. Check if it's a holiday
+            $isHoliday = \App\Models\Holiday::where('date', $date->toDateString())->exists();
+            if ($isHoliday) {
+                return response()->json([
+                    'is_holiday' => true,
+                    'message' => 'Salon tutup pada tanggal ini.',
+                    'conflicts' => []
+                ]);
+            }
+
+            // 1. Get ALL bookings for that day (except dibatalkan)
+            $existingBookings = Booking::whereDate('reservation_datetime', $date)
+                ->whereNotIn('status', ['dibatalkan'])
+                ->with(['details.treatmentDetail'])
+                ->get();
+
+            // 2. Map existing busy windows for each stylist
+            $stylistWindows = [];
+            foreach ($existingBookings as $b) {
+                // Determine starting point for this booking
+                $currentStart = Carbon::parse($b->reservation_datetime);
+                
+                // Details are sequential
+                foreach ($b->details as $d) {
+                    if ($d->stylist_id && $d->treatmentDetail) {
+                        $duration = $d->treatmentDetail->duration;
+                        $currentEnd = $currentStart->copy()->addMinutes($duration);
+                        
+                        $stylistWindows[$d->stylist_id][] = [
+                            'start' => $currentStart->copy(),
+                            'end' => $currentEnd->copy()
+                        ];
+                        
+                        $currentStart = $currentEnd->copy();
+                    }
+                }
+            }
+
+            // 3. Check requested selection window for each detail index
+            $conflicts = [];
+            $currentRequestedStart = $startTime->copy();
+            
+            foreach ($selection as $index => $item) {
+                // Item might be just an ID or an object
+                $id = is_array($item) ? $item['id'] : $item;
+                $detail = TreatmentDetail::find($id);
+                
+                if (!$detail) {
+                    $conflicts[$index] = [];
+                    continue;
+                }
+
+                $duration = $detail->duration;
+                $currentRequestedEnd = $currentRequestedStart->copy()->addMinutes($duration);
+
+                $busyIds = [];
+                foreach ($stylistWindows as $stylistId => $windows) {
+                    foreach ($windows as $win) {
+                        // Overlap check: start1 < end2 AND end1 > start2
+                        if ($currentRequestedStart->lt($win['end']) && $currentRequestedEnd->gt($win['start'])) {
+                            $busyIds[] = (int)$stylistId;
+                            break;
+                        }
+                    }
+                }
+                
+                $conflicts[$index] = array_values(array_unique($busyIds));
+                
+                // Increment for next treatment in selection
+                $currentRequestedStart = $currentRequestedEnd->copy();
+            }
+
+            return response()->json(['conflicts' => $conflicts]);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 }

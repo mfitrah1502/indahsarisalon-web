@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\HolidayController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Http\Controllers\PelangganController;
@@ -109,6 +110,7 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
     // ------------------------------
     // Karyawan
     // ------------------------------
+    Route::get('karyawan/filter', [KaryawanController::class, 'filter'])->name('karyawan.filter');
     Route::resource('karyawan', KaryawanController::class);
     Route::get('/karyawan/{id}/absensi', [KaryawanController::class, 'absensi'])->name('karyawan.absensi');
 
@@ -118,20 +120,27 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
     Route::prefix('absensi')->middleware('role:admin,karyawan')->group(function () {
         Route::post('/masuk', [AbsensiController::class, 'absenMasuk'])->name('absensi.masuk');
         Route::post('/keluar', [AbsensiController::class, 'absenKeluar'])->name('absensi.keluar');
+        
+        // QR Attendance
+        Route::get('/scan', [AbsensiController::class, 'showScanner'])->name('absensi.scan');
+        Route::get('/konfirmasi', [AbsensiController::class, 'showConfirmation'])->name('absensi.confirmation');
+        Route::post('/process-qr', [AbsensiController::class, 'processQR'])->name('absensi.processQR');
     });
 
-
-    // ------------------------------
     // Admin only
-    // ------------------------------
     Route::middleware('role:admin')->group(function () {
+        Route::get('/admin/absensi/qr', [AbsensiController::class, 'showQR'])->name('admin.absensi.qr');
         // Treatment
         Route::get('treatment/filter', [TreatmentController::class, 'filter'])->name('treatment.filter');
         Route::get('/treatment/filter-debug', [TreatmentController::class, 'filter'])->name('treatment.filter.debug');
         Route::resource('treatment', TreatmentController::class);
 
         // Pelanggan
+        Route::get('pelanggan/filter', [PelangganController::class, 'filter'])->name('pelanggan.filter');
         Route::resource('pelanggan', PelangganController::class);
+
+        // Hari Libur
+        Route::resource('holidays', HolidayController::class)->only(['index', 'store', 'destroy']);
     });
 
     //Booking
@@ -150,6 +159,7 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         Route::get('/booking', [BookingController::class, 'index'])->name('booking.index'); // halaman daftar treatment
         Route::get('/booking/select/{treatmentId?}', [BookingController::class, 'select'])->name('booking.select'); // step 1
         Route::post('/booking/store', [BookingController::class, 'store'])->name('booking.store'); // simpan booking
+        Route::post('/booking/check-stylist-availability', [BookingController::class, 'checkStylistAvailability'])->name('booking.check_stylist_availability');
         Route::get('/booking/summary/{bookingId}', [BookingController::class, 'summary'])->name('booking.summary'); // step summary
         Route::post('/booking/pay/{bookingId}', [BookingController::class, 'pay'])->name('booking.pay'); // bayar
         Route::get('/booking/history', [BookingController::class, 'history'])->name('booking.history'); // riwayat

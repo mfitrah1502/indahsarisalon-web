@@ -96,4 +96,26 @@ class PelangganController extends Controller
         return redirect()->route('pelanggan.index')
             ->with('success','Pelanggan berhasil dihapus');
     }
+
+    public function filter(Request $request)
+    {
+        $query = User::where('role', 'pelanggan');
+
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%")
+                  ->orWhere('username', 'like', "%{$request->search}%")
+                  ->orWhere('email', 'like', "%{$request->search}%")
+                  ->orWhere('phone', 'like', "%{$request->search}%");
+            });
+        }
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        $pelanggans = $query->get();
+
+        return view('pelanggan.table', compact('pelanggans'));
+    }
 }

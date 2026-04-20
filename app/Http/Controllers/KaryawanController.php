@@ -97,12 +97,55 @@ class KaryawanController extends Controller
         return redirect()->route('karyawan.index')->with('success','Karyawan berhasil dihapus');
     }
     public function absensi($id)
-{
-    $karyawan = User::findOrFail($id);
-    $absensi = $karyawan->absensi()->orderBy('tanggal', 'desc')->get(); // ambil absensi
+    {
+        $karyawan = User::findOrFail($id);
+        $startDate = now()->startOfMonth();
+        $endDate = now();
+        
+        // Ambil data absensi yang ada di database
+        $absensi = $karyawan->absensi()
+            ->whereBetween('tanggal', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->get()
+            ->keyBy('tanggal');
 
-    return response()->json($absensi); // wajib pakai JSON agar AJAX bisa menampilkan modal
-}
+        // Ambil data hari libur
+        $holidays = \App\Models\Holiday::whereBetween('date', [$startDate, $endDate])
+            ->pluck('date')
+            ->map(fn($d) => $d->format('Y-m-d'))
+            ->toArray();
+
+        $report = [];
+        // Iterasi dari hari ini ke belakang sampai awal bulan
+        for ($date = clone $endDate; $date->gte($startDate); $date->subDay()) {
+            $dateString = $date->format('Y-m-d');
+            
+            if (isset($absensi[$dateString])) {
+                $item = $absensi[$dateString];
+                
+                // Jika hanya ada jam masuk dan sudah lewat hari, nyatakan tidak absensi pulang
+                if ($dateString < $endDate->format('Y-m-d') && is_null($item->jam_keluar)) {
+                    $item->status = 'Tidak Absensi Pulang';
+                }
+                
+                $report[] = $item;
+            } else {
+                // Jika tidak ada record di hari sebelumnya dan bukan hari libur/Minggu, nyatakan Tidak Hadir
+                $isWeekend = $date->dayOfWeek === 0; // 0 = Sunday
+                $isHoliday = in_array($dateString, $holidays);
+                
+                if ($dateString < $endDate->format('Y-m-d') && !$isWeekend && !$isHoliday) {
+                    $report[] = [
+                        'tanggal' => $dateString,
+                        'jam_masuk' => null,
+                        'jam_keluar' => null,
+                        'status' => 'Tidak Hadir'
+                    ];
+                }
+            }
+        }
+
+        return response()->json($report);
+    }
 
     public function filter(Request $request)
     {

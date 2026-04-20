@@ -202,13 +202,13 @@
             } else {
                 data.forEach(function (item) {
                     let badgeClass = 'bg-light-success text-success';
-                    if (item.status === 'Terlambat') badgeClass = 'bg-light-warning text-warning';
+                    if (item.status === 'Terlambat' || item.status === 'Tidak Absensi Pulang') badgeClass = 'bg-light-warning text-warning';
                     if (item.status === 'Tidak Hadir' || item.status === 'Alpha') badgeClass = 'bg-light-danger text-danger';
                     
                     rows += `<tr>
                         <td class="fw-medium">${item.tanggal}</td>
-                        <td class="text-center">${item.jam_masuk ? item.jam_masuk.split(' ')[1] || item.jam_masuk : '-'}</td>
-                        <td class="text-center">${item.jam_keluar ? item.jam_keluar.split(' ')[1] || item.jam_keluar : '-'}</td>
+                        <td class="text-center">${item.jam_masuk ? (item.jam_masuk.includes(' ') ? item.jam_masuk.split(' ')[1] : item.jam_masuk) : '-'}</td>
+                        <td class="text-center">${item.jam_keluar ? (item.jam_keluar.includes(' ') ? item.jam_keluar.split(' ')[1] : item.jam_keluar) : '-'}</td>
                         <td class="text-center"><span class="badge ${badgeClass} rounded-pill px-3">${item.status ?? 'Hadir'}</span></td>
                     </tr>`;
                 });

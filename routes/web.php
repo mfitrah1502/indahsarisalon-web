@@ -130,6 +130,7 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
     // Admin only
     Route::middleware('role:admin')->group(function () {
         Route::get('/admin/absensi/qr', [AbsensiController::class, 'showQR'])->name('admin.absensi.qr');
+        Route::post('/admin/absensi/manual', [AbsensiController::class, 'storeManual'])->name('absensi.storeManual');
         // Treatment
         Route::get('treatment/filter', [TreatmentController::class, 'filter'])->name('treatment.filter');
         Route::get('/treatment/filter-debug', [TreatmentController::class, 'filter'])->name('treatment.filter.debug');

@@ -125,7 +125,14 @@
             <div class="modal-content border-0 shadow-lg rounded-4">
                 <div class="modal-header border-0 pb-0">
                     <h5 class="fw-bold"><i class="ti ti-calendar-event me-2 text-primary"></i>Riwayat Presensi: <span id="employeeName"></span></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="ms-auto d-flex gap-2">
+                        @if(Auth::user()->role === 'admin')
+                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-none" id="btnSetOffWork">
+                                <i class="ti ti-calendar-off me-1"></i> Setel Libur (Off Work)
+                            </button>
+                        @endif
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
                 </div>
                 <div class="modal-body p-4">
                     <!-- Filter Section -->
@@ -202,8 +209,10 @@
             } else {
                 data.forEach(function (item) {
                     let badgeClass = 'bg-light-success text-success';
-                    if (item.status === 'Terlambat' || item.status === 'Tidak Absensi Pulang') badgeClass = 'bg-light-warning text-warning';
+                    if (item.status === 'Terlambat') badgeClass = 'bg-light-warning text-warning';
+                    if (item.status === 'Off Work' || item.status === 'Libur') badgeClass = 'bg-light-secondary text-secondary';
                     if (item.status === 'Tidak Hadir' || item.status === 'Alpha') badgeClass = 'bg-light-danger text-danger';
+                    if (item.status === 'Tidak Absensi Pulang') badgeClass = 'bg-light-warning text-warning';
                     
                     rows += `<tr>
                         <td class="fw-medium">${item.tanggal}</td>
@@ -282,6 +291,7 @@
                 type: "GET",
                 success: function (data) {
                     currentAbsensiData = data;
+                    $('#offWorkUserId').val(userId); // set for off work form
                     $('#filterType').val('all').trigger('change');
                     renderAbsensi(data);
                     var modal = new bootstrap.Modal(document.getElementById('absensiModal'));
@@ -292,6 +302,66 @@
                 }
             });
         });
+
+        // Trigger Off Work Modal
+        $(document).on('click', '#btnSetOffWork', function() {
+            var offWorkModal = new bootstrap.Modal(document.getElementById('offWorkModal'));
+            offWorkModal.show();
+        });
+
+        // Submit Off Work Form
+        $('#offWorkForm').on('submit', function(e) {
+            e.preventDefault();
+            let formData = $(this).serialize();
+            let userId = $('#offWorkUserId').val();
+
+            $.ajax({
+                url: "{{ route('absensi.storeManual') }}",
+                type: "POST",
+                data: formData,
+                success: function(response) {
+                    if(response.success) {
+                        $('#offWorkModal').modal('hide');
+                        // Refresh data absensi di modal utama
+                        $.ajax({
+                            url: "/karyawan/" + userId + "/absensi",
+                            type: "GET",
+                            success: function(data) {
+                                currentAbsensiData = data;
+                                renderAbsensi(data);
+                            }
+                        });
+                        alert('Karyawan berhasil diliburkan pada tanggal tersebut.');
+                    }
+                },
+                error: function(err) {
+                    alert('Gagal menyimpan data libur.');
+                }
+            });
+        });
     </script>
 @endpush
+    <!-- Modal Setel Libur -->
+    <div class="modal fade" id="offWorkModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="fw-bold">Setel Libur (Off Work)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="offWorkForm">
+                        @csrf
+                        <input type="hidden" name="user_id" id="offWorkUserId">
+                        <input type="hidden" name="status" value="Off Work">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Pilih Tanggal</label>
+                            <input type="date" name="tanggal" class="form-control border-0 shadow-sm" required value="{{ date('Y-m-d') }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill pt-2 pb-2 shadow">Simpan Status Libur</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection

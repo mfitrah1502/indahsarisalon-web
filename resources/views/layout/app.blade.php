@@ -13,6 +13,7 @@
     <div class="container mt-4">
         @yield('content')
     </div>
+    @include('partials.offline-overlay')
 </body>
 
 </html>

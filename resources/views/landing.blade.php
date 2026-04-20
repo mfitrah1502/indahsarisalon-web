@@ -287,5 +287,6 @@
         </div>
     </footer>
 
+    @include('partials.offline-overlay')
 </body>
 </html>

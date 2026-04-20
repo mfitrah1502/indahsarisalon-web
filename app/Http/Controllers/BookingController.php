@@ -113,10 +113,12 @@ class BookingController extends Controller
         foreach ($existingBookings as $b) {
             $currStart = \Carbon\Carbon::parse($b->reservation_datetime);
             foreach ($b->details as $d) {
-                if ($d->stylist_id && $d->treatmentDetail) {
+                if ($d->treatmentDetail) {
                     $dur = $d->treatmentDetail->duration;
                     $currEnd = $currStart->copy()->addMinutes($dur);
-                    $stylistWindows[$d->stylist_id][] = ['start' => $currStart->copy(), 'end' => $currEnd->copy()];
+                    if ($d->stylist_id) {
+                        $stylistWindows[$d->stylist_id][] = ['start' => $currStart->copy(), 'end' => $currEnd->copy()];
+                    }
                     $currStart = $currEnd->copy();
                 }
             }
@@ -211,7 +213,7 @@ class BookingController extends Controller
                 ],
                 'customer_details' => [
                     'first_name' => $request->customer_name,
-                    'email' => Auth::user()->email,
+                    'email' => Auth::user()->role === 'pelanggan' ? Auth::user()->email : 'info@indahsarisalon.com', // Fallback email for staff bookings
                 ],
             ];
 
@@ -454,7 +456,7 @@ class BookingController extends Controller
             $startTime = Carbon::parse($date . ' ' . $time);
             
             // 0. Check if it's a holiday
-            $isHoliday = \App\Models\Holiday::where('date', $date->toDateString())->exists();
+            $isHoliday = \App\Models\Holiday::where('date', $date)->exists();
             if ($isHoliday) {
                 return response()->json([
                     'is_holiday' => true,
@@ -477,14 +479,16 @@ class BookingController extends Controller
                 
                 // Details are sequential
                 foreach ($b->details as $d) {
-                    if ($d->stylist_id && $d->treatmentDetail) {
+                    if ($d->treatmentDetail) {
                         $duration = $d->treatmentDetail->duration;
                         $currentEnd = $currentStart->copy()->addMinutes($duration);
                         
-                        $stylistWindows[$d->stylist_id][] = [
-                            'start' => $currentStart->copy(),
-                            'end' => $currentEnd->copy()
-                        ];
+                        if ($d->stylist_id) {
+                            $stylistWindows[$d->stylist_id][] = [
+                                'start' => $currentStart->copy(),
+                                'end' => $currentEnd->copy()
+                            ];
+                        }
                         
                         $currentStart = $currentEnd->copy();
                     }

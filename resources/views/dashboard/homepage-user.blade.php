@@ -6,7 +6,7 @@
 <div class="row g-4">
     <!-- WELCOME HERO -->
     <div class="col-12">
-        <div class="card border-0 shadow-sm overflow-hidden" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="card border-0 shadow-sm overflow-hidden" style="background: linear-gradient(135deg, #EA8290 0%, #D96A79 100%);">
             <div class="card-body p-4 p-md-5 position-relative">
                 <div class="row align-items-center">
                     <div class="col-md-7 text-white">
@@ -17,7 +17,7 @@
                         </a>
                     </div>
                     <div class="col-md-5 text-end d-none d-md-block">
-                        <img src="{{ asset('assets/images/user/avatar-1.jpg') }}" alt="User Profile" class="rounded-circle border border-white border-4 shadow" style="width: 120px; height: 120px; object-fit: cover;">
+                        <img src="{{ Auth::user()->avatar_url }}" alt="User Profile" class="rounded-circle border border-white border-4 shadow" style="width: 120px; height: 120px; object-fit: cover;">
                     </div>
                 </div>
             </div>

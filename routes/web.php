@@ -141,7 +141,13 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
 
         // Hari Libur
         Route::resource('holidays', HolidayController::class)->only(['index', 'store', 'destroy']);
+
+        // Keuangan (Not yet implemented)
+        Route::get('/admin/keuangan/pemasukan', function () { abort(404); })->name('keuangan.pemasukan');
+        Route::get('/admin/keuangan/pengeluaran', function () { abort(404); })->name('keuangan.pengeluaran');
     });
+
+
 
     //Booking
     // Route::get('/booking', [BookingController::class, 'index'])->name('booking.index');
@@ -167,4 +173,9 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         Route::post('/booking/{id}/update-payment-method', [BookingController::class, 'updatePaymentMethod'])->name('booking.updatePaymentMethod');
         Route::post('/booking/notification', [BookingController::class, 'handleNotification'])->name('booking.notification'); // webhook
     });
+});
+
+// Global fallback route inside web group (outside auth) to ensure session state for 404
+Route::fallback(function () {
+    return response()->view('errors.404', [], 404);
 });

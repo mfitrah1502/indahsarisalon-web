@@ -74,7 +74,7 @@
             </p>
             
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <a href="{{ url('/') }}" class="bg-pink-600 text-white px-8 py-4 rounded-full font-semibold hover:bg-pink-700 transition-all shadow-lg shadow-pink-600/30 hover:shadow-pink-600/50 hover:-translate-y-1">
+                <a href="{{ auth()->check() ? route('dashboard') : url('/') }}" class="bg-pink-600 text-white px-8 py-4 rounded-full font-semibold hover:bg-pink-700 transition-all shadow-lg shadow-pink-600/30 hover:shadow-pink-600/50 hover:-translate-y-1">
                     Kembali ke Beranda
                 </a>
                 <button onclick="window.location.reload()" class="bg-white text-gray-700 border border-gray-200 px-8 py-4 rounded-full font-semibold hover:bg-gray-50 transition-all shadow-sm">

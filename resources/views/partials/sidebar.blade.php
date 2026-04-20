@@ -3,7 +3,7 @@
         <div class="m-header">
             <a href="{{ route('dashboard') }}" class="b-brand text-primary">
                 <!-- ========   Change your logo from here   ============ -->
-                <img src="{{ asset('assets/images/favicon.svg') }}" alt="logo" class="logo logo-lg" />
+                <img src="{{ asset('assets/images/indahsarisalonimg.jpg') }}" alt="logo" class="logo logo-lg" style="max-width: 100%; height: 45px; object-fit: contain; border-radius: 8px;" />
             </a>
         </div>
         <div class="navbar-content">
@@ -39,8 +39,8 @@
                             class="pc-mtext">Keuangan</span><span class="pc-arrow"><i
                                 data-feather="chevron-right"></i></span></a>
                     <ul class="pc-submenu">
-                        <li class="pc-item"><a class="pc-link" href="#!">Pemasukan</a></li>
-                        <li class="pc-item"><a class="pc-link" href="#!">Pengeluaran</a></li>
+                        <li class="pc-item"><a class="pc-link" href="{{ url('/admin/keuangan/pemasukan') }}">Pemasukan</a></li>
+                        <li class="pc-item"><a class="pc-link" href="{{ url('/admin/keuangan/pengeluaran') }}">Pengeluaran</a></li>
                     </ul>
                 </li>
 

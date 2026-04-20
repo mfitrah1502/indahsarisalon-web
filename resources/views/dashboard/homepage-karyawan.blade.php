@@ -8,7 +8,7 @@
         <!-- WELCOME HEADER -->
         <div class="col-12">
             <div class="card border-0 shadow-sm overflow-hidden"
-                style="background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);">
+                style="background: linear-gradient(135deg, #EA8290 0%, #D96A79 100%);">
                 <div class="card-body p-4 position-relative">
                     <div class="row align-items-center">
                         <div class="col-md-8 text-white">
@@ -20,8 +20,8 @@
                                 pelanggan hari ini.</p>
                         </div>
                         <div class="col-md-4 text-end d-none d-md-block">
-                            <img src="{{ asset('assets/images/user/avatar-2.jpg') }}" alt="user-image"
-                                class="rounded-circle border border-white border-4"
+                            <img src="{{ Auth::user()->avatar_url }}" alt="user-image"
+                                class="rounded-circle border border-white border-4 shadow-sm"
                                 style="width: 80px; height: 80px; object-fit: cover;">
                         </div>
                     </div>

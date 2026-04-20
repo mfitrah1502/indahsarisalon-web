@@ -2,7 +2,7 @@
     <div class="navbar-wrapper">
         <div class="m-header">
             <a href="{{ route('dashboard') }}" class="b-brand text-primary">
-                <img src="{{ asset('assets/images/favicon.svg') }}" alt="logo" class="logo logo-lg" />
+                <img src="{{ asset('assets/images/indahsarisalonimg.jpg') }}" alt="logo" class="logo logo-lg" style="max-width: 100%; height: 45px; object-fit: contain; border-radius: 8px;" />
             </a>
         </div>
         <div class="navbar-content">

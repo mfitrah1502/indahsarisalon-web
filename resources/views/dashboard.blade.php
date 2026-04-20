@@ -49,7 +49,7 @@
     <nav class="navbar navbar-expand-md navbar-light default">
         <div class="container">
             <a class="navbar-brand" href="#">
-                <img src="assets/images/favicon.svg" alt="logo" class="img-fluid" />
+                <img src="assets/images/indahsarisalonimg.jpg" alt="logo" class="img-fluid" style="max-height: 50px; border-radius: 6px;" />
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTogglerDemo01"
                 aria-controls="navbarTogglerDemo01" aria-expanded="false" aria-label="Toggle navigation">

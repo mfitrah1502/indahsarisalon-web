@@ -189,7 +189,7 @@ class BookingController extends Controller
             'treatment_id' => $booking_details_data[0]['parent_treatment_id'], // Primary treatment
             'reservation_datetime' => Carbon::parse($request->reservation_date.' '.$request->reservation_time),
             'total_price' => $total_price,
-            'status' => 'proses',
+            'status' => 'pending',
             'payment_status' => $paymentStatus,
             'payment_method' => $request->payment_method
         ]);
@@ -261,9 +261,9 @@ class BookingController extends Controller
     {
         $booking = Booking::findOrFail($bookingId);
         $booking->payment_status = 'paid';
-        // Status tetap 'proses' agar muncul di "Dalam Proses", hanya payment_status yang lunas
+        // Status tetap 'pending' agar muncul di "Dalam Proses", hanya payment_status yang lunas
         if ($booking->status === 'confirmed') {
-            $booking->status = 'proses'; // kembalikan ke proses agar bisa dikelola admin
+            $booking->status = 'pending'; // kembalikan ke pending agar bisa dikelola admin
         }
         $booking->save();
 
@@ -288,7 +288,7 @@ class BookingController extends Controller
         $allBookings = $query->orderBy('reservation_datetime', 'desc')->get();
 
         // Bagi data untuk Pelanggan (Proses vs Riwayat)
-        $inProcess = $allBookings->whereIn('status', ['proses', 'pending', 'confirmed']);
+        $inProcess = $allBookings->whereIn('status', ['pending', 'confirmed']);
         $history = $allBookings->whereIn('status', ['berhasil', 'dibatalkan']);
 
         return view('booking.history', compact('inProcess', 'history', 'allBookings'));
@@ -301,7 +301,7 @@ class BookingController extends Controller
             ->where('user_id', Auth::id())
             ->firstOrFail();
 
-        if ($booking->status !== 'proses' && $booking->status !== 'pending') {
+        if ($booking->status !== 'pending') {
             return response()->json(['success' => false, 'message' => 'Pemesanan ini tidak dapat dibatalkan.'], 400);
         }
 
@@ -352,7 +352,7 @@ class BookingController extends Controller
     // ADMIN: Daftar semua booking
     public function adminIndex(Request $request)
     {
-        $status = $request->get('status', 'proses'); // Default to proses
+        $status = $request->get('status', 'pending'); // Default to pending
 
         $query = Booking::with(['user', 'stylist', 'treatment', 'cashier']);
 
@@ -379,7 +379,7 @@ class BookingController extends Controller
         // Stats
         $stats = [
             'total' => Booking::count(),
-            'proses' => Booking::where('status', 'proses')->count(),
+            'pending' => Booking::where('status', 'pending')->count(),
             'berhasil' => Booking::where('status', 'berhasil')->count(),
             'dibatalkan' => Booking::where('status', 'dibatalkan')->count(),
         ];
@@ -394,7 +394,7 @@ class BookingController extends Controller
     public function updateStatus(Request $request, Booking $booking)
     {
         $request->validate([
-            'status' => 'required|in:proses,berhasil,dibatalkan'
+            'status' => 'required|in:pending,berhasil,dibatalkan'
         ]);
 
         $booking->update(['status' => $request->status]);

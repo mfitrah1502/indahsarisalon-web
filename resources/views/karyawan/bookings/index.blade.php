@@ -84,8 +84,8 @@
                         <i class="ti ti-loader fs-3"></i>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <h6 class="text-dark mb-0 opacity-75 small">Pending / Proses</h6>
-                        <h4 class="text-dark mb-0 fw-bold">{{ $stats['proses'] }}</h4>
+                        <h6 class="text-dark mb-0 opacity-75 small">Pending</h6>
+                        <h4 class="text-dark mb-0 fw-bold">{{ $stats['pending'] }}</h4>
                     </div>
                 </div>
             </div>
@@ -135,7 +135,7 @@
                     
                     <!-- DATE FILTER SECTION -->
                     <form action="{{ route('admin.bookings.index') }}" method="GET" id="filterForm" class="row g-2 align-items-center">
-                        <input type="hidden" name="status" value="{{ request('status', 'proses') }}">
+                        <input type="hidden" name="status" value="{{ request('status', 'pending') }}">
                         <div class="col-auto">
                             <select name="filter_mode" id="filterMode" class="form-select form-select-sm border-light shadow-none rounded-pill px-3">
                                 <option value="all" {{ request('filter_mode') == 'all' ? 'selected' : '' }}>Semua Riwayat</option>
@@ -155,7 +155,7 @@
                         </div>
                         <div class="col-auto">
                             <button type="submit" class="btn btn-pink btn-sm rounded-pill px-3"><i class="ti ti-search me-1"></i>Filter</button>
-                            <a href="{{ route('admin.bookings.index', ['status' => request('status', 'proses')]) }}" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="ti ti-refresh me-1"></i>Reset</a>
+                            <a href="{{ route('admin.bookings.index', ['status' => request('status', 'pending')]) }}" class="btn btn-light btn-sm rounded-pill px-3 border"><i class="ti ti-refresh me-1"></i>Reset</a>
                         </div>
                     </form>
                 </div>
@@ -163,9 +163,9 @@
                 <!-- TABS -->
                 <ul class="nav nav-tabs card-header-tabs px-3 border-bottom-0" role="tablist">
                     <li class="nav-item">
-                        <a class="nav-link {{ $status == 'proses' ? 'active fw-bold' : '' }}" 
-                           href="{{ route('admin.bookings.index', ['status' => 'proses']) }}">
-                            ⏳ Pending / Proses
+                        <a class="nav-link {{ $status == 'pending' ? 'active fw-bold' : '' }}" 
+                           href="{{ route('admin.bookings.index', ['status' => 'pending']) }}">
+                            ⏳ Pending
                         </a>
                     </li>
                     <li class="nav-item">
@@ -363,7 +363,7 @@
                     $('#mdl_role_badge').text(data.user ? 'Pelanggan Online' : 'Pelanggan Offline');
                     
                     const statusMap = {
-                        'proses': { label: '⏳ Proses', class: 'bg-warning text-dark' },
+                        'pending': { label: '⏳ Pending', class: 'bg-warning text-dark' },
                         'berhasil': { label: '✅ Selesai', class: 'bg-success text-white' },
                         'dibatalkan': { label: '❌ Batal', class: 'bg-danger text-white' }
                     };
@@ -396,7 +396,7 @@
                     });
                     $('#mdl_services_list').html(servicesHtml);
 
-                    if(data.status === 'proses') {
+                    if(data.status === 'pending') {
                         $('#mdl_actions').removeClass('d-none').addClass('d-flex');
                         $('#mdl_status_info').addClass('d-none');
                     } else {

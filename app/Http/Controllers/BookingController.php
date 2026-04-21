@@ -59,10 +59,17 @@ class BookingController extends Controller
         $allTreatments = Treatment::with(['details', 'category'])->get();
         $categories = Category::all();
         
+        // Ambil data staff untuk UI
+        $isStaff = in_array(strtolower(Auth::user()->role), ['admin', 'karyawan']) || Auth::user()->type === 'karyawan';
+        $customers = [];
+        if ($isStaff) {
+            $customers = User::where('role', 'pelanggan')->orderBy('name', 'asc')->get(['id', 'name', 'email', 'phone']);
+        }
+
         // Ambil tanggal libur
         $holidays = \App\Models\Holiday::pluck('date')->toArray();
 
-        return view('booking.select', compact('treatment', 'stylists', 'allTreatments', 'categories', 'holidays'));
+        return view('booking.select', compact('treatment', 'stylists', 'allTreatments', 'categories', 'holidays', 'customers', 'isStaff'));
     }
     // STEP 2: Simpan booking
     public function store(Request $request)
@@ -153,19 +160,24 @@ class BookingController extends Controller
 
         $total_price = 0;
         $booking_details_data = [];
+        $customPrices = $request->custom_prices ?? [];
 
         foreach ($detailIds as $index => $dId) {
             $detail = TreatmentDetail::findOrFail($dId);
             $sId = $stylistIds[$index] ?? null;
             $stylist = $sId ? User::find($sId) : null;
             
-            $price = $detail->price;
-            
-            if ($detail->has_stylist_price && $stylist) {
-                if (strtolower($stylist->kategori) == 'senior') {
-                    $price = $detail->price_senior ?? $price;
-                } elseif (strtolower($stylist->kategori) == 'junior') {
-                    $price = $detail->price_junior ?? $price;
+            // Gunakan harga kustom jika disediakan oleh staff
+            if (isset($customPrices[$index]) && $customPrices[$index] !== '') {
+                $price = (int)$customPrices[$index];
+            } else {
+                $price = $detail->price;
+                if ($detail->has_stylist_price && $stylist) {
+                    if (strtolower($stylist->kategori) == 'senior') {
+                        $price = $detail->price_senior ?? $price;
+                    } elseif (strtolower($stylist->kategori) == 'junior') {
+                        $price = $detail->price_junior ?? $price;
+                    }
                 }
             }
 
@@ -178,15 +190,55 @@ class BookingController extends Controller
             $total_price += $price;
         }
 
-        $isStaff = in_array(Auth::user()->role, ['admin', 'karyawan']);
-        $paymentStatus = ($isStaff && $request->payment_method === 'cash') ? 'paid' : 'unpaid';
+        // Robust Staff Detection with Logging
+        $authId = Auth::id();
+        $authUser = $authId ? \App\Models\User::find($authId) : null;
+        $isStaff = false;
+        
+        if ($authUser) {
+            $role = strtolower(trim($authUser->role));
+            $type = strtolower(trim($authUser->type));
+            // Sangat inklusif: admin, karyawan, atau ID 1 (Primary Admin)
+            if ($role === 'admin' || $role === 'karyawan' || $type === 'karyawan' || $authUser->id === 1) {
+                $isStaff = true;
+            }
+        }
+
+        \Log::info('Booking Attempt', [
+            'booking_id_potential' => 'next',
+            'auth_id' => $authId,
+            'role' => $authUser->role ?? 'N/A',
+            'type' => $authUser->type ?? 'N/A',
+            'is_staff_detected' => $isStaff,
+            'payment_method' => $request->payment_method,
+            'user_agent' => $request->userAgent()
+        ]);
+        
+        $paymentMethod = strtolower($request->payment_method);
+        $paymentStatus = ($isStaff && $paymentMethod === 'cash') ? 'paid' : 'unpaid';
+
+        // Log Debug untuk investigasi masalah 'unpaid'
+        try {
+            $debugData = [
+                'timestamp' => now()->toDateTimeString(),
+                'auth_id' => Auth::id(),
+                'auth_user' => $authUser ? ['id' => $authUser->id, 'role' => $authUser->role, 'type' => $authUser->type] : 'NULL',
+                'is_staff' => $isStaff,
+                'payment_method' => $paymentMethod,
+                'payment_status' => $paymentStatus,
+                'request' => $request->all()
+            ];
+            \Storage::disk('local')->put('debug_booking.json', json_encode($debugData, JSON_PRETTY_PRINT));
+        } catch (\Exception $e) {}
 
         $booking = Booking::create([
-            'user_id' => $isStaff ? null : Auth::id(),
+            'user_id' => $request->selected_user_id ?: ($isStaff ? null : $authUser->id),
             'customer_name' => $request->customer_name,
-            'cashier_id' => $isStaff ? Auth::id() : null,
-            'stylist_id' => $booking_details_data[0]['stylist_id'], // Primary stylist fallback
-            'treatment_id' => $booking_details_data[0]['parent_treatment_id'], // Primary treatment
+            'customer_phone' => $request->customer_phone,
+            'customer_email' => $request->customer_email,
+            'cashier_id' => $isStaff ? $authUser->id : null,
+            'stylist_id' => $booking_details_data[0]['stylist_id'],
+            'treatment_id' => $booking_details_data[0]['parent_treatment_id'],
             'reservation_datetime' => Carbon::parse($request->reservation_date.' '.$request->reservation_time),
             'total_price' => $total_price,
             'status' => 'pending',
@@ -213,7 +265,7 @@ class BookingController extends Controller
                 ],
                 'customer_details' => [
                     'first_name' => $request->customer_name,
-                    'email' => Auth::user()->role === 'pelanggan' ? Auth::user()->email : 'info@indahsarisalon.com', // Fallback email for staff bookings
+                    'email' => (strtolower($authUser->role) === 'pelanggan' && $authUser->type !== 'karyawan') ? $authUser->email : 'info@indahsarisalon.com', // Fallback email for staff bookings
                 ],
             ];
 
@@ -276,9 +328,9 @@ class BookingController extends Controller
         $user = Auth::user();
         $query = Booking::with(['treatment', 'stylist', 'cashier', 'details.treatmentDetail.treatment', 'details.stylist']);
 
-        if ($user->role === 'pelanggan') {
+        if (strtolower($user->role) === 'pelanggan' && $user->type !== 'karyawan') {
             $query->where('user_id', $user->id);
-        } elseif ($user->role === 'karyawan') {
+        } elseif (in_array(strtolower($user->role), ['admin', 'karyawan']) || $user->type === 'karyawan') {
             $query->where(function ($q) use ($user) {
                 $q->where('cashier_id', $user->id)
                     ->orWhere('stylist_id', $user->id);
@@ -385,7 +437,7 @@ class BookingController extends Controller
         ];
 
         // Tentukan view berdasarkan role
-        $view = (Auth::user()->role === 'karyawan') ? 'karyawan.bookings.index' : 'admin.bookings.index';
+        $view = (strtolower(Auth::user()->role) === 'karyawan') ? 'karyawan.bookings.index' : 'admin.bookings.index';
 
         return view($view, compact('bookings', 'status', 'stats'));
     }
@@ -423,8 +475,26 @@ class BookingController extends Controller
         $booking = Booking::findOrFail($id);
         $request->validate(['payment_method' => 'required|in:cash,transfer']);
 
-        $isStaff = in_array(Auth::user()->role, ['admin', 'karyawan']);
-        $paymentStatus = ($isStaff && $request->payment_method === 'cash') ? 'paid' : 'unpaid';
+        $authId = Auth::id();
+        $authUser = $authId ? \App\Models\User::find($authId) : null;
+        $isStaff = false;
+        if ($authUser) {
+            $role = strtolower(trim($authUser->role));
+            $type = strtolower(trim($authUser->type));
+            if ($role === 'admin' || $role === 'karyawan' || $type === 'karyawan' || $authUser->id === 1) {
+                $isStaff = true;
+            }
+        }
+
+        \Log::info('Payment Method Update Attempt', [
+            'booking_id' => $id,
+            'auth_id' => $authId,
+            'role' => $authUser->role ?? 'N/A',
+            'is_staff_detected' => $isStaff,
+            'new_method' => $request->payment_method
+        ]);
+
+        $paymentStatus = ($isStaff && strtolower($request->payment_method) === 'cash') ? 'paid' : 'unpaid';
 
         $booking->update([
             'payment_method' => $request->payment_method,

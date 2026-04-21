@@ -69,7 +69,6 @@ class ProfileController extends Controller
         return response()->json(['success' => false, 'message' => 'Gagal mengunggah foto.'], 400);
     }
 
-    // AJAX: Update Informasi Dasar (Nama & Username)
     public function updateProfile(Request $request)
     {
         $user = auth()->user();
@@ -77,13 +76,15 @@ class ProfileController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username,' . $user->id,
-            'phone' => 'required|string|max:15',
+            'phone' => 'nullable|string|max:15',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
         ]);
 
         $user->update([
             'name' => $request->name,
             'username' => $request->username,
             'phone' => $request->phone,
+            'email' => $request->email,
         ]);
 
         return response()->json([
@@ -91,7 +92,8 @@ class ProfileController extends Controller
             'message' => 'Informasi profil berhasil diperbarui.',
             'name' => $user->name,
             'username' => $user->username,
-            'phone' => $user->phone
+            'phone' => $user->phone,
+            'email' => $user->email
         ]);
     }
 

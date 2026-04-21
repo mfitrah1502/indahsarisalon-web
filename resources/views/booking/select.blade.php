@@ -231,7 +231,7 @@
                                                     data-name="{{ $d->name }}" data-parent-name="{{ $treatment->name }}"
                                                     data-price="{{ $d->price }}" data-price-senior="{{ $d->price_senior }}"
                                                     data-price-junior="{{ $d->price_junior }}"
-                                                    data-has-stylist-price="{{ $d->has_stylist_price }}"
+                                                    data-has-stylist-price="{{ $d->has_stylist_price ? '1' : '0' }}"
                                                     data-duration="{{ $d->duration }}" onchange="togglePrimaryDetail(this)">
                                                 <label class="form-check-label p-2 w-100 border rounded cursor-pointer h-100"
                                                     for="detail_{{ $d->id }}">
@@ -242,8 +242,22 @@
                                                     </div>
                                                     <div class="d-flex justify-content-between">
                                                         <small class="text-muted extra-small">{{ $d->duration }} menit</small>
-                                                        <small class="fw-bold text-primary">Rp
-                                                            {{ number_format($d->price) }}</small>
+                                                        <small class="fw-bold text-primary">
+                                                            @if($d->has_stylist_price)
+                                                                @php
+                                                                    $prices = array_filter([(int)$d->price_senior, (int)$d->price_junior]);
+                                                                    $minPrice = count($prices) > 0 ? min($prices) : (int)$d->price;
+                                                                    $maxPrice = count($prices) > 0 ? max($prices) : (int)$d->price;
+                                                                @endphp
+                                                                @if($minPrice != $maxPrice)
+                                                                    Rp {{ number_format($minPrice, 0) }} - {{ number_format($maxPrice, 0) }}
+                                                                @else
+                                                                    Rp {{ number_format($minPrice, 0) }}
+                                                                @endif
+                                                            @else
+                                                                Rp {{ number_format($d->price) }}
+                                                            @endif
+                                                        </small>
                                                     </div>
                                                 </label>
                                             </div>
@@ -288,7 +302,7 @@
                                 @endphp
 
                                 {{-- Stylist selection will now be inside the treatment list --}}
-                                <div class="col-md-12 mb-4">
+                                <div class="col-md-12 mb-4" id="globalStylistSection" style="{{ $hasStylistPrice ? '' : 'display: none;' }}">
                                     <div class="p-4 bg-white border rounded shadow-sm">
                                         <div class="d-flex flex-column mb-3">
                                             <label class="form-label fw-bold mb-2"><i class="ti ti-heart-handshake me-1"></i>Pilih Stylist untuk Semua Layanan</label>
@@ -380,8 +394,10 @@
                                     <label class="form-label">Metode Pembayaran</label>
                                     <select name="payment_method" class="form-select" required>
                                         <option value="">-- Pilih Metode --</option>
-                                        <option value="cash">Cash</option>
-                                        <option value="transfer">Transfer Bank</option>
+                                        @if(Auth::user()->role === 'admin' || Auth::user()->role === 'karyawan')
+                                            <option value="cash">Cash</option>
+                                        @endif
+                                        <option value="transfer">Transfer Bank (Midtrans)</option>
                                     </select>
                                 </div>
 
@@ -471,14 +487,28 @@
                                                         <small class="text-muted extra-small">{{ $d->duration }} menit</small>
                                                     </div>
                                                     <div class="text-end">
-                                                        <div class="small fw-bold text-primary mb-1">Rp
-                                                            {{ number_format($d->price) }}</div>
+                                                        <div class="small fw-bold text-primary mb-1">
+                                                            @if($d->has_stylist_price)
+                                                                @php
+                                                                    $prices = array_filter([(int)$d->price_senior, (int)$d->price_junior]);
+                                                                    $minPrice = count($prices) > 0 ? min($prices) : (int)$d->price;
+                                                                    $maxPrice = count($prices) > 0 ? max($prices) : (int)$d->price;
+                                                                @endphp
+                                                                @if($minPrice != $maxPrice)
+                                                                    Rp {{ number_format($minPrice, 0) }} - {{ number_format($maxPrice, 0) }}
+                                                                @else
+                                                                    Rp {{ number_format($minPrice, 0) }}
+                                                                @endif
+                                                            @else
+                                                                Rp {{ number_format($d->price) }}
+                                                            @endif
+                                                        </div>
                                                         <button type="button" class="btn btn-primary btn-xs add-detail-btn"
                                                             data-id="{{ $d->id }}" data-name="{{ $d->name }}"
                                                             data-parent-name="{{ $item->name }}" data-price="{{ $d->price }}"
                                                             data-price-senior="{{ $d->price_senior }}"
                                                             data-price-junior="{{ $d->price_junior }}"
-                                                            data-has-stylist-price="{{ $d->has_stylist_price }}"
+                                                            data-has-stylist-price="{{ $d->has_stylist_price ? '1' : '0' }}"
                                                             data-duration="{{ $d->duration }}">
                                                             Pilih
                                                         </button>
@@ -652,20 +682,20 @@
         let selectedDetails = [
             @if($treatment->details->count() === 1)
                 @foreach($treatment->details as $d)
-                            {
+                    {
                         id: {{ $d->id }},
-                        name: "{{ $d->name }}",
-                        parentName: "{{ $treatment->name }}",
-                        price: {{ $d->price }},
-                        priceSenior: {{ $d->price_senior ?? $d->price }},
-                        priceJunior: {{ $d->price_junior ?? $d->price }},
+                        name: {!! json_encode($d->name) !!},
+                        parentName: {!! json_encode($treatment->name) !!},
+                        price: {{ (int)$d->price }},
+                        priceSenior: {{ (int)($d->price_senior ?: $d->price) }},
+                        priceJunior: {{ (int)($d->price_junior ?: $d->price) }},
                         hasStylistPrice: {{ $d->has_stylist_price ? 'true' : 'false' }},
-                        duration: {{ $d->duration }},
+                        duration: {{ (int)$d->duration }},
                         isPrimary: true
                     },
                 @endforeach
             @endif
-            ];
+        ];
 
         window.togglePrimaryDetail = function (checkbox) {
             const isMulti = {{ $treatment->allow_multi_select ? 'true' : 'false' }};
@@ -738,6 +768,7 @@
                                     ${d.isPrimary ? '<span class="badge bg-light-primary text-primary rounded-pill">Utama</span>' : `<button type="button" class="btn btn-icon btn-link-danger btn-sm" onclick="removeDetail(${d.id})"><i class="ti ti-trash"></i></button>`}
                                 </div>
                             </div>
+                            ${d.hasStylistPrice ? `
                             <div class="mt-3">
                                 <label class="extra-small text-muted mb-2"><i class="ti ti-hand-click me-1"></i>Pilih Stylist:</label>
                                 <div class="stylist-grid" data-detail-id="${d.id}">
@@ -746,20 +777,24 @@
                                         return `
                                             <div class="stylist-card-modern ${isSelected ? 'active' : ''} stylist-item-${s.id}" 
                                                  data-stylist-id="${s.id}" 
-                                                 data-kategori="${s.kategori.toLowerCase()}"
+                                                 data-kategori="${s.kategori ? s.kategori.toLowerCase() : ''}"
                                                  onclick="updateItemStylistCards(${d.id}, ${s.id}, this)">
                                                 <div class="check-mark"><i class="ti ti-check"></i></div>
                                                 <div class="avatar-container">
                                                     <img src="${s.avatar_url}" alt="${s.name}">
                                                 </div>
-                                                <span class="stylist-name">${s.name.split(' ')[0]}</span>
-                                                <span class="stylist-cat">${s.kategori}</span>
+                                                <span class="stylist-name">${s.name ? s.name.split(' ')[0] : ''}</span>
+                                                <span class="stylist-cat">${s.kategori || ''}</span>
                                             </div>
                                         `;
                                     }).join('')}
                                 </div>
-                                ${!d.hasStylistPrice ? '<div class="extra-small text-muted mt-1"><i class="ti ti-info-circle me-1"></i>Harga tetap untuk layanan ini.</div>' : ''}
                             </div>
+                            ` : `
+                            <div class="mt-3">
+                                <div class="extra-small text-muted mt-1"><i class="ti ti-info-circle me-1"></i>Harga tetap untuk layanan ini.</div>
+                            </div>
+                            `}
                         </div>
                     `;
                 container.insertAdjacentHTML('beforeend', itemHtml);
@@ -769,6 +804,13 @@
             document.getElementById('totalPriceDisplay1').innerText = formattedTotal;
             document.getElementById('totalPriceDisplay2').innerText = formattedTotal;
             document.getElementById('paymentTreatmentInputs').innerHTML = hiddenInputs;
+
+            // Show or hide the global stylist section based on selection
+            const showGlobal = selectedDetails.some(d => d.hasStylistPrice);
+            const globalSection = document.getElementById('globalStylistSection');
+            if (globalSection) {
+                globalSection.style.display = showGlobal ? '' : 'none';
+            }
 
             // Apply busy states if we have them
             applyBusyStylists();
@@ -915,6 +957,11 @@
             renderSelectedTreatments();
         };
 
+        // Render initial details if there is only 1 variant auto-selected
+        if (selectedDetails.length > 0) {
+            renderSelectedTreatments();
+        }
+
         // Trigger availability check when date or time changes
         document.getElementById('reservation_date').addEventListener('change', checkStylistAvailability);
         document.getElementById('reservation_time').addEventListener('change', checkStylistAvailability);
@@ -1035,17 +1082,22 @@
                 let summaryHtml = '<p class="fw-bold mb-1">Layanan terpilih:</p><div class="list-group list-group-flush mb-3">';
                 selectedDetails.forEach(detail => {
                     const price = calculateDetailPrice(detail);
-                    // Find stylist name
-                    const sSelect = document.querySelector(`.stylist-selector[data-id="${detail.id}"]`);
-                    const sName = detail.hasStylistPrice
-                        ? ((sSelect && sSelect.selectedIndex > 0) ? sSelect.selectedOptions[0].text : 'Belum dipilih')
-                        : 'Tidak tersedia (Tanpa Stylist)';
+                    
+                    let sNameText = '';
+                    if (detail.hasStylistPrice) {
+                        let sName = 'Belum dipilih';
+                        if (detail.stylistId) {
+                            const foundStylist = allStylists.find(s => s.id == detail.stylistId);
+                            if (foundStylist) sName = foundStylist.name;
+                        }
+                        sNameText = `<div class="extra-small text-muted">Stylist: ${sName}</div>`;
+                    }
 
                     summaryHtml += `
                             <div class="list-group-item px-0 py-1 d-flex justify-content-between align-items-center border-0 border-bottom">
                                 <div>
                                     <div class="small fw-bold">${detail.parentName} - ${detail.name}</div>
-                                    <div class="extra-small text-muted">Stylist: ${sName}</div>
+                                    ${sNameText}
                                 </div>
                                 <span class="fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(price)}</span>
                             </div>

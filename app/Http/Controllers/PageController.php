@@ -39,7 +39,9 @@ class PageController extends Controller
             // Stats untuk admin dashboard
             $stats = [
                 'total_pelanggan' => \App\Models\User::where('role', 'pelanggan')->count(),
-                'total_pemasukan' => Booking::where('payment_status', 'paid')->sum('total_price'),
+                'total_pemasukan' => Booking::where('payment_status', 'paid')
+                                            ->where('status', 'berhasil')
+                                            ->sum('total_price'),
                 'today_bookings' => Booking::whereDate('reservation_datetime', now()->toDateString())->count(),
             ];
 
@@ -50,6 +52,7 @@ class PageController extends Controller
                 $income = Booking::whereYear('reservation_datetime', $currentYear)
                                  ->whereMonth('reservation_datetime', $i)
                                  ->where('payment_status', 'paid')
+                                 ->where('status', 'berhasil')
                                  ->sum('total_price');
                 $monthlyIncome[] = $income;
             }

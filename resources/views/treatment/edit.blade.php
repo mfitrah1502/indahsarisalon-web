@@ -211,6 +211,7 @@
                                     
                                     <div class="mb-3">
                                         <label class="small fw-bold mb-1">Nama Variasi</label>
+                                        <input type="hidden" name="details[{{ $index }}][id]" value="{{ $detail->id }}">
                                         <input type="text" name="details[{{ $index }}][name]" class="form-control glass-input" value="{{ $detail->name }}" required>
                                     </div>
 

@@ -153,7 +153,7 @@
                         <div class="col-md-6 mb-4">
                             <div class="info-box border">
                                 <span class="info-label">Email Address</span>
-                                <div class="fw-bold mt-1 fs-5 text-dark">{{ Auth::user()->email }}</div>
+                                <div class="fw-bold mt-1 fs-5 text-dark" id="display-email">{{ Auth::user()->email }}</div>
                             </div>
                         </div>
                         <div class="col-md-6 mb-4">
@@ -220,6 +220,10 @@
                                 <span class="input-group-text">@</span>
                                 <input type="text" name="username" class="form-control" value="{{ Auth::user()->username }}" required>
                             </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" name="email" class="form-control" value="{{ Auth::user()->email }}" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Nomor Telepon</label>
@@ -429,6 +433,7 @@
                         $('#display-name').text(res.name);
                         $('#display-username').text('@ ' + res.username);
                         $('#display-phone').text(res.phone || '-');
+                        $('#display-email').text(res.email);
                         $('.profile-card h3').text(res.name);
                         $('.pc-header .small.text-muted').text(res.name);
 

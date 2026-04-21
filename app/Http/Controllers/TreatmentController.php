@@ -195,12 +195,11 @@ class TreatmentController extends Controller
         }
         $treatment->save();
 
-        // Hapus detail lama
-        $treatment->details()->delete();
+        $existingDetailIds = $treatment->details()->pluck('id')->toArray();
+        $submittedDetailIds = [];
 
-        // Simpan detail baru
         foreach ($request->details as $detail) {
-            $treatment->details()->create([
+            $data = [
                 'name' => $detail['name'],
                 'duration' => $detail['duration'],
                 'price' => $detail['price'] ?? 0,
@@ -208,7 +207,24 @@ class TreatmentController extends Controller
                 'has_stylist_price' => isset($detail['has_stylist_price']) ? 1 : 0,
                 'price_senior' => $detail['price_senior'] ?? null,
                 'price_junior' => $detail['price_junior'] ?? null,
-            ]);
+            ];
+
+            if (isset($detail['id']) && in_array($detail['id'], $existingDetailIds)) {
+                \App\Models\TreatmentDetail::where('id', $detail['id'])->update($data);
+                $submittedDetailIds[] = $detail['id'];
+            } else {
+                $newDetail = $treatment->details()->create($data);
+                $submittedDetailIds[] = $newDetail->id;
+            }
+        }
+
+        $toDelete = array_diff($existingDetailIds, $submittedDetailIds);
+        if (!empty($toDelete)) {
+            try {
+                \App\Models\TreatmentDetail::whereIn('id', $toDelete)->delete();
+            } catch (\Exception $e) {
+                // Biarkan jika sudah terikat dengan booking_details
+            }
         }
 
         // Redirect ke index dengan pesan sukses

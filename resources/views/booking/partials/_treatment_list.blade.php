@@ -15,7 +15,22 @@
                         @foreach($treatment->details as $detail)
                             <div class="d-flex justify-content-between border-bottom py-1">
                                 <span>- {{ $detail->name }}</span>
-                                <span class="fw-bold">Rp {{ number_format($detail->price, 0) }}</span>
+                                <span class="fw-bold">
+                                    @if($detail->has_stylist_price)
+                                        @php
+                                            $prices = array_filter([(int)$detail->price_senior, (int)$detail->price_junior]);
+                                            $minPrice = count($prices) > 0 ? min($prices) : (int)$detail->price;
+                                            $maxPrice = count($prices) > 0 ? max($prices) : (int)$detail->price;
+                                        @endphp
+                                        @if($minPrice != $maxPrice)
+                                            Rp {{ number_format($minPrice, 0) }} - Rp {{ number_format($maxPrice, 0) }}
+                                        @else
+                                            Rp {{ number_format($minPrice, 0) }}
+                                        @endif
+                                    @else
+                                        Rp {{ number_format($detail->price, 0) }}
+                                    @endif
+                                </span>
                             </div>
                         @endforeach
                     </div>

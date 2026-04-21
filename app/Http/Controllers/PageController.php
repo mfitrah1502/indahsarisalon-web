@@ -42,7 +42,19 @@ class PageController extends Controller
                 'total_pemasukan' => Booking::where('payment_status', 'paid')->sum('total_price'),
                 'today_bookings' => Booking::whereDate('reservation_datetime', now()->toDateString())->count(),
             ];
-            return view('dashboard.homepage', compact('stats'));
+
+            // Data Pemasukan Bulanan untuk Chart
+            $currentYear = now()->year;
+            $monthlyIncome = [];
+            for ($i = 1; $i <= 12; $i++) {
+                $income = Booking::whereYear('reservation_datetime', $currentYear)
+                                 ->whereMonth('reservation_datetime', $i)
+                                 ->where('payment_status', 'paid')
+                                 ->sum('total_price');
+                $monthlyIncome[] = $income;
+            }
+
+            return view('dashboard.homepage', compact('stats', 'monthlyIncome', 'currentYear'));
         }
 
         // Dashboard untuk Pelanggan (User)

@@ -148,4 +148,24 @@ class AbsensiController extends Controller
 
         return redirect()->back()->with('success', $msg);
     }
+
+    public function storeManual(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'tanggal' => 'required|date',
+            'status' => 'required|string'
+        ]);
+
+        Absensi::updateOrCreate(
+            ['user_id' => $request->user_id, 'tanggal' => $request->tanggal],
+            [
+                'status' => $request->status,
+                'jam_masuk' => null,
+                'jam_keluar' => null
+            ]
+        );
+
+        return response()->json(['success' => true, 'message' => 'Status presensi berhasil diperbarui.']);
+    }
 }

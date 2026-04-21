@@ -147,19 +147,11 @@
         <div class="col-12 mt-4">
             <div class="card border-0 shadow-sm" style="border-radius: 20px;">
                 <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">Statistik Pertumbuhan</h5>
-                    <select class="form-select w-auto border-0 bg-light small">
-                        <option>This Month</option>
-                        <option>This Year</option>
-                    </select>
+                    <h5 class="mb-0 fw-bold">Statistik Pemasukan Tahun {{ $currentYear ?? now()->year }}</h5>
                 </div>
                 <div class="card-body px-4 pb-4">
                     <div id="growth-chart" style="min-height: 350px;">
                         <!-- ApexCharts will be rendered here -->
-                        <div class="text-center py-5">
-                            <i class="ti ti-chart-line text-muted f-30"></i>
-                            <p class="text-muted mt-2">Data pertumbuhan akan segera tersedia.</p>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -171,9 +163,52 @@
     <!-- Apex Chart could be re-added here if needed -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
-        // Simple placeholder for now to avoid errors if scripts refer to it
         document.addEventListener('DOMContentLoaded', function() {
-            // Future chart initialization here
+            var options = {
+                series: [{
+                    name: 'Pemasukan (Rp)',
+                    data: {!! json_encode($monthlyIncome ?? [0,0,0,0,0,0,0,0,0,0,0,0]) !!}
+                }],
+                chart: {
+                    type: 'area',
+                    height: 350,
+                    toolbar: { show: false },
+                    fontFamily: "'Inter', sans-serif"
+                },
+                colors: ['#EA8290'],
+                dataLabels: { enabled: false },
+                stroke: { curve: 'smooth', width: 3 },
+                xaxis: {
+                    categories: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'],
+                },
+                yaxis: {
+                    labels: {
+                        formatter: function (val) {
+                            return "Rp " + val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                        }
+                    }
+                },
+                tooltip: {
+                    theme: 'light',
+                    y: {
+                        formatter: function (val) {
+                            return "Rp " + val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                        }
+                    }
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.7,
+                        opacityTo: 0.1,
+                        stops: [0, 90, 100]
+                    }
+                }
+            };
+
+            var chart = new ApexCharts(document.querySelector("#growth-chart"), options);
+            chart.render();
         });
     </script>
 @endpush

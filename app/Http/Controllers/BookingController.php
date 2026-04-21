@@ -448,8 +448,8 @@ class BookingController extends Controller
         $time = $request->reservation_time;
         $selection = $request->selected_details; 
 
-        if (!$date || !$time || empty($selection)) {
-            return response()->json(['conflicts' => []]);
+        if (!$date || empty($selection)) {
+            return response()->json(['conflicts' => [], 'off_work_ids' => []]);
         }
 
         try {
@@ -465,71 +465,85 @@ class BookingController extends Controller
                 ]);
             }
 
-            // 1. Get ALL bookings for that day (except dibatalkan)
-            $existingBookings = Booking::whereDate('reservation_datetime', $date)
-                ->whereNotIn('status', ['dibatalkan'])
-                ->with(['details.treatmentDetail'])
-                ->get();
+            // 0a. Check for stylists who are "Off Work" or "Libur"
+            $offWorkIds = \App\Models\Absensi::whereDate('tanggal', $date)
+                ->whereIn('status', ['Off Work', 'Libur', 'libur', 'off work'])
+                ->pluck('user_id')
+                ->map(fn($id) => (int)$id)
+                ->toArray();
 
-            // 2. Map existing busy windows for each stylist
-            $stylistWindows = [];
-            foreach ($existingBookings as $b) {
-                // Determine starting point for this booking
-                $currentStart = Carbon::parse($b->reservation_datetime);
-                
-                // Details are sequential
-                foreach ($b->details as $d) {
-                    if ($d->treatmentDetail) {
-                        $duration = $d->treatmentDetail->duration;
-                        $currentEnd = $currentStart->copy()->addMinutes($duration);
-                        
-                        if ($d->stylist_id) {
-                            $stylistWindows[$d->stylist_id][] = [
-                                'start' => $currentStart->copy(),
-                                'end' => $currentEnd->copy()
-                            ];
-                        }
-                        
-                        $currentStart = $currentEnd->copy();
-                    }
-                }
-            }
-
-            // 3. Check requested selection window for each detail index
             $conflicts = [];
-            $currentRequestedStart = $startTime->copy();
-            
-            foreach ($selection as $index => $item) {
-                // Item might be just an ID or an object
-                $id = is_array($item) ? $item['id'] : $item;
-                $detail = TreatmentDetail::find($id);
+            if ($time) {
+                $startTime = Carbon::parse($date . ' ' . $time);
                 
-                if (!$detail) {
-                    $conflicts[$index] = [];
-                    continue;
-                }
+                // 1. Get ALL bookings for that day (except dibatalkan)
+                $existingBookings = Booking::whereDate('reservation_datetime', $date)
+                    ->whereNotIn('status', ['dibatalkan'])
+                    ->with(['details.treatmentDetail'])
+                    ->get();
 
-                $duration = $detail->duration;
-                $currentRequestedEnd = $currentRequestedStart->copy()->addMinutes($duration);
-
-                $busyIds = [];
-                foreach ($stylistWindows as $stylistId => $windows) {
-                    foreach ($windows as $win) {
-                        // Overlap check: start1 < end2 AND end1 > start2
-                        if ($currentRequestedStart->lt($win['end']) && $currentRequestedEnd->gt($win['start'])) {
-                            $busyIds[] = (int)$stylistId;
-                            break;
+                // 2. Map existing busy windows for each stylist
+                $stylistWindows = [];
+                foreach ($existingBookings as $b) {
+                    // Determine starting point for this booking
+                    $currentStart = Carbon::parse($b->reservation_datetime);
+                    
+                    // Details are sequential
+                    foreach ($b->details as $d) {
+                        if ($d->treatmentDetail) {
+                            $duration = $d->treatmentDetail->duration;
+                            $currentEnd = $currentStart->copy()->addMinutes($duration);
+                            
+                            if ($d->stylist_id) {
+                                $stylistWindows[$d->stylist_id][] = [
+                                    'start' => $currentStart->copy(),
+                                    'end' => $currentEnd->copy()
+                                ];
+                            }
+                            
+                            $currentStart = $currentEnd->copy();
                         }
                     }
                 }
+
+                // 3. Check requested selection window for each detail index
+                $currentRequestedStart = $startTime->copy();
                 
-                $conflicts[$index] = array_values(array_unique($busyIds));
-                
-                // Increment for next treatment in selection
-                $currentRequestedStart = $currentRequestedEnd->copy();
+                foreach ($selection as $index => $item) {
+                    // Item might be just an ID or an object
+                    $id = is_array($item) ? $item['id'] : $item;
+                    $detail = TreatmentDetail::find($id);
+                    
+                    if (!$detail) {
+                        $conflicts[$index] = [];
+                        continue;
+                    }
+
+                    $duration = $detail->duration;
+                    $currentRequestedEnd = $currentRequestedStart->copy()->addMinutes($duration);
+
+                    $busyIds = [];
+                    foreach ($stylistWindows as $stylistId => $windows) {
+                        foreach ($windows as $win) {
+                            // Overlap check: start1 < end2 AND end1 > start2
+                            if ($currentRequestedStart->lt($win['end']) && $currentRequestedEnd->gt($win['start'])) {
+                                $busyIds[] = (int)$stylistId;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    $conflicts[$index] = array_values(array_unique($busyIds));
+                    
+                    // Increment for next treatment in selection
+                    $currentRequestedStart = $currentRequestedEnd->copy();
+                }
             }
 
-            return response()->json(['conflicts' => $conflicts]);
+            return response()->json([
+                'conflicts' => $conflicts,
+                'off_work_ids' => $offWorkIds
+            ]);
 
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);

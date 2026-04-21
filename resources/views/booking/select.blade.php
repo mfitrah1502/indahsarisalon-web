@@ -22,6 +22,100 @@
         color: #dcdcdc !important;
         background: #f8f9fa !important;
     }
+
+    /* Stylist Card Modern Styles */
+    .stylist-grid {
+        display: flex;
+        overflow-x: auto;
+        gap: 12px;
+        padding: 5px 2px 15px 2px;
+        scrollbar-width: thin;
+        scrollbar-color: #EA8290 transparent;
+    }
+    .stylist-grid::-webkit-scrollbar {
+        height: 6px;
+    }
+    .stylist-grid::-webkit-scrollbar-thumb {
+        background: #EA8290;
+        border-radius: 10px;
+    }
+    .stylist-card-modern {
+        flex: 0 0 100px;
+        background: #fff;
+        border: 2px solid #f0f0f0;
+        border-radius: 15px;
+        padding: 12px 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    .stylist-card-modern:hover {
+        border-color: #EA8290;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    .stylist-card-modern.active {
+        border-color: #EA8290;
+        background: #fff5f6;
+        box-shadow: 0 4px 12px rgba(234, 130, 144, 0.2);
+    }
+    .stylist-card-modern .avatar-container {
+        width: 50px;
+        height: 50px;
+        margin: 0 auto 8px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .stylist-card-modern .avatar-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .stylist-card-modern .stylist-name {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #333;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-truncate: ellipsis;
+    }
+    .stylist-card-modern .stylist-cat {
+        font-size: 0.6rem;
+        color: #888;
+        display: block;
+    }
+    .stylist-card-modern .check-mark {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: #EA8290;
+        color: #fff;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .stylist-card-modern.active .check-mark {
+        display: flex;
+    }
+    .stylist-card-modern.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        filter: grayscale(0.8);
+    }
+    .stylist-card-modern.busy .stylist-name::after {
+        content: '(Sibuk)';
+        color: #dc3545;
+        font-size: 0.6rem;
+        display: block;
+    }
 </style>
 
 <style>
@@ -195,22 +289,34 @@
 
                                 {{-- Stylist selection will now be inside the treatment list --}}
                                 <div class="col-md-12 mb-4">
-                                    <div class="p-3 bg-light border rounded shadow-sm">
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <label class="form-label mb-0 fw-bold"><i class="ti ti-users me-1"></i>Pilih
-                                                Stylist untuk Semua (Cepat)</label>
-                                            <select id="global_stylist_selector" class="form-select form-select-sm w-auto">
-                                                <option value="">-- Pilih --</option>
-                                                @foreach($stylists as $stylist)
-                                                    <option value="{{ $stylist->id }}"
-                                                        data-kategori="{{ strtolower($stylist->kategori) }}">
-                                                        {{ $stylist->name }} ({{ ucfirst($stylist->kategori) }})
-                                                    </option>
-                                                @endforeach
-                                            </select>
+                                    <div class="p-4 bg-white border rounded shadow-sm">
+                                        <div class="d-flex flex-column mb-3">
+                                            <label class="form-label fw-bold mb-2"><i class="ti ti-heart-handshake me-1"></i>Pilih Stylist untuk Semua Layanan</label>
+                                            <p class="small text-muted mb-3">Atur semua layanan ke satu stylist yang sama secara otomatis.</p>
                                         </div>
-                                        <small class="text-muted">Gunakan ini untuk mengatur semua layanan ke satu stylist
-                                            yang sama secara otomatis.</small>
+                                        <div class="stylist-grid" id="global_stylist_grid">
+                                            <div class="stylist-card-modern active" data-stylist-id="" onclick="updateGlobalStylist(null, this)">
+                                                <div class="check-mark"><i class="ti ti-check"></i></div>
+                                                <div class="avatar-container d-flex align-items-center justify-content-center bg-light">
+                                                    <i class="ti ti-minus text-muted" style="font-size: 1.5rem;"></i>
+                                                </div>
+                                                <span class="stylist-name">Reset</span>
+                                                <span class="stylist-cat">Default</span>
+                                            </div>
+                                            @foreach($stylists as $stylist)
+                                                <div class="stylist-card-modern stylist-global-item-{{ $stylist->id }}" 
+                                                     data-stylist-id="{{ $stylist->id }}" 
+                                                     data-kategori="{{ strtolower($stylist->kategori) }}"
+                                                     onclick="updateGlobalStylist({{ $stylist->id }}, this)">
+                                                    <div class="check-mark"><i class="ti ti-check"></i></div>
+                                                    <div class="avatar-container">
+                                                        <img src="{{ $stylist->avatar_url }}" alt="{{ $stylist->name }}">
+                                                    </div>
+                                                    <span class="stylist-name">{{ explode(' ', $stylist->name)[0] }}</span>
+                                                    <span class="stylist-cat">{{ $stylist->kategori }}</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
                                     </div>
                                 </div>
                                 <!-- TANGGAL -->
@@ -445,6 +551,22 @@
     <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
 
     <script>
+        const allStylists = @json($stylists);
+        // Map avatars separately since we have an accessor but Laravel json encode might not include it by default
+        allStylists.forEach(s => {
+            s.avatar_url = "{{ asset('assets/images/user/avatar-2.jpg') }}"; // Initial fallback
+        });
+        
+        // Re-map with actual calculated URLs from PHP to be safe
+        const stylistAvatars = {
+            @foreach($stylists as $s)
+                "{{ $s->id }}": "{{ $s->avatar_url }}",
+            @endforeach
+        };
+        allStylists.forEach(s => {
+            s.avatar_url = stylistAvatars[s.id];
+        });
+
         // Initialize min date & time logic
         function initTimeSelection() {
             const dateInput = document.getElementById('reservation_date');
@@ -616,25 +738,28 @@
                                     ${d.isPrimary ? '<span class="badge bg-light-primary text-primary rounded-pill">Utama</span>' : `<button type="button" class="btn btn-icon btn-link-danger btn-sm" onclick="removeDetail(${d.id})"><i class="ti ti-trash"></i></button>`}
                                 </div>
                             </div>
-                            ${d.hasStylistPrice ? `
-                            <div class="row g-2 align-items-center">
-                                <div class="col-sm-8">
-                                    <select class="form-select form-select-sm stylist-selector" data-id="${d.id}" onchange="updateItemStylist(${d.id}, this.value)" required>
-                                        <option value="">-- Pilih Stylist --</option>
-                                        @foreach($stylists as $stylist)
-                                            <option value="{{ $stylist->id }}" 
-                                                data-kategori="{{ strtolower($stylist->kategori) }}"
-                                                ${d.stylistId == {{ $stylist->id }} ? 'selected' : ''}>
-                                                {{ $stylist->name }} (${"{{ ucfirst($stylist->kategori) }}"})
-                                            </option>
-                                        @endforeach
-                                    </select>
+                            <div class="mt-3">
+                                <label class="extra-small text-muted mb-2"><i class="ti ti-hand-click me-1"></i>Pilih Stylist:</label>
+                                <div class="stylist-grid" data-detail-id="${d.id}">
+                                    ${allStylists.map(s => {
+                                        const isSelected = d.stylistId == s.id;
+                                        return `
+                                            <div class="stylist-card-modern ${isSelected ? 'active' : ''} stylist-item-${s.id}" 
+                                                 data-stylist-id="${s.id}" 
+                                                 data-kategori="${s.kategori.toLowerCase()}"
+                                                 onclick="updateItemStylistCards(${d.id}, ${s.id}, this)">
+                                                <div class="check-mark"><i class="ti ti-check"></i></div>
+                                                <div class="avatar-container">
+                                                    <img src="${s.avatar_url}" alt="${s.name}">
+                                                </div>
+                                                <span class="stylist-name">${s.name.split(' ')[0]}</span>
+                                                <span class="stylist-cat">${s.kategori}</span>
+                                            </div>
+                                        `;
+                                    }).join('')}
                                 </div>
-                                <div class="col-sm-4">
-                                    <small class="text-muted d-block text-end"><i class="ti ti-info-circle"></i> Harga Senior/Junior</small>
-                                </div>
+                                ${!d.hasStylistPrice ? '<div class="extra-small text-muted mt-1"><i class="ti ti-info-circle me-1"></i>Harga tetap untuk layanan ini.</div>' : ''}
                             </div>
-                            ` : '<div class="extra-small text-muted"><i class="ti ti-info-circle me-1"></i>Pilih stylist tidak tersedia untuk layanan ini.</div>'}
                         </div>
                     `;
                 container.insertAdjacentHTML('beforeend', itemHtml);
@@ -650,12 +775,13 @@
         }
 
         let busyStylistsMap = {};
+        let offWorkStylists = [];
 
         window.checkStylistAvailability = function () {
             const date = document.getElementById('reservation_date').value;
             const time = document.getElementById('reservation_time').value;
 
-            if (!date || !time || selectedDetails.length === 0) return;
+            if (!date || selectedDetails.length === 0) return;
 
             $.ajax({
                 url: "{{ route('booking.check_stylist_availability') }}",
@@ -674,6 +800,7 @@
                         return;
                     }
                     busyStylistsMap = response.conflicts;
+                    offWorkStylists = response.off_work_ids || [];
                     applyBusyStylists();
                 }
             });
@@ -682,31 +809,74 @@
         function applyBusyStylists() {
             selectedDetails.forEach((d, index) => {
                 const busyIds = busyStylistsMap[index] || [];
-                const selector = document.querySelector(`.stylist-selector[data-id="${d.id}"]`);
-                if (!selector) return;
+                const container = document.querySelector(`.stylist-grid[data-detail-id="${d.id}"]`);
+                if (!container) return;
 
-                const options = selector.querySelectorAll('option');
-                options.forEach(opt => {
-                    if (opt.value === "") return;
-                    const sid = parseInt(opt.value);
-                    if (busyIds.includes(sid)) {
-                        opt.disabled = true;
-                        if (!opt.textContent.includes('(Sibuk)')) {
-                            opt.textContent = opt.textContent + ' (Sibuk)';
-                        }
-                        // If selected option becomes busy, reset it
-                        if (selector.value == sid) {
-                            selector.value = "";
-                            d.stylistId = null;
-                            d.stylistKategori = null;
-                        }
+                const cards = container.querySelectorAll('.stylist-card-modern');
+                cards.forEach(card => {
+                    const sid = parseInt(card.getAttribute('data-stylist-id'));
+                    const isOff = offWorkStylists.includes(sid);
+                    const isBusy = busyIds.includes(sid);
+
+                    // Reset special classes first
+                    card.classList.remove('busy', 'disabled');
+                    card.style.display = '';
+
+                    if (isOff) {
+                        card.style.display = 'none'; // Completely hide if off work
+                    } else if (isBusy) {
+                        card.classList.add('busy', 'disabled');
                     } else {
-                        opt.disabled = false;
-                        opt.textContent = opt.textContent.replace(' (Sibuk)', '');
+                        // Normal state
+                    }
+
+                    // If selected stylist becomes unavailable, reset
+                    if (d.stylistId == sid && (isOff || isBusy)) {
+                        card.classList.remove('active');
+                        d.stylistId = null;
+                        d.stylistKategori = null;
+                        renderSelectedTreatments(); // Refresh to show price reset
                     }
                 });
             });
+
+            // Also update the global stylist grid
+            const globalGrid = document.getElementById('global_stylist_grid');
+            if (globalGrid) {
+                const globalCards = globalGrid.querySelectorAll('.stylist-card-modern');
+                globalCards.forEach(card => {
+                    const sid = card.getAttribute('data-stylist-id');
+                    if (!sid) return; // Skip reset card
+                    const isOff = offWorkStylists.includes(parseInt(sid));
+                    card.style.display = isOff ? 'none' : '';
+                });
+            }
         }
+
+        window.updateItemStylistCards = function (detailId, stylistId, element) {
+            const item = selectedDetails.find(d => d.id === detailId);
+            if (!item) return;
+
+            // Check if card is disabled (busy)
+            if (element.classList.contains('disabled')) {
+                alert('Mohon maaf, stylist ini sudah memiliki jadwal pada jam tersebut.');
+                return;
+            }
+
+            // Toggle logic
+            if (item.stylistId == stylistId) {
+                item.stylistId = null;
+                item.stylistKategori = null;
+                element.classList.remove('active');
+            } else {
+                item.stylistId = stylistId;
+                item.stylistKategori = element.getAttribute('data-kategori');
+                // Remove active from peers
+                element.parentElement.querySelectorAll('.stylist-card-modern').forEach(c => c.classList.remove('active'));
+                element.classList.add('active');
+            }
+            renderSelectedTreatments();
+        };
 
         function calculateDetailPrice(d) {
             if (d.hasStylistPrice && d.stylistKategori) {
@@ -728,18 +898,22 @@
             }
         };
 
-        // Global stylist helper
-        document.getElementById('global_stylist_selector')?.addEventListener('change', function () {
-            const sid = this.value;
-            const kat = this.selectedOptions[0].getAttribute('data-kategori');
+        window.updateGlobalStylist = function (stylistId, element) {
+            const kat = stylistId ? element.getAttribute('data-kategori') : null;
+            
+            // UI Update for Global
+            element.parentElement.querySelectorAll('.stylist-card-modern').forEach(c => c.classList.remove('active'));
+            element.classList.add('active');
+
             selectedDetails.forEach(d => {
+                // We only apply this to details that have stylist selection enabled
                 if (d.hasStylistPrice) {
-                    d.stylistId = sid;
+                    d.stylistId = stylistId;
                     d.stylistKategori = kat;
                 }
             });
             renderSelectedTreatments();
-        });
+        };
 
         // Trigger availability check when date or time changes
         document.getElementById('reservation_date').addEventListener('change', checkStylistAvailability);
@@ -1068,6 +1242,7 @@
 
         // Initial setup
         renderSelectedTreatments();
+        checkStylistAvailability();
         showStep(currentStep);
     </script>
 @endsection

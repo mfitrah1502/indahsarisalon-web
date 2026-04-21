@@ -288,12 +288,41 @@
                         <form id="bookingForm">
                             <div class="row">
                                 {{-- Jika login sebagai Admin atau Karyawan, tampilkan input Nama Pelanggan --}}
-                                @if(in_array(Auth::user()->role, ['admin', 'karyawan']))
-                                    <div class="col-md-12 mb-3">
-                                        <label class="form-label fw-bold">👤 Nama Pelanggan (Offline)</label>
-                                        <input type="text" name="customer_name_input" id="customer_name_input"
-                                            class="form-control" placeholder="Masukkan nama pelanggan..." required>
-                                        <small class="text-muted">Gunakan ini jika pelanggan tidak memiliki akun/HP.</small>
+                                @if($isStaff)
+                                    <div class="col-md-12 mb-4">
+                                        <div class="p-4 rounded-4 border bg-white shadow-sm">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <label class="form-label fw-bold mb-0"><i class="ti ti-users me-1"></i>Informasi Pelanggan</label>
+                                                <button type="button" class="btn btn-sm btn-light-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#modalCustomerList">
+                                                    <i class="ti ti-search me-1"></i>Pilih dari Daftar Pelanggan
+                                                </button>
+                                            </div>
+
+                                            <div class="form-floating mb-3">
+                                                <input type="text" name="customer_name_input" id="customer_name_input" class="form-control bg-light" placeholder="Nama Pelanggan" required>
+                                                <label for="customer_name_input">Nama Pelanggan</label>
+                                            </div>
+
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="form-floating">
+                                                        <input type="text" id="customer_phone_input" class="form-control bg-light" placeholder="08xxxxxxxx">
+                                                        <label for="customer_phone_input">No. WhatsApp</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-floating">
+                                                        <input type="email" id="customer_email_input" class="form-control bg-light" placeholder="email@example.com">
+                                                        <label for="customer_email_input">Email</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <input type="hidden" name="selected_user_id" id="selected_user_id">
+                                            <div id="member_badge" class="mt-2" style="display: none;">
+                                                <span class="badge bg-soft-success text-success"><i class="ti ti-medal me-1"></i>Pelanggan Terdaftar</span>
+                                                <button type="button" class="btn btn-link btn-sm text-danger p-0 ms-2" onclick="clearSelectedCustomer()">Hapus</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 @endif
 
@@ -389,6 +418,9 @@
                                     value="{{ Auth::user()->name }}">
                                 <input type="hidden" name="reservation_date" id="paymentDate">
                                 <input type="hidden" name="reservation_time" id="paymentTime">
+                                <input type="hidden" name="customer_email" id="paymentCustomerEmail">
+                                <input type="hidden" name="customer_phone" id="paymentCustomerPhone">
+                                <input type="hidden" name="selected_user_id" id="paymentSelectedUserId">
 
                                 <div class="mb-3">
                                     <label class="form-label">Metode Pembayaran</label>
@@ -526,6 +558,63 @@
         </div>
     </div>
 
+    @if($isStaff)
+    <!-- MODAL DAFTAR PELANGGAN -->
+    <div class="modal fade" id="modalCustomerList" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title text-white fw-bold"><i class="ti ti-users me-2"></i>Daftar Pelanggan Terdaftar</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="p-3 bg-light border-bottom">
+                        <div class="input-group shadow-sm">
+                            <span class="input-group-text bg-white border-end-0"><i class="ti ti-search text-muted"></i></span>
+                            <input type="text" id="customerSearchInput" class="form-control border-start-0 ps-0" placeholder="Cari nama, email, atau no handphone...">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="ps-3">Nama Pelanggan</th>
+                                    <th>Kontak</th>
+                                    <th class="text-end pe-3">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="customerTableBody">
+                                @forelse($customers as $c)
+                                <tr class="customer-row" data-search="{{ strtolower($c->name . ' ' . $c->email . ' ' . $c->phone) }}">
+                                    <td class="ps-3">
+                                        <div class="fw-bold text-dark">{{ $c->name }}</div>
+                                        <div class="small text-muted">ID: #{{ $c->id }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="small"><i class="ti ti-mail me-1"></i>{{ $c->email ?? '-' }}</div>
+                                        <div class="small"><i class="ti ti-brand-whatsapp me-1"></i>{{ $c->phone ?? '-' }}</div>
+                                    </td>
+                                    <td class="text-end pe-3">
+                                        <button type="button" class="btn btn-primary btn-sm rounded-pill px-3" 
+                                            onclick="selectCustomerFromModal({{ $c->id }}, '{{ addslashes($c->name) }}', '{{ $c->phone }}', '{{ $c->email }}')">
+                                            Pilih
+                                        </button>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-muted">Belum ada pelanggan terdaftar.</td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- MODAL KONFIRMASI AKHIR -->
     <div class="modal fade" id="modalConfirmBooking" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -596,6 +685,78 @@
         allStylists.forEach(s => {
             s.avatar_url = stylistAvatars[s.id];
         });
+
+        // Initialize variables
+        const isStaff = @json($isStaff);
+        const customers = @json($customers);
+
+        // Logic for Customer Selection Modal (Staff Only)
+        if (isStaff) {
+            const searchInput = document.getElementById('customerSearchInput');
+            const rows = document.querySelectorAll('.customer-row');
+            const nameInput = document.getElementById('customer_name_input');
+            const phoneInput = document.getElementById('customer_phone_input');
+            const emailInput = document.getElementById('customer_email_input');
+            const userIdInput = document.getElementById('selected_user_id');
+            const memberBadge = document.getElementById('member_badge');
+            const customerModalEl = document.getElementById('modalCustomerList');
+            const customerModal = customerModalEl ? new bootstrap.Modal(customerModalEl) : null;
+
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const q = this.value.toLowerCase();
+                    rows.forEach(row => {
+                        row.style.display = row.getAttribute('data-search').includes(q) ? '' : 'none';
+                    });
+                });
+            }
+
+            window.selectCustomerFromModal = function(id, name, phone, email) {
+                nameInput.value = name;
+                phoneInput.value = phone || '';
+                emailInput.value = email || '';
+                userIdInput.value = id;
+                if (memberBadge) memberBadge.style.display = 'block';
+                
+                // Close modal safely
+                const modalEl = document.getElementById('modalCustomerList');
+                if (modalEl) {
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if (modalInstance) {
+                        modalInstance.hide();
+                    } else {
+                        // Fallback if instance not found
+                        $(modalEl).modal('hide');
+                    }
+                    
+                    // Force remove backdrop if it gets stuck (common BS5 issue)
+                    setTimeout(() => {
+                        if (document.querySelector('.modal-backdrop')) {
+                            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                            document.body.classList.remove('modal-open');
+                            document.body.style.overflow = '';
+                            document.body.style.paddingRight = '';
+                        }
+                    }, 400);
+                }
+            };
+
+            window.clearSelectedCustomer = function() {
+                nameInput.value = '';
+                phoneInput.value = '';
+                emailInput.value = '';
+                userIdInput.value = '';
+                if (memberBadge) memberBadge.style.display = 'none';
+            };
+        }
+
+        window.updateCustomPrice = function(detailId, val) {
+            const detail = selectedDetails.find(d => d.id == detailId);
+            if (detail) {
+                detail.customPrice = val ? parseInt(val) : undefined;
+                renderSelectedTreatments();
+            }
+        };
 
         // Initialize min date & time logic
         function initTimeSelection() {
@@ -751,10 +912,14 @@
             let hiddenInputs = '';
 
             selectedDetails.forEach((d, index) => {
-                const price = calculateDetailPrice(d);
-                total += price;
+                // Gunakan harga kustom jika ada, jika tidak gunakan harga kalkulasi standar
+                const basePrice = calculateDetailPrice(d);
+                const currentPrice = d.customPrice !== undefined ? d.customPrice : basePrice;
+                
+                total += currentPrice;
                 hiddenInputs += `<input type="hidden" name="treatment_detail_ids[]" value="${d.id}">`;
                 hiddenInputs += `<input type="hidden" name="stylist_ids[]" value="${d.stylistId || ''}">`;
+                hiddenInputs += `<input type="hidden" name="custom_prices[]" value="${d.customPrice !== undefined ? d.customPrice : ''}">`;
 
                 const itemHtml = `
                         <div class="p-3 mb-3 rounded border-start border-3 border-primary bg-white shadow-sm">
@@ -762,7 +927,17 @@
                                 <div>
                                     <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">${d.parentName}</div>
                                     <div class="fw-bold text-dark">${d.name} <small class="text-muted fw-normal">(${d.duration} mnt)</small></div>
-                                    <div class="text-primary small fw-semibold">Rp ${new Intl.NumberFormat('id-ID').format(price)}</div>
+                                    @if($isStaff)
+                                        <div class="input-group input-group-sm mt-1" style="max-width: 150px;" onclick="event.stopPropagation()">
+                                            <span class="input-group-text bg-light">Rp</span>
+                                            <input type="number" class="form-control" value="${currentPrice}" 
+                                                   onclick="event.stopPropagation()"
+                                                   onchange="updateCustomPrice(${d.id}, this.value)" 
+                                                   placeholder="Harga">
+                                        </div>
+                                    @else
+                                        <div class="text-primary small fw-semibold">Rp ${new Intl.NumberFormat('id-ID').format(currentPrice)}</div>
+                                    @endif
                                 </div>
                                 <div>
                                     ${d.isPrimary ? '<span class="badge bg-light-primary text-primary rounded-pill">Utama</span>' : `<button type="button" class="btn btn-icon btn-link-danger btn-sm" onclick="removeDetail(${d.id})"><i class="ti ti-trash"></i></button>`}
@@ -1081,7 +1256,8 @@
                 // Render Summary
                 let summaryHtml = '<p class="fw-bold mb-1">Layanan terpilih:</p><div class="list-group list-group-flush mb-3">';
                 selectedDetails.forEach(detail => {
-                    const price = calculateDetailPrice(detail);
+                    const basePrice = calculateDetailPrice(detail);
+                    const currentPrice = detail.customPrice !== undefined ? detail.customPrice : basePrice;
                     
                     let sNameText = '';
                     if (detail.hasStylistPrice) {
@@ -1096,10 +1272,10 @@
                     summaryHtml += `
                             <div class="list-group-item px-0 py-1 d-flex justify-content-between align-items-center border-0 border-bottom">
                                 <div>
-                                    <div class="small fw-bold">${detail.parentName} - ${detail.name}</div>
+                                    <div class="small fw-bold">${detail.parentName} - ${detail.name} ${detail.customPrice !== undefined ? '<span class="badge bg-soft-warning text-warning extra-small ms-1">Custom Price</span>' : ''}</div>
                                     ${sNameText}
                                 </div>
-                                <span class="fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(price)}</span>
+                                <span class="fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(currentPrice)}</span>
                             </div>
                         `;
                 });
@@ -1110,10 +1286,17 @@
                 document.getElementById('summaryDatetime').innerText = dateInput.value + ' ' + timeInput.value;
 
                 const customName = document.getElementById('customer_name_input');
+                const customPhone = document.getElementById('customer_phone_input');
+                const customEmail = document.getElementById('customer_email_input');
+                const selUserId = document.getElementById('selected_user_id');
+
                 if (customName && customName.value) {
                     document.getElementById('summaryCustomer').innerText = customName.value;
                     document.getElementById('paymentCustomerName').value = customName.value;
                 }
+                if (customPhone) document.getElementById('paymentCustomerPhone').value = customPhone.value;
+                if (customEmail) document.getElementById('paymentCustomerEmail').value = customEmail.value;
+                if (selUserId) document.getElementById('paymentSelectedUserId').value = selUserId.value;
 
                 document.getElementById('paymentDate').value = dateInput.value;
                 document.getElementById('paymentTime').value = timeInput.value;

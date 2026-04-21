@@ -17,8 +17,9 @@ class PageController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
+        $isStaff = in_array(strtolower($user->role), ['admin', 'karyawan']) || $user->type === 'karyawan';
         
-        if ($user->role === 'karyawan') {
+        if (strtolower($user->role) === 'karyawan') {
             $today = now()->format('Y-m-d');
             $absensi = Absensi::where('user_id', $user->id)
                              ->where('tanggal', $today)
@@ -26,7 +27,7 @@ class PageController extends Controller
 
             // Ambil ringkasan booking hari ini yang perlu diproses
             $todayBookings = Booking::whereDate('reservation_datetime', $today)
-                                    ->where('status', 'proses')
+                                    ->where('status', 'pending')
                                     ->with(['treatment', 'user'])
                                     ->orderBy('reservation_datetime', 'asc')
                                     ->take(5)
@@ -35,7 +36,7 @@ class PageController extends Controller
             return view('dashboard.homepage-karyawan', compact('absensi', 'todayBookings'));
         }
 
-        if ($user->role === 'admin') {
+        if (strtolower($user->role) === 'admin') {
             // Stats untuk admin dashboard
             $stats = [
                 'total_pelanggan' => \App\Models\User::where('role', 'pelanggan')->count(),

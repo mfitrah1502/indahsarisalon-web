@@ -2,6 +2,13 @@
 <html lang="en">
 
 <head>
+    <script>
+        // Mencegah layar berkedip putih saat mode gelap aktif
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        }
+    </script>
     <meta charset="UTF-8">
     <title>@yield('title', 'Dashboard') | Indah Sarisalon</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -103,8 +110,175 @@
         .dropdown-user-profile .dropdown-item:hover i {
             color: #EA8290 !important;
         }
+
     </style>
     @stack('styles')
+    <style>
+        /* === THE ULTIMATE DARK MODE HAMMER (ABSOLUTE PRIORITY) === */
+        [data-bs-theme="dark"] body,
+        [data-bs-theme="dark"] .pc-container,
+        [data-bs-theme="dark"] .pc-content {
+            background-color: #121212 !important;
+            color: #ffffff !important;
+        }
+        
+        [data-bs-theme="dark"] .pc-sidebar,
+        [data-bs-theme="dark"] .pc-header {
+            background-color: #1e1e1e !important;
+            border-color: #333 !important;
+        }
+        
+        /* Overriding Hardcoded White/Light Backgrounds EVERYWHERE */
+        [data-bs-theme="dark"] .bg-white,
+        [data-bs-theme="dark"] .bg-light,
+        [data-bs-theme="dark"] .bg-body {
+            background-color: #1e1e1e !important;
+            color: #ffffff !important;
+        }
+        
+        /* Cards & Containers (Profile, Bookings, etc) */
+        [data-bs-theme="dark"] .card,
+        [data-bs-theme="dark"] .card-body,
+        [data-bs-theme="dark"] .card-header,
+        [data-bs-theme="dark"] .card-footer {
+            background-color: #1e1e1e !important;
+            border-color: #333 !important;
+            color: #ffffff !important;
+        }
+
+        /* Modals & Pop-ups */
+        [data-bs-theme="dark"] .modal-content,
+        [data-bs-theme="dark"] .offcanvas {
+            background-color: #1e1e1e !important;
+            border-color: #333 !important;
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .modal-header,
+        [data-bs-theme="dark"] .modal-footer {
+            border-color: #333 !important;
+        }
+        [data-bs-theme="dark"] .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+
+        /* Lists, Accordions & Tabs */
+        [data-bs-theme="dark"] .list-group-item,
+        [data-bs-theme="dark"] .accordion-item,
+        [data-bs-theme="dark"] .accordion-button {
+            background-color: #1e1e1e !important;
+            border-color: #333 !important;
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .accordion-button:not(.collapsed) {
+            background-color: #2a2a2a !important;
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .nav-tabs {
+            border-bottom-color: #333 !important;
+            position: relative;
+            z-index: 10; /* Bring tabs forward so card-body doesn't cover them */
+        }
+        [data-bs-theme="dark"] .nav-tabs .nav-link {
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .nav-tabs .nav-link:hover {
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .nav-tabs .nav-link.active {
+            background-color: #1e1e1e !important;
+            color: #EA8290 !important;
+            border-color: #333 #333 #1e1e1e !important;
+        }
+        
+        /* Sidebar Text & Icons */
+        [data-bs-theme="dark"] .pc-caption {
+            color: #cccccc !important;
+        }
+        [data-bs-theme="dark"] .pc-sidebar .pc-link {
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .pc-sidebar .pc-link .pc-micon i {
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .pc-sidebar .pc-item.active > .pc-link,
+        [data-bs-theme="dark"] .pc-sidebar .pc-item.active > .pc-link .pc-micon i {
+            color: #EA8290 !important;
+        }
+
+        /* Header Buttons & Dropdowns */
+        [data-bs-theme="dark"] .pc-header .pc-head-link {
+            background-color: #2a2a2a !important;
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .pc-header .pc-head-link:hover {
+            background-color: #EA8290 !important;
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .dropdown-menu {
+            background-color: #1e1e1e !important;
+            border-color: #333 !important;
+        }
+        [data-bs-theme="dark"] .dropdown-item {
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .dropdown-item:hover {
+            background-color: #333 !important;
+        }
+
+        /* General Typography */
+        [data-bs-theme="dark"] h1, [data-bs-theme="dark"] h2, 
+        [data-bs-theme="dark"] h3, [data-bs-theme="dark"] h4, 
+        [data-bs-theme="dark"] h5, [data-bs-theme="dark"] h6,
+        [data-bs-theme="dark"] .text-dark,
+        [data-bs-theme="dark"] strong,
+        [data-bs-theme="dark"] b {
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .text-muted, [data-bs-theme="dark"] p,
+        [data-bs-theme="dark"] span:not(.badge),
+        [data-bs-theme="dark"] label {
+            color: #ffffff !important;
+        }
+        
+        /* Tables, Employee Rows & Forms */
+        [data-bs-theme="dark"] .table {
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .employee-row,
+        [data-bs-theme="dark"] tr {
+            background-color: #2a2a2a !important;
+            color: #ffffff !important;
+            border-color: #444 !important;
+        }
+        [data-bs-theme="dark"] td, [data-bs-theme="dark"] th {
+            background-color: transparent !important;
+            color: #ffffff !important;
+            border-color: #444 !important;
+        }
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select,
+        [data-bs-theme="dark"] .input-group-text,
+        [data-bs-theme="dark"] input,
+        [data-bs-theme="dark"] select,
+        [data-bs-theme="dark"] textarea {
+            background-color: #2a2a2a !important;
+            border-color: #444 !important;
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .btn-light {
+            background-color: #333 !important;
+            border-color: #444 !important;
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .btn-light:hover {
+            background-color: #444 !important;
+        }
+        [data-bs-theme="dark"] .bg-light-primary { background-color: #3a2226 !important; }
+        [data-bs-theme="dark"] .bg-light-success { background-color: #1e3a29 !important; }
+        [data-bs-theme="dark"] .bg-light-danger { background-color: #3a1e1e !important; }
+        [data-bs-theme="dark"] .bg-light-info { background-color: #1e2f3a !important; }
+        [data-bs-theme="dark"] .bg-light-warning { background-color: #3a321e !important; }
+    </style>
     <script>
         window.onpageshow = function(event) {
             if (event.persisted) {
@@ -148,14 +322,52 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Setup Dark Mode Logic
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+            const root = document.documentElement;
+            
+            // Read initial theme
+            let currentTheme = localStorage.getItem('theme') || 'light';
+            
+            // Synchronize Bootstrap and Berry theme attributes
+            function applyTheme(theme) {
+                root.setAttribute('data-bs-theme', theme);
+                document.body.setAttribute('data-pc-theme', theme);
+                if (typeof layout_change === 'function' && document.body.getAttribute('data-pc-theme') !== theme) {
+                    layout_change(theme);
+                }
+            }
+            
+            if (currentTheme === 'dark' && themeIcon) {
+                themeIcon.classList.replace('ti-moon', 'ti-sun');
+            }
+
             // Theme Config (Safe Check)
             if (typeof layout_change === 'function') {
-                layout_change('light');
+                layout_change(currentTheme);
                 font_change('Roboto');
                 change_box_container('false');
                 layout_caption_change('true');
                 layout_rtl_change('false');
                 preset_change('preset-1');
+            }
+            applyTheme(currentTheme);
+
+            // Toggle Click Event
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    currentTheme = root.getAttribute('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                    localStorage.setItem('theme', currentTheme);
+                    applyTheme(currentTheme);
+                    
+                    if (currentTheme === 'dark') {
+                        themeIcon.classList.replace('ti-moon', 'ti-sun');
+                    } else {
+                        themeIcon.classList.replace('ti-sun', 'ti-moon');
+                    }
+                });
             }
         });
     </script>

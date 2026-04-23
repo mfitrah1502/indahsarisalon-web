@@ -17,6 +17,12 @@
         <!-- [Mobile Media Block end] -->
         <div class="ms-auto">
             <ul class="list-unstyled">
+                <!-- Theme Toggle Button -->
+                <li class="pc-h-item">
+                    <a href="#" class="pc-head-link head-link-primary ms-0" id="theme-toggle" title="Toggle Dark/Light Mode">
+                        <i class="ti ti-moon fs-4" id="theme-icon"></i>
+                    </a>
+                </li>
 
                 <li class="dropdown pc-h-item header-user-profile">
                     <button class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0 d-flex align-items-center border-0 bg-transparent" 

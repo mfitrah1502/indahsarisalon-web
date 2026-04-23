@@ -160,33 +160,27 @@
                     </form>
                 </div>
                 
-                <!-- TABS -->
-                <ul class="nav nav-tabs card-header-tabs px-3 border-bottom-0" role="tablist">
-                    <li class="nav-item">
-                        <a class="nav-link {{ $status == 'pending' ? 'active fw-bold' : '' }}" 
-                           href="{{ route('admin.bookings.index', ['status' => 'pending']) }}">
+                <!-- MODERN PILL TABS -->
+                <div class="px-3 pb-3 mt-2">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ route('admin.bookings.index', ['status' => 'pending']) }}" 
+                           class="btn rounded-pill px-4 py-2 {{ $status == 'pending' ? 'btn-warning text-dark fw-bold shadow-sm' : 'btn-light text-muted border' }}">
                             ⏳ Pending
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ $status == 'berhasil' ? 'active fw-bold' : '' }}" 
-                           href="{{ route('admin.bookings.index', ['status' => 'berhasil']) }}">
+                        <a href="{{ route('admin.bookings.index', ['status' => 'berhasil']) }}" 
+                           class="btn rounded-pill px-4 py-2 {{ $status == 'berhasil' ? 'btn-success text-white fw-bold shadow-sm' : 'btn-light text-muted border' }}">
                             ✅ Selesai (Berhasil)
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ $status == 'dibatalkan' ? 'active fw-bold' : '' }}" 
-                           href="{{ route('admin.bookings.index', ['status' => 'dibatalkan']) }}">
+                        <a href="{{ route('admin.bookings.index', ['status' => 'dibatalkan']) }}" 
+                           class="btn rounded-pill px-4 py-2 {{ $status == 'dibatalkan' ? 'btn-danger text-white fw-bold shadow-sm' : 'btn-light text-muted border' }}">
                             ❌ Dibatalkan
                         </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {{ $status == 'all' ? 'active fw-bold' : '' }}" 
-                           href="{{ route('admin.bookings.index', ['status' => 'all']) }}">
-                            Semua
+                        <a href="{{ route('admin.bookings.index', ['status' => 'all']) }}" 
+                           class="btn rounded-pill px-4 py-2 {{ $status == 'all' ? 'btn-dark text-white fw-bold shadow-sm' : 'btn-light text-muted border' }}">
+                            📑 Semua
                         </a>
-                    </li>
-                </ul>
+                    </div>
+                </div>
             </div>
 
             <div class="card-body p-4 bg-light bg-opacity-50">

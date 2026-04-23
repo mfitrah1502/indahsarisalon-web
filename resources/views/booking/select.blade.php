@@ -303,7 +303,7 @@
                             </button>
                         </div>
 
-                        <div class="p-3 mb-4 rounded border-start border-primary border-4" style="background:#f0f7ff;">
+                        <div class="p-3 mb-4 rounded border-start border-primary border-4 bg-light">
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-bold">Total Pembayaran:</span>
                                 <h4 class="mb-0 text-primary fw-bold" id="totalPriceDisplay1">Rp 0</h4>
@@ -409,7 +409,7 @@
 
                     <!-- STEP 2 -->
                     <div class="tab-pane fade" id="step2">
-                        <div class="p-3 rounded" style="background:#f8f9fa;">
+                        <div class="p-3 rounded bg-light">
                             <h5 class="mb-3">📋 Ringkasan Booking</h5>
 
                             <p><strong>Customer:</strong> <span id="summaryCustomer">{{ Auth::user()->name }}</span></p>
@@ -429,7 +429,7 @@
 
                     <!-- STEP 3 -->
                     <div class="tab-pane fade" id="step3">
-                        <div class="p-3 rounded" style="background:#f8f9fa;">
+                        <div class="p-3 rounded bg-light">
                             <h5 class="mb-3">💳 Pembayaran</h5>
 
                             <form method="POST" action="{{ route('booking.store') }}" id="finalBookingForm">

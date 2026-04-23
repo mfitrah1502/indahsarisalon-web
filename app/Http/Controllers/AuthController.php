@@ -26,7 +26,7 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            session()->flash('show_promo_modal', true);
+            session()->put('show_promo_modal', true);
             
             $user = Auth::user();
 
@@ -34,11 +34,15 @@ class AuthController extends Controller
             if (strtolower($user->role) === 'pelanggan') {
                 $promoTreatments = \App\Models\Treatment::where('is_promo', true)->get();
                 if ($promoTreatments->count() > 0) {
-                    $promoNames = $promoTreatments->pluck('name')->implode(', ');
-                    $message = "Halo {$user->name}, ada promo spesial di Indah Sari Salon!\n\nTreatment promo hari ini: {$promoNames}.\n\nCek detailnya di: " . route('dashboard') . "\n\nSampai jumpa di salon!";
-                    \App\Services\WhatsAppService::sendMessage($user->phone, $message);
-                }
-            }
+                $promoDetails = $promoTreatments->map(function($t) {
+                    $discount = ($t->promo_type == 'percentage') ? $t->promo_value . '%' : 'Rp ' . number_format($t->promo_value, 0, ',', '.');
+                    return "- " . $t->name . " (DISKON " . $discount . ")";
+                })->implode("\n");
+
+                $message = "Halo {$user->name}, ada promo spesial di Indah Sari Salon!\n\nTreatment promo hari ini:\n{$promoDetails}\n\nBooking sekarang sebelum kehabisan slot: " . route('dashboard') . "\n\nSampai jumpa di salon!";
+                
+                \App\Services\WhatsAppService::sendMessage($user->phone, $message);
+            }    }
 
             if ($user->role == 'admin' || $user->role == 'karyawan') {
                 return redirect()->intended(route('dashboard')); // Redirect ke tujuan awal atau dashboard

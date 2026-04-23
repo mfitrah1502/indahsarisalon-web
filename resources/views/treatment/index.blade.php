@@ -67,6 +67,9 @@
                     <p class="text-muted mb-0">Kelola daftar layanan salon dan pengaturan harga.</p>
                 </div>
                 <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-success rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#broadcastModal">
+                        <i class="ti ti-brand-whatsapp me-1"></i> Siarkan Promo
+                    </button>
                     <button id="btnViewCategories" class="btn btn-light-primary rounded-pill px-4">
                         <i class="ti ti-category me-1"></i> Kelola Kategori
                     </button>
@@ -133,7 +136,10 @@
                                     <tr class="treatment-row" 
                                         data-name="{{ $treatment->name }}"
                                         data-category="{{ $treatment->category->name ?? '-' }}"
-                                        data-promo="{{ $treatment->is_promo ? ($treatment->promo_type == 'percent' ? $treatment->promo_value.'%' : 'Rp '.number_format($treatment->promo_value)) : '-' }}"
+                                        data-promo="{{ $treatment->is_promo ? ($treatment->promo_type == 'percentage' ? $treatment->promo_value.'%' : 'Rp '.number_format($treatment->promo_value)) : '-' }}"
+                                        data-is-promo="{{ $treatment->is_promo ? '1' : '0' }}"
+                                        data-promo-type="{{ $treatment->promo_type }}"
+                                        data-promo-value="{{ $treatment->promo_value }}"
                                         data-details='@json($treatment->details)'
                                         data-image="{{ $treatment->image }}">
                                         <td class="px-3">
@@ -164,7 +170,7 @@
                                             @if($treatment->is_promo)
                                                 <span class="promo-tag">
                                                     <i class="ti ti-discount-2 me-1"></i>
-                                                    {{ $treatment->promo_type == 'percent' ? $treatment->promo_value.'%' : 'Rp '.number_format($treatment->promo_value) }}
+                                                    {{ $treatment->promo_type == 'percentage' ? $treatment->promo_value.'%' : 'Rp '.number_format($treatment->promo_value) }}
                                                 </span>
                                             @else
                                                 <span class="text-muted small">-</span>
@@ -205,6 +211,38 @@
                         {{ $treatments->links() }}
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Broadcast Promo Modal -->
+    <div class="modal fade" id="broadcastModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-success text-white border-bottom-0 rounded-top-4">
+                    <h5 class="modal-title fw-bold"><i class="ti ti-brand-whatsapp me-2"></i>Siarkan Promo ke Pelanggan</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('treatment.broadcast') }}" method="POST" id="broadcastForm" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body p-4">
+                        <p class="text-muted mb-4">Sistem akan mengambil semua treatment yang statusnya sedang promo dan mengirimkan daftarnya ke WhatsApp seluruh pelanggan yang terdaftar.</p>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Unggah Banner Promo (Opsional)</label>
+                            <input type="file" name="promo_images[]" class="form-control" multiple accept="image/*">
+                            <small class="text-muted d-block mt-2">
+                                <i class="ti ti-info-circle text-info"></i> Anda bisa memilih lebih dari 1 gambar. Gambar yang diunggah di sini akan dikirim ke pelanggan.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0 p-4 pt-0">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-success rounded-pill px-4" onclick="confirmBroadcast(this)">
+                            <i class="ti ti-send me-1"></i> Kirim Sekarang
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -343,13 +381,34 @@
             let baseUrl = "https://{{ env('SUPABASE_PROJECT_REF') }}.supabase.co/storage/v1/object/public/{{ env('SUPABASE_BUCKET') }}/";
             $('#popupImage').attr('src', image ? baseUrl + image : "{{ asset('assets/images/no-image.jpg') }}");
 
+            let isPromo = row.data('is-promo') == '1';
+            let pType = row.data('promo-type');
+            let pVal = parseFloat(row.data('promo-value') || 0);
+
             let html = '';
             details.forEach(function (d) {
+                let currentPrice = d.price;
+                let priceHtml = `<span class="fw-bold text-primary">Rp ${new Intl.NumberFormat('id-ID').format(currentPrice)}</span>`;
+
+                if (isPromo) {
+                    let discounted = currentPrice;
+                    if (pType === 'percentage' || pType === 'percent') discounted = currentPrice - (currentPrice * pVal / 100);
+                    else discounted = currentPrice - pVal;
+                    
+                    discounted = Math.max(0, discounted);
+                    priceHtml = `
+                        <div>
+                            <span class="text-muted text-decoration-line-through small me-2">Rp ${new Intl.NumberFormat('id-ID').format(currentPrice)}</span>
+                            <span class="fw-bold text-primary">Rp ${new Intl.NumberFormat('id-ID').format(discounted)}</span>
+                        </div>
+                    `;
+                }
+
                 html += `
                     <div class="list-group-item p-3 border-0 border-bottom">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="fw-bold">${d.name}</span>
-                            <span class="fw-bold text-primary">Rp ${new Intl.NumberFormat('id-ID').format(d.price)}</span>
+                            ${priceHtml}
                         </div>
                         <div class="d-flex gap-3 small text-muted">
                             <span><i class="ti ti-clock me-1"></i>${d.duration} mnt</span>
@@ -420,6 +479,13 @@
                 success: () => row.remove()
             });
         });
+        function confirmBroadcast(btn) {
+            if (confirm('Apakah Anda yakin ingin mengirimkan pesan promo dan gambar-gambar ini ke SELURUH pelanggan? Proses ini mungkin memakan waktu.')) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim...';
+                document.getElementById('broadcastForm').submit();
+            }
+        }
     </script>
 @endpush
 @endsection

@@ -169,27 +169,40 @@ class BookingController extends Controller
             $sId = $stylistIds[$index] ?? null;
             $stylist = $sId ? User::find($sId) : null;
             
-            // Gunakan harga kustom jika disediakan oleh staff
+            $price = $detail->price;
+            
+            // 1. Cek Harga berdasarkan Kategori Stylist (jika ada)
+            if ($detail->has_stylist_price && $stylist) {
+                if (strtolower($stylist->kategori) == 'senior') {
+                    $price = $detail->price_senior ?? $price;
+                } elseif (strtolower($stylist->kategori) == 'junior') {
+                    $price = $detail->price_junior ?? $price;
+                }
+            }
+
+            // 2. Terapkan Potongan Promo (jika treatment induk sedang promo)
+            $parentTreatment = $detail->treatment;
+            if ($parentTreatment && $parentTreatment->is_promo) {
+                if ($parentTreatment->promo_type === 'percentage' || $parentTreatment->promo_type === 'percent') {
+                    $discount = ($price * $parentTreatment->promo_value) / 100;
+                    $price = $price - $discount;
+                } elseif ($parentTreatment->promo_type === 'fixed') {
+                    $price = $price - $parentTreatment->promo_value;
+                }
+            }
+
+            // 3. Gunakan harga kustom jika disediakan oleh staff (timpa promo)
             if (isset($customPrices[$index]) && $customPrices[$index] !== '') {
                 $price = (int)$customPrices[$index];
-            } else {
-                $price = $detail->price;
-                if ($detail->has_stylist_price && $stylist) {
-                    if (strtolower($stylist->kategori) == 'senior') {
-                        $price = $detail->price_senior ?? $price;
-                    } elseif (strtolower($stylist->kategori) == 'junior') {
-                        $price = $detail->price_junior ?? $price;
-                    }
-                }
             }
 
             $booking_details_data[] = [
                 'treatment_detail_id' => $detail->id,
                 'stylist_id' => $sId,
-                'price' => $price,
+                'price' => max(0, $price), // Harga tidak boleh negatif
                 'parent_treatment_id' => $detail->treatment_id
             ];
-            $total_price += $price;
+            $total_price += max(0, $price);
         }
 
         // Robust Staff Detection with Logging

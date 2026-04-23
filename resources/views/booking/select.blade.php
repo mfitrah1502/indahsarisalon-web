@@ -232,6 +232,9 @@
                                                     data-price="{{ $d->price }}" data-price-senior="{{ $d->price_senior }}"
                                                     data-price-junior="{{ $d->price_junior }}"
                                                     data-has-stylist-price="{{ $d->has_stylist_price ? '1' : '0' }}"
+                                                    data-is-promo="{{ $treatment->is_promo ? '1' : '0' }}"
+                                                    data-promo-type="{{ $treatment->promo_type }}"
+                                                    data-promo-value="{{ $treatment->promo_value }}"
                                                     data-duration="{{ $d->duration }}" onchange="togglePrimaryDetail(this)">
                                                 <label class="form-check-label p-2 w-100 border rounded cursor-pointer h-100"
                                                     for="detail_{{ $d->id }}">
@@ -243,19 +246,41 @@
                                                     <div class="d-flex justify-content-between">
                                                         <small class="text-muted extra-small">{{ $d->duration }} menit</small>
                                                         <small class="fw-bold text-primary">
+                                                            @php
+                                                                $isPromo = $treatment->is_promo;
+                                                                $promoType = $treatment->promo_type;
+                                                                $promoValue = $treatment->promo_value;
+                                                                
+                                                                $applyPromo = function($p) use ($isPromo, $promoType, $promoValue) {
+                                                                    if (!$isPromo) return $p;
+                                                                    if ($promoType === 'percentage' || $promoType === 'percent') return $p - ($p * $promoValue / 100);
+                                                                    return $p - $promoValue;
+                                                                };
+                                                            @endphp
+
                                                             @if($d->has_stylist_price)
                                                                 @php
                                                                     $prices = array_filter([(int)$d->price_senior, (int)$d->price_junior]);
                                                                     $minPrice = count($prices) > 0 ? min($prices) : (int)$d->price;
                                                                     $maxPrice = count($prices) > 0 ? max($prices) : (int)$d->price;
+                                                                    
+                                                                    $minPromo = $applyPromo($minPrice);
+                                                                    $maxPromo = $applyPromo($maxPrice);
                                                                 @endphp
-                                                                @if($minPrice != $maxPrice)
-                                                                    Rp {{ number_format($minPrice, 0) }} - {{ number_format($maxPrice, 0) }}
+                                                                @if($isPromo)
+                                                                    <span class="text-muted text-decoration-line-through extra-small me-1">Rp {{ number_format($minPrice, 0) }}</span>
+                                                                @endif
+                                                                @if($minPromo != $maxPromo)
+                                                                    Rp {{ number_format(max(0, $minPromo), 0) }} - {{ number_format(max(0, $maxPromo), 0) }}
                                                                 @else
-                                                                    Rp {{ number_format($minPrice, 0) }}
+                                                                    Rp {{ number_format(max(0, $minPromo), 0) }}
                                                                 @endif
                                                             @else
-                                                                Rp {{ number_format($d->price) }}
+                                                                @php $pricePromo = $applyPromo($d->price); @endphp
+                                                                @if($isPromo)
+                                                                    <span class="text-muted text-decoration-line-through extra-small me-1">Rp {{ number_format($d->price, 0) }}</span>
+                                                                @endif
+                                                                Rp {{ number_format(max(0, $pricePromo), 0) }}
                                                             @endif
                                                         </small>
                                                     </div>
@@ -520,19 +545,41 @@
                                                     </div>
                                                     <div class="text-end">
                                                         <div class="small fw-bold text-primary mb-1">
+                                                            @php
+                                                                $isItemPromo = $item->is_promo;
+                                                                $itemPromoType = $item->promo_type;
+                                                                $itemPromoValue = $item->promo_value;
+                                                                
+                                                                $applyItemPromo = function($p) use ($isItemPromo, $itemPromoType, $itemPromoValue) {
+                                                                    if (!$isItemPromo) return $p;
+                                                                    if ($itemPromoType === 'percentage' || $itemPromoType === 'percent') return $p - ($p * $itemPromoValue / 100);
+                                                                    return $p - $itemPromoValue;
+                                                                };
+                                                            @endphp
+
                                                             @if($d->has_stylist_price)
                                                                 @php
-                                                                    $prices = array_filter([(int)$d->price_senior, (int)$d->price_junior]);
-                                                                    $minPrice = count($prices) > 0 ? min($prices) : (int)$d->price;
-                                                                    $maxPrice = count($prices) > 0 ? max($prices) : (int)$d->price;
+                                                                    $iPrices = array_filter([(int)$d->price_senior, (int)$d->price_junior]);
+                                                                    $iMin = count($iPrices) > 0 ? min($iPrices) : (int)$d->price;
+                                                                    $iMax = count($iPrices) > 0 ? max($iPrices) : (int)$d->price;
+                                                                    
+                                                                    $iMinPromo = $applyItemPromo($iMin);
+                                                                    $iMaxPromo = $applyItemPromo($iMax);
                                                                 @endphp
-                                                                @if($minPrice != $maxPrice)
-                                                                    Rp {{ number_format($minPrice, 0) }} - {{ number_format($maxPrice, 0) }}
+                                                                @if($isItemPromo)
+                                                                    <span class="text-muted text-decoration-line-through extra-small me-1">Rp {{ number_format($iMin, 0) }}</span>
+                                                                @endif
+                                                                @if($iMinPromo != $iMaxPromo)
+                                                                    Rp {{ number_format(max(0, $iMinPromo), 0) }} - {{ number_format(max(0, $iMaxPromo), 0) }}
                                                                 @else
-                                                                    Rp {{ number_format($minPrice, 0) }}
+                                                                    Rp {{ number_format(max(0, $iMinPromo), 0) }}
                                                                 @endif
                                                             @else
-                                                                Rp {{ number_format($d->price) }}
+                                                                @php $iPriceP = $applyItemPromo($d->price); @endphp
+                                                                @if($isItemPromo)
+                                                                    <span class="text-muted text-decoration-line-through extra-small me-1">Rp {{ number_format($d->price, 0) }}</span>
+                                                                @endif
+                                                                Rp {{ number_format(max(0, $iPriceP), 0) }}
                                                             @endif
                                                         </div>
                                                         <button type="button" class="btn btn-primary btn-xs add-detail-btn"
@@ -541,6 +588,9 @@
                                                             data-price-senior="{{ $d->price_senior }}"
                                                             data-price-junior="{{ $d->price_junior }}"
                                                             data-has-stylist-price="{{ $d->has_stylist_price ? '1' : '0' }}"
+                                                            data-is-promo="{{ $item->is_promo ? '1' : '0' }}"
+                                                            data-promo-type="{{ $item->promo_type }}"
+                                                            data-promo-value="{{ $item->promo_value }}"
                                                             data-duration="{{ $d->duration }}">
                                                             Pilih
                                                         </button>
@@ -852,7 +902,10 @@
                         priceJunior: {{ (int)($d->price_junior ?: $d->price) }},
                         hasStylistPrice: {{ $d->has_stylist_price ? 'true' : 'false' }},
                         duration: {{ (int)$d->duration }},
-                        isPrimary: true
+                        isPrimary: true,
+                        isPromo: {{ $treatment->is_promo ? 'true' : 'false' }},
+                        promoType: {!! json_encode($treatment->promo_type) !!},
+                        promoValue: {{ (int)$treatment->promo_value }}
                     },
                 @endforeach
             @endif
@@ -891,7 +944,10 @@
                         priceJunior: parseInt(checkbox.getAttribute('data-price-junior') || checkbox.getAttribute('data-price')),
                         hasStylistPrice: checkbox.getAttribute('data-has-stylist-price') === '1',
                         duration: parseInt(checkbox.getAttribute('data-duration')),
-                        isPrimary: true
+                        isPrimary: true,
+                        isPromo: checkbox.getAttribute('data-is-promo') === '1',
+                        promoType: checkbox.getAttribute('data-promo-type'),
+                        promoValue: parseInt(checkbox.getAttribute('data-promo-value') || 0)
                     });
                 }
             } else {
@@ -1096,11 +1152,21 @@
         };
 
         function calculateDetailPrice(d) {
+            let finalPrice = d.price;
             if (d.hasStylistPrice && d.stylistKategori) {
-                if (d.stylistKategori === 'senior') return d.priceSenior;
-                if (d.stylistKategori === 'junior') return d.priceJunior;
+                if (d.stylistKategori === 'senior') finalPrice = d.priceSenior;
+                else if (d.stylistKategori === 'junior') finalPrice = d.priceJunior;
             }
-            return d.price;
+
+            // Apply Promo
+            if (d.isPromo) {
+                if (d.promoType === 'percentage' || d.promoType === 'percent') {
+                    finalPrice = finalPrice - (finalPrice * d.promoValue / 100);
+                } else if (d.promoType === 'fixed') {
+                    finalPrice = finalPrice - d.promoValue;
+                }
+            }
+            return Math.max(0, finalPrice);
         }
 
         window.updateItemStylist = function (detailId, stylistId) {
@@ -1165,7 +1231,10 @@
                     priceJunior: parseInt(this.getAttribute('data-price-junior') || this.getAttribute('data-price')),
                     hasStylistPrice: this.getAttribute('data-has-stylist-price') === '1',
                     duration: parseInt(this.getAttribute('data-duration')),
-                    isPrimary: false
+                    isPrimary: false,
+                    isPromo: this.getAttribute('data-is-promo') === '1',
+                    promoType: this.getAttribute('data-promo-type'),
+                    promoValue: parseInt(this.getAttribute('data-promo-value') || 0)
                 });
 
                 renderSelectedTreatments();

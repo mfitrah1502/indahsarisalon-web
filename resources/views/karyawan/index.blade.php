@@ -3,48 +3,55 @@
 @section('title', 'Manajemen Karyawan')
 
 @push('styles')
-<style>
-    .employee-card-table {
-        border-collapse: separate;
-        border-spacing: 0 10px;
-    }
+    <style>
+        .employee-card-table {
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
 
-    .employee-card-table tr {
-        background: #fff;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        border-radius: 12px;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
+        .employee-card-table tr {
+            background: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
 
-    .employee-card-table tr:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
+        .employee-card-table tr:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
 
-    .employee-card-table td {
-        padding: 1.2rem 1rem !important;
-        vertical-align: middle;
-        border: none !important;
-    }
+        .employee-card-table td {
+            padding: 1.2rem 1rem !important;
+            vertical-align: middle;
+            border: none !important;
+        }
 
-    .employee-card-table td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
-    .employee-card-table td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        .employee-card-table td:first-child {
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
 
-    .action-btn {
-        width: 38px;
-        height: 38px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 10px;
-        transition: all 0.2s;
-    }
+        .employee-card-table td:last-child {
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
 
-    .action-btn:hover {
-        background: #fdf2f8 !important;
-        transform: scale(1.1);
-    }
-</style>
+        .action-btn {
+            width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: #fdf2f8 !important;
+            transform: scale(1.1);
+        }
+    </style>
 @endpush
 
 @section('content')
@@ -76,8 +83,10 @@
                         <div class="col-md-4">
                             <label class="small fw-bold text-muted mb-2">Cari Nama / Email / Username</label>
                             <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0"><i class="ti ti-search text-muted"></i></span>
-                                <input type="text" id="searchInput" class="form-control border-start-0 ps-0" placeholder="Ketik kata kunci..." value="{{ request('search') }}">
+                                <span class="input-group-text bg-white border-end-0"><i
+                                        class="ti ti-search text-muted"></i></span>
+                                <input type="text" id="searchInput" class="form-control border-start-0 ps-0"
+                                    placeholder="Ketik kata kunci..." value="{{ request('search') }}">
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -93,7 +102,7 @@
                             <select id="filterStatus" class="form-select border-0 shadow-none">
                                 <option value="">Semua Status</option>
                                 <option value="aktif">Aktif</option>
-                                <option value="nonaktif">Nonaktif</option>
+                                <option value="tidak">Nonaktif</option>
                             </select>
                         </div>
                     </div>
@@ -124,10 +133,12 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-4">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="fw-bold"><i class="ti ti-calendar-event me-2 text-primary"></i>Riwayat Presensi: <span id="employeeName"></span></h5>
+                    <h5 class="fw-bold"><i class="ti ti-calendar-event me-2 text-primary"></i>Riwayat Presensi: <span
+                            id="employeeName"></span></h5>
                     <div class="ms-auto d-flex gap-2">
                         @if(Auth::user()->role === 'admin')
-                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-none" id="btnSetOffWork">
+                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-none"
+                                id="btnSetOffWork">
                                 <i class="ti ti-calendar-off me-1"></i> Setel Libur (Off Work)
                             </button>
                         @endif
@@ -173,174 +184,174 @@
         </div>
     </div>
 
-@push('scripts')
-    <script>
-        // AJAX filter/search
-        function applyFilters() {
-            let search = $('#searchInput').val();
-            let role = $('#filterRole').val();
-            let status = $('#filterStatus').val();
+    @push('scripts')
+        <script>
+            // AJAX filter/search
+            function applyFilters() {
+                let search = $('#searchInput').val();
+                let role = $('#filterRole').val();
+                let status = $('#filterStatus').val();
 
-            $.ajax({
-                url: "{{ route('karyawan.filter') }}",
-                type: "GET",
-                data: { search: search, role: role, status: status },
-                success: function (response) {
-                    $('.employee-card-table tbody').html(response);
-                }
-            });
-        }
-
-        $('#filterRole, #filterStatus').change(applyFilters);
-        $('#searchInput').on('keyup', function (e) {
-            if (e.keyCode === 13) applyFilters();
-        });
-
-        // Data presensi global untuk filter
-        let currentAbsensiData = [];
-
-        function renderAbsensi(data) {
-            let rows = '';
-            if (data.length === 0) {
-                rows = `<tr><td colspan="4" class="text-center text-muted py-5">
-                            <i class="ti ti-info-circle fs-2 d-block mb-2"></i>
-                            Data tidak ditemukan
-                        </td></tr>`;
-            } else {
-                data.forEach(function (item) {
-                    let badgeClass = 'bg-light-success text-success';
-                    if (item.status === 'Terlambat') badgeClass = 'bg-light-warning text-warning';
-                    if (item.status === 'Off Work' || item.status === 'Libur') badgeClass = 'bg-light-secondary text-secondary';
-                    if (item.status === 'Tidak Hadir' || item.status === 'Alpha') badgeClass = 'bg-light-danger text-danger';
-                    if (item.status === 'Tidak Absensi Pulang') badgeClass = 'bg-light-warning text-warning';
-                    
-                    rows += `<tr>
-                        <td class="fw-medium">${item.tanggal}</td>
-                        <td class="text-center">${item.jam_masuk ? (item.jam_masuk.includes(' ') ? item.jam_masuk.split(' ')[1] : item.jam_masuk) : '-'}</td>
-                        <td class="text-center">${item.jam_keluar ? (item.jam_keluar.includes(' ') ? item.jam_keluar.split(' ')[1] : item.jam_keluar) : '-'}</td>
-                        <td class="text-center"><span class="badge ${badgeClass} rounded-pill px-3">${item.status ?? 'Hadir'}</span></td>
-                    </tr>`;
+                $.ajax({
+                    url: "{{ route('karyawan.filter') }}",
+                    type: "GET",
+                    data: { search: search, role: role, status: status },
+                    success: function (response) {
+                        $('.employee-card-table tbody').html(response);
+                    }
                 });
             }
-            $('#absensiTable').html(rows);
-        }
 
-        function applyAbsensiFilter() {
-            const type = $('#filterType').val();
-            const val = $('#filterValue').val();
-            
-            if (type === 'all' || !val) {
-                renderAbsensi(currentAbsensiData);
-                return;
-            }
-
-            let filtered = currentAbsensiData.filter(item => {
-                if (type === 'harian') return item.tanggal === val;
-                if (type === 'bulanan') return item.tanggal.startsWith(val);
-                if (type === 'tahunan') return item.tanggal.startsWith(val);
-                return true;
+            $('#filterRole, #filterStatus').change(applyFilters);
+            $('#searchInput').on('keyup', function (e) {
+                if (e.keyCode === 13) applyFilters();
             });
 
-            renderAbsensi(filtered);
-        }
+            // Data presensi global untuk filter
+            let currentAbsensiData = [];
 
-        // Event change filter
-        $('#filterType').on('change', function() {
-            const type = $(this).val();
-            const $container = $('#filterInputContainer');
-            const $action = $('#filterActionContainer');
-            const $input = $('#filterValue');
-            const $label = $('#filterInputLabel');
+            function renderAbsensi(data) {
+                let rows = '';
+                if (data.length === 0) {
+                    rows = `<tr><td colspan="4" class="text-center text-muted py-5">
+                                    <i class="ti ti-info-circle fs-2 d-block mb-2"></i>
+                                    Data tidak ditemukan
+                                </td></tr>`;
+                } else {
+                    data.forEach(function (item) {
+                        let badgeClass = 'bg-light-success text-success';
+                        if (item.status === 'Terlambat') badgeClass = 'bg-light-warning text-warning';
+                        if (item.status === 'Off Work' || item.status === 'Libur') badgeClass = 'bg-light-secondary text-secondary';
+                        if (item.status === 'Tidak Hadir' || item.status === 'Alpha') badgeClass = 'bg-light-danger text-danger';
+                        if (item.status === 'Tidak Absensi Pulang') badgeClass = 'bg-light-warning text-warning';
 
-            if (type === 'all') {
-                $container.hide();
-                $action.hide();
-                $input.val('');
-                renderAbsensi(currentAbsensiData);
-            } else {
-                $container.show();
-                $action.show();
-                if (type === 'harian') {
-                    $input.attr('type', 'date');
-                    $label.text('Pilih Tanggal');
-                } else if (type === 'bulanan') {
-                    $input.attr('type', 'month');
-                    $label.text('Pilih Bulan');
-                } else if (type === 'tahunan') {
-                    $input.attr('type', 'number').attr('min', '2020').attr('max', '2030');
-                    $input.val(new Date().getFullYear());
-                    $label.text('Ketik Tahun');
+                        rows += `<tr>
+                                <td class="fw-medium">${item.tanggal}</td>
+                                <td class="text-center">${item.jam_masuk ? (item.jam_masuk.includes(' ') ? item.jam_masuk.split(' ')[1] : item.jam_masuk) : '-'}</td>
+                                <td class="text-center">${item.jam_keluar ? (item.jam_keluar.includes(' ') ? item.jam_keluar.split(' ')[1] : item.jam_keluar) : '-'}</td>
+                                <td class="text-center"><span class="badge ${badgeClass} rounded-pill px-3">${item.status ?? 'Hadir'}</span></td>
+                            </tr>`;
+                    });
                 }
+                $('#absensiTable').html(rows);
             }
-        });
 
-        $('#filterValue').on('change keyup', applyAbsensiFilter);
-        $('#btnResetFilter').on('click', function() {
-            $('#filterType').val('all').trigger('change');
-        });
+            function applyAbsensiFilter() {
+                const type = $('#filterType').val();
+                const val = $('#filterValue').val();
 
-        // Popup presensi
-        $(document).on('click', '.lihat-absensi', function (e) {
-            e.preventDefault();
-            let userId = $(this).data('id');
-            let name = $(this).closest('tr').find('h6').text().trim();
-            $('#employeeName').text(name);
-
-            $.ajax({
-                url: "/karyawan/" + userId + "/absensi",
-                type: "GET",
-                success: function (data) {
-                    currentAbsensiData = data;
-                    $('#offWorkUserId').val(userId); // set for off work form
-                    $('#filterType').val('all').trigger('change');
-                    renderAbsensi(data);
-                    var modal = new bootstrap.Modal(document.getElementById('absensiModal'));
-                    modal.show();
-                },
-                error: function (err) {
-                    console.error('AJAX Error:', err);
+                if (type === 'all' || !val) {
+                    renderAbsensi(currentAbsensiData);
+                    return;
                 }
-            });
-        });
 
-        // Trigger Off Work Modal
-        $(document).on('click', '#btnSetOffWork', function() {
-            var offWorkModal = new bootstrap.Modal(document.getElementById('offWorkModal'));
-            offWorkModal.show();
-        });
+                let filtered = currentAbsensiData.filter(item => {
+                    if (type === 'harian') return item.tanggal === val;
+                    if (type === 'bulanan') return item.tanggal.startsWith(val);
+                    if (type === 'tahunan') return item.tanggal.startsWith(val);
+                    return true;
+                });
 
-        // Submit Off Work Form
-        $('#offWorkForm').on('submit', function(e) {
-            e.preventDefault();
-            let formData = $(this).serialize();
-            let userId = $('#offWorkUserId').val();
+                renderAbsensi(filtered);
+            }
 
-            $.ajax({
-                url: "{{ route('absensi.storeManual') }}",
-                type: "POST",
-                data: formData,
-                success: function(response) {
-                    if(response.success) {
-                        $('#offWorkModal').modal('hide');
-                        // Refresh data absensi di modal utama
-                        $.ajax({
-                            url: "/karyawan/" + userId + "/absensi",
-                            type: "GET",
-                            success: function(data) {
-                                currentAbsensiData = data;
-                                renderAbsensi(data);
-                            }
-                        });
-                        alert('Karyawan berhasil diliburkan pada tanggal tersebut.');
+            // Event change filter
+            $('#filterType').on('change', function () {
+                const type = $(this).val();
+                const $container = $('#filterInputContainer');
+                const $action = $('#filterActionContainer');
+                const $input = $('#filterValue');
+                const $label = $('#filterInputLabel');
+
+                if (type === 'all') {
+                    $container.hide();
+                    $action.hide();
+                    $input.val('');
+                    renderAbsensi(currentAbsensiData);
+                } else {
+                    $container.show();
+                    $action.show();
+                    if (type === 'harian') {
+                        $input.attr('type', 'date');
+                        $label.text('Pilih Tanggal');
+                    } else if (type === 'bulanan') {
+                        $input.attr('type', 'month');
+                        $label.text('Pilih Bulan');
+                    } else if (type === 'tahunan') {
+                        $input.attr('type', 'number').attr('min', '2020').attr('max', '2030');
+                        $input.val(new Date().getFullYear());
+                        $label.text('Ketik Tahun');
                     }
-                },
-                error: function(err) {
-                    alert('Gagal menyimpan data libur.');
                 }
             });
-        });
-    </script>
-@endpush
+
+            $('#filterValue').on('change keyup', applyAbsensiFilter);
+            $('#btnResetFilter').on('click', function () {
+                $('#filterType').val('all').trigger('change');
+            });
+
+            // Popup presensi
+            $(document).on('click', '.lihat-absensi', function (e) {
+                e.preventDefault();
+                let userId = $(this).data('id');
+                let name = $(this).closest('tr').find('h6').text().trim();
+                $('#employeeName').text(name);
+
+                $.ajax({
+                    url: "/karyawan/" + userId + "/absensi",
+                    type: "GET",
+                    success: function (data) {
+                        currentAbsensiData = data;
+                        $('#offWorkUserId').val(userId); // set for off work form
+                        $('#filterType').val('all').trigger('change');
+                        renderAbsensi(data);
+                        var modal = new bootstrap.Modal(document.getElementById('absensiModal'));
+                        modal.show();
+                    },
+                    error: function (err) {
+                        console.error('AJAX Error:', err);
+                    }
+                });
+            });
+
+            // Trigger Off Work Modal
+            $(document).on('click', '#btnSetOffWork', function () {
+                var offWorkModal = new bootstrap.Modal(document.getElementById('offWorkModal'));
+                offWorkModal.show();
+            });
+
+            // Submit Off Work Form
+            $('#offWorkForm').on('submit', function (e) {
+                e.preventDefault();
+                let formData = $(this).serialize();
+                let userId = $('#offWorkUserId').val();
+
+                $.ajax({
+                    url: "{{ route('absensi.storeManual') }}",
+                    type: "POST",
+                    data: formData,
+                    success: function (response) {
+                        if (response.success) {
+                            $('#offWorkModal').modal('hide');
+                            // Refresh data absensi di modal utama
+                            $.ajax({
+                                url: "/karyawan/" + userId + "/absensi",
+                                type: "GET",
+                                success: function (data) {
+                                    currentAbsensiData = data;
+                                    renderAbsensi(data);
+                                }
+                            });
+                            alert('Karyawan berhasil diliburkan pada tanggal tersebut.');
+                        }
+                    },
+                    error: function (err) {
+                        alert('Gagal menyimpan data libur.');
+                    }
+                });
+            });
+        </script>
+    @endpush
     <!-- Modal Setel Libur -->
     <div class="modal fade" id="offWorkModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">
@@ -356,9 +367,11 @@
                         <input type="hidden" name="status" value="Off Work">
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Pilih Tanggal</label>
-                            <input type="date" name="tanggal" class="form-control border-0 shadow-sm" required value="{{ date('Y-m-d') }}">
+                            <input type="date" name="tanggal" class="form-control border-0 shadow-sm" required
+                                value="{{ date('Y-m-d') }}">
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 rounded-pill pt-2 pb-2 shadow">Simpan Status Libur</button>
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill pt-2 pb-2 shadow">Simpan Status
+                            Libur</button>
                     </form>
                 </div>
             </div>

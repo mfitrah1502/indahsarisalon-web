@@ -18,22 +18,48 @@
                     <span class="badge bg-light-primary text-primary mb-2">{{ $treatment->category->name ?? '-' }}</span><br>
                     <div class="small">
                         @foreach($treatment->details as $detail)
+                            @php
+                                $originalPrice = $detail->price;
+                                $isPromo = $treatment->is_promo;
+                                $promoType = $treatment->promo_type;
+                                $promoValue = $treatment->promo_value;
+
+                                if ($detail->has_stylist_price) {
+                                    $prices = array_filter([(int)$detail->price_senior, (int)$detail->price_junior]);
+                                    $minPrice = count($prices) > 0 ? min($prices) : (int)$detail->price;
+                                    $maxPrice = count($prices) > 0 ? max($prices) : (int)$detail->price;
+
+                                    if ($isPromo) {
+                                        if ($promoType === 'percentage' || $promoType === 'percent') {
+                                            $minPrice -= ($minPrice * $promoValue / 100);
+                                            $maxPrice -= ($maxPrice * $promoValue / 100);
+                                        } else {
+                                            $minPrice -= $promoValue;
+                                            $maxPrice -= $promoValue;
+                                        }
+                                    }
+                                } else {
+                                    $price = $originalPrice;
+                                    if ($isPromo) {
+                                        if ($promoType === 'percentage' || $promoType === 'percent') {
+                                            $price -= ($price * $promoValue / 100);
+                                        } else {
+                                            $price -= $promoValue;
+                                        }
+                                    }
+                                }
+                            @endphp
                             <div class="d-flex justify-content-between border-bottom py-1">
                                 <span>- {{ $detail->name }}</span>
-                                <span class="fw-bold">
+                                <span class="fw-bold text-primary">
                                     @if($detail->has_stylist_price)
-                                        @php
-                                            $prices = array_filter([(int)$detail->price_senior, (int)$detail->price_junior]);
-                                            $minPrice = count($prices) > 0 ? min($prices) : (int)$detail->price;
-                                            $maxPrice = count($prices) > 0 ? max($prices) : (int)$detail->price;
-                                        @endphp
                                         @if($minPrice != $maxPrice)
-                                            Rp {{ number_format($minPrice, 0) }} - Rp {{ number_format($maxPrice, 0) }}
+                                            Rp {{ number_format(max(0, $minPrice), 0) }} - {{ number_format(max(0, $maxPrice), 0) }}
                                         @else
-                                            Rp {{ number_format($minPrice, 0) }}
+                                            Rp {{ number_format(max(0, $minPrice), 0) }}
                                         @endif
                                     @else
-                                        Rp {{ number_format($detail->price, 0) }}
+                                        Rp {{ number_format(max(0, $price), 0) }}
                                     @endif
                                 </span>
                             </div>

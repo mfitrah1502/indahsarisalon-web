@@ -275,5 +275,96 @@ public function filter(Request $request)
 
     $treatments = $query->get(); // AJAX load
 
-    return view('treatment.table', compact('treatments'));}
+    return view('treatment.table', compact('treatments'));
+    }
+
+    public function broadcastPromo(\Illuminate\Http\Request $request)
+    {
+        $promoTreatments = Treatment::where('is_promo', 1)->get();
+        if ($promoTreatments->isEmpty()) {
+            return back()->with('error', 'Tidak ada treatment yang sedang promo saat ini.');
+        }
+
+        $customers = \App\Models\User::where('role', 'pelanggan')
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
+            ->get();
+
+        if ($customers->isEmpty()) {
+            return back()->with('error', 'Tidak ada pelanggan dengan nomor WhatsApp terdaftar.');
+        }
+
+        $promoDetails = "";
+        foreach ($promoTreatments as $promo) {
+            $typeStr = ($promo->promo_type == 'percentage' || $promo->promo_type == 'percent') ? $promo->promo_value . '%' : 'Rp ' . number_format($promo->promo_value, 0, ',', '.');
+            $promoDetails .= "- *{$promo->name}* (Diskon {$typeStr})\n";
+        }
+
+        $successCount = 0;
+        $supabaseUrl = env('SUPABASE_URL');
+        $supabaseBucket = env('SUPABASE_BUCKET');
+        $supabaseKey = env('SUPABASE_SERVICE_KEY');
+
+        // Upload custom promo images if provided
+        $uploadedUrls = [];
+        if ($request->hasFile('promo_images')) {
+            foreach ($request->file('promo_images') as $file) {
+                $filename = 'promo_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $fileContents = file_get_contents($file->getRealPath());
+
+                $response = \Illuminate\Support\Facades\Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $supabaseKey,
+                    'apikey' => $supabaseKey,
+                    'Content-Type' => 'application/octet-stream',
+                ])->withBody($fileContents, 'application/octet-stream')
+                ->post($supabaseUrl . '/storage/v1/object/' . $supabaseBucket . '/' . $filename);
+
+                if ($response->successful()) {
+                    $uploadedUrls[] = "{$supabaseUrl}/storage/v1/object/public/{$supabaseBucket}/{$filename}";
+                    \Illuminate\Support\Facades\Log::info("Supabase upload success: " . end($uploadedUrls));
+                } else {
+                    \Illuminate\Support\Facades\Log::error("Supabase upload failed: " . $response->body());
+                }
+            }
+        }
+
+        foreach ($customers as $customer) {
+            $message = "Halo *{$customer->name}*, ada promo spesial di *Indah Sari Salon*!\n\n";
+            $message .= "Berikut treatment yang sedang promo hari ini:\n\n";
+            $message .= $promoDetails;
+            $message .= "\nBooking sekarang sebelum kehabisan slot: " . route('dashboard') . "\n\nSampai jumpa di salon!";
+
+            // Jika admin mengunggah gambar promo khusus
+            if (count($uploadedUrls) > 0) {
+                // Kirim pesan utama dengan gambar pertama
+                if (\App\Services\WhatsAppService::sendMessage($customer->phone, $message, $uploadedUrls[0])) {
+                    $successCount++;
+                    // Kirim gambar sisa jika ada
+                    for ($i = 1; $i < count($uploadedUrls); $i++) {
+                        \App\Services\WhatsAppService::sendMessage($customer->phone, "", $uploadedUrls[$i]);
+                    }
+                }
+            } else {
+                // Fallback: Kirim dengan gambar treatment bawaan
+                $firstPromo = $promoTreatments->first();
+                $firstImageUrl = $firstPromo->image 
+                    ? "{$supabaseUrl}/storage/v1/object/public/{$supabaseBucket}/{$firstPromo->image}"
+                    : null;
+
+                if (\App\Services\WhatsAppService::sendMessage($customer->phone, $message, $firstImageUrl)) {
+                    $successCount++;
+                    if ($promoTreatments->count() > 1) {
+                        foreach ($promoTreatments->skip(1) as $promo) {
+                            if ($promo->image) {
+                                $imageUrl = "{$supabaseUrl}/storage/v1/object/public/{$supabaseBucket}/{$promo->image}";
+                                \App\Services\WhatsAppService::sendMessage($customer->phone, "Treatment: *{$promo->name}*", $imageUrl);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return back()->with('success', "Berhasil mengirimkan broadcast promo beserta gambar ke {$successCount} pelanggan.");
+    }
 }

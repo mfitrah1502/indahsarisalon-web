@@ -2,7 +2,10 @@
     <tr class="treatment-row" 
         data-name="{{ $treatment->name }}"
         data-category="{{ $treatment->category->name ?? '-' }}"
-        data-promo="{{ $treatment->is_promo ? ($treatment->promo_type == 'percent' ? $treatment->promo_value.'%' : 'Rp '.number_format($treatment->promo_value)) : '-' }}"
+        data-promo="{{ $treatment->is_promo ? ($treatment->promo_type == 'percentage' ? $treatment->promo_value.'%' : 'Rp '.number_format($treatment->promo_value)) : '-' }}"
+        data-is-promo="{{ $treatment->is_promo ? '1' : '0' }}"
+        data-promo-type="{{ $treatment->promo_type }}"
+        data-promo-value="{{ $treatment->promo_value }}"
         data-details='@json($treatment->details)'
         data-image="{{ $treatment->image }}">
         <td class="px-3">
@@ -33,7 +36,7 @@
             @if($treatment->is_promo)
                 <span class="promo-tag">
                     <i class="ti ti-discount-2 me-1"></i>
-                    {{ $treatment->promo_type == 'percent' ? $treatment->promo_value.'%' : 'Rp '.number_format($treatment->promo_value) }}
+                    {{ $treatment->promo_type == 'percentage' ? $treatment->promo_value.'%' : 'Rp '.number_format($treatment->promo_value) }}
                 </span>
             @else
                 <span class="text-muted small">-</span>

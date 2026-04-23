@@ -159,8 +159,8 @@
             }
         });
     </script>
-    @stack('scripts')
     @include('partials.promo-modal')
+    @stack('scripts')
     @include('partials.offline-overlay')
 </body>
 

@@ -17,8 +17,9 @@
                                 <div class="row g-0">
                                     <div class="col-md-6">
                                         @php
+                                            $bucket = config('services.supabase.bucket');
                                             $imageUrl = $promo->image 
-                                                ? config('services.supabase.url') . '/storage/v1/object/public/' . config('services.supabase.bucket') . '/' . $promo->image 
+                                                ? config('services.supabase.url') . '/storage/v1/object/public/' . $bucket . '/' . $promo->image 
                                                 : asset('assets/images/no-image.jpg');
                                         @endphp
                                         <img src="{{ $imageUrl }}" class="img-fluid h-100" style="object-fit: cover; min-height: 400px;" alt="{{ $promo->name }}">
@@ -33,9 +34,21 @@
                                         
                                         <div class="mb-4">
                                             @foreach($promo->details as $detail)
+                                                @php
+                                                    $originalPrice = $detail->price;
+                                                    $discountedPrice = $originalPrice;
+                                                    if ($promo->promo_type === 'percentage' || $promo->promo_type === 'percent') {
+                                                        $discountedPrice = $originalPrice - ($originalPrice * $promo->promo_value / 100);
+                                                    } elseif ($promo->promo_type === 'fixed') {
+                                                        $discountedPrice = $originalPrice - $promo->promo_value;
+                                                    }
+                                                @endphp
                                                 <div class="d-flex justify-content-between border-bottom py-2">
                                                     <span class="small text-dark">{{ $detail->name }}</span>
-                                                    <span class="fw-bold text-primary">Rp {{ number_format($detail->price, 0, ',', '.') }}</span>
+                                                    <div>
+                                                        <span class="text-muted text-decoration-line-through small me-2">Rp {{ number_format($originalPrice, 0, ',', '.') }}</span>
+                                                        <span class="fw-bold text-primary">Rp {{ number_format(max(0, $discountedPrice), 0, ',', '.') }}</span>
+                                                    </div>
                                                 </div>
                                             @endforeach
                                         </div>
@@ -67,9 +80,18 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        var promoModal = new bootstrap.Modal(document.getElementById('promoModal'));
-        promoModal.show();
+        console.log('Promo Modal Check:', {
+            hasPromo: {{ isset($promoTreatments) && $promoTreatments->count() > 0 ? 'true' : 'false' }},
+            showModal: {{ session('show_promo_modal') ? 'true' : 'false' }}
+        });
+        
+        var modalEl = document.getElementById('promoModal');
+        if (modalEl) {
+            var promoModal = new bootstrap.Modal(modalEl);
+            promoModal.show();
+        }
     });
 </script>
 @endpush
+@php session()->forget('show_promo_modal'); @endphp
 @endif

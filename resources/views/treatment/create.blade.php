@@ -166,7 +166,7 @@
                                 <div class="mb-3">
                                     <label class="small fw-bold mb-2">Jenis Potongan</label>
                                     <div class="d-flex gap-2">
-                                        <input type="radio" class="btn-check" name="promo_type" id="type_percent" value="percent" checked>
+                                        <input type="radio" class="btn-check" name="promo_type" id="type_percent" value="percentage" checked>
                                         <label class="btn btn-outline-primary btn-sm rounded-pill flex-fill" for="type_percent">Persen (%)</label>
                                         
                                         <input type="radio" class="btn-check" name="promo_type" id="type_fixed" value="fixed">

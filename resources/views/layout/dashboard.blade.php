@@ -160,6 +160,7 @@
         });
     </script>
     @stack('scripts')
+    @include('partials.promo-modal')
     @include('partials.offline-overlay')
 </body>
 

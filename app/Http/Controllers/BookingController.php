@@ -3,6 +3,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Category;
 use App\Models\Booking;
 use App\Models\BookingDetail;
@@ -36,7 +38,7 @@ class BookingController extends Controller
             $query->where('name', 'like', '%'.$request->search.'%');
         }
 
-        $treatments = $query->orderBy('name', 'asc')->get();
+        $treatments = $query->orderBy('is_promo', 'desc')->orderBy('name', 'asc')->get();
 
         // Cek jam operasional (09:00 - 18:00)
         $now = Carbon::now();
@@ -204,7 +206,7 @@ class BookingController extends Controller
             }
         }
 
-        \Log::info('Booking Attempt', [
+        Log::info('Booking Attempt', [
             'booking_id_potential' => 'next',
             'auth_id' => $authId,
             'role' => $authUser->role ?? 'N/A',
@@ -228,7 +230,7 @@ class BookingController extends Controller
                 'payment_status' => $paymentStatus,
                 'request' => $request->all()
             ];
-            \Storage::disk('local')->put('debug_booking.json', json_encode($debugData, JSON_PRETTY_PRINT));
+            Storage::disk('local')->put('debug_booking.json', json_encode($debugData, JSON_PRETTY_PRINT));
         } catch (\Exception $e) {}
 
         $booking = Booking::create([
@@ -449,7 +451,14 @@ class BookingController extends Controller
             'status' => 'required|in:pending,berhasil,dibatalkan'
         ]);
 
-        $booking->update(['status' => $request->status]);
+        $updateData = ['status' => $request->status];
+
+        // Jika status diubah menjadi berhasil (Selesai), maka status pembayaran otomatis Paid
+        if ($request->status === 'berhasil') {
+            $updateData['payment_status'] = 'paid';
+        }
+
+        $booking->update($updateData);
 
         if ($request->ajax()) {
             return response()->json([
@@ -486,7 +495,7 @@ class BookingController extends Controller
             }
         }
 
-        \Log::info('Payment Method Update Attempt', [
+        Log::info('Payment Method Update Attempt', [
             'booking_id' => $id,
             'auth_id' => $authId,
             'role' => $authUser->role ?? 'N/A',

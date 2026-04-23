@@ -18,6 +18,7 @@ class PageController extends Controller
     {
         $user = Auth::user();
         $isStaff = in_array(strtolower($user->role), ['admin', 'karyawan']) || $user->type === 'karyawan';
+        $promoTreatments = \App\Models\Treatment::where('is_promo', true)->with('details')->get();
         
         if (strtolower($user->role) === 'karyawan') {
             $today = now()->format('Y-m-d');
@@ -33,7 +34,7 @@ class PageController extends Controller
                                     ->take(5)
                                     ->get();
 
-            return view('dashboard.homepage-karyawan', compact('absensi', 'todayBookings'));
+            return view('dashboard.homepage-karyawan', compact('absensi', 'todayBookings', 'promoTreatments'));
         }
 
         if (strtolower($user->role) === 'admin') {
@@ -58,7 +59,7 @@ class PageController extends Controller
                 $monthlyIncome[] = $income;
             }
 
-            return view('dashboard.homepage', compact('stats', 'monthlyIncome', 'currentYear'));
+            return view('dashboard.homepage', compact('stats', 'monthlyIncome', 'currentYear', 'promoTreatments'));
         }
 
         // Dashboard untuk Pelanggan (User)
@@ -71,7 +72,7 @@ class PageController extends Controller
             $q->where('is_promo', false); // Optional: filter if needed
         }])->get();
 
-        return view('dashboard.homepage-user', compact('latestBooking', 'categories'));
+        return view('dashboard.homepage-user', compact('latestBooking', 'categories', 'promoTreatments'));
     }
     public function landing()
     

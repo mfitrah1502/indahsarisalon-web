@@ -20,7 +20,8 @@ curl_setopt_array($curl, array(
   CURLOPT_CUSTOMREQUEST => 'POST',
   CURLOPT_POSTFIELDS => array(
     'target' => $target,
-    'message' => $message,
+    'message' => 'Tes Gambar (Parameter FILE)',
+    'file' => 'https://via.placeholder.com/300/09f/fff.png'
   ),
   CURLOPT_HTTPHEADER => array(
     "Authorization: $token"

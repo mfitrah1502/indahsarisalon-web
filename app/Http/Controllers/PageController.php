@@ -75,8 +75,12 @@ class PageController extends Controller
         return view('dashboard.homepage-user', compact('latestBooking', 'categories', 'promoTreatments'));
     }
     public function landing()
-    
     {
+        // Jika user sudah login, langsung arahkan ke dashboard
+        if (Auth::check()) {
+            return redirect()->route('dashboard');
+        }
+
         return view('landing'); // file: resources/views/landing.blade.php
     }
 

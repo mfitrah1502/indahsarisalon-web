@@ -16,7 +16,7 @@
 
   <base href="{{ url('/') }}/">
   <!-- [Favicon] icon -->
-  <link rel="icon" href="{{ asset('assets/images/favicon.svg') }}" type="image/x-icon" />
+  <link rel="icon" href="{{ asset('assets/images/indahsarisalonimg.jpg') }}" type="image/x-icon" />
 
   <!-- Styles -->
   <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">

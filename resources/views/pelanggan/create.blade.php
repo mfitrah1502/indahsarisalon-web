@@ -1,7 +1,7 @@
 @extends('layout.dashboard')
 
 @section('title', 'Tambah Pelanggan')
-<link rel="icon" href="{{ asset('assets/images/favicon.svg') }}" type="image/x-icon" />
+<link rel="icon" href="{{ asset('assets/images/indahsarisalonimg.jpg') }}" type="image/x-icon" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
     id="main-font-link" />
 <link rel="stylesheet" href="{{ asset('assets/fonts/phosphor/duotone/style.css') }}" />

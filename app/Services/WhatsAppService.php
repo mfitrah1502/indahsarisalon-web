@@ -27,24 +27,44 @@ class WhatsAppService
         }
 
         try {
-            // Persiapkan data pengiriman
-            $data = [
+            $postData = [
                 'target' => $to,
-                'message' => $message,
+                'message' => $message ?: ' ', // Cegah pesan benar-benar kosong
             ];
 
-            // Tambahkan URL jika ada gambar/file
             if ($url) {
-                $data['url'] = $url;
+                $postData['url'] = $url;
             }
 
-            // Gunakan format yang sudah terbukti berhasil di tes manual
-            $response = Http::withHeaders([
-                'Authorization' => $apiKey,
-            ])->asForm()->post($apiUrl, $data);
+            $curl = curl_init();
+            curl_setopt_array($curl, [
+                CURLOPT_URL => $apiUrl,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => '',
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 0,
+                CURLOPT_FOLLOWLOCATION => true,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS => json_encode($postData), // Gunakan JSON Murni
+                CURLOPT_HTTPHEADER => [
+                    "Authorization: $apiKey",
+                    "Content-Type: application/json" // Beri tahu Fonnte bahwa ini JSON
+                ],
+            ]);
 
-            Log::info("WA API Response: " . $response->body());
-            return $response->successful();
+            $response = curl_exec($curl);
+            $err = curl_error($curl);
+            curl_close($curl);
+
+            if ($err) {
+                Log::error("WhatsApp cURL Error #:" . $err);
+                return false;
+            } else {
+                Log::info("WA API Response: " . $response);
+                $respData = json_decode($response, true);
+                return isset($respData['status']) && $respData['status'] == true;
+            }
         } catch (\Exception $e) {
             Log::error("Failed to send WA to $to: " . $e->getMessage());
             return false;

@@ -2,7 +2,7 @@
 
 @section('title', 'Booking Appointment')
 
-<link rel="icon" href="{{ asset('assets/images/favicon.svg') }}" type="image/x-icon" />
+<link rel="icon" href="{{ asset('assets/images/indahsarisalonimg.jpg') }}" type="image/x-icon" />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" />
 <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}" />
 

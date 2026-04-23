@@ -14,7 +14,7 @@
     <meta name="author" content="codedthemes" />
 
     <!-- [Favicon] icon -->
-    <link rel="icon" href="assets/images/favicon.svg" type="image/x-icon" />
+    <link rel="icon" href="assets/images/indahsarisalonimg.jpg" type="image/x-icon" />
     <!-- [Page specific CSS] start -->
     <link href="assets/css/plugins/animate.min.css" rel="stylesheet" type="text/css" />
     <!-- [Page specific CSS] end -->

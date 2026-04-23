@@ -8,7 +8,12 @@
             @endphp
             <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $treatment->name }}">
             <div class="card-body">
-                <h5 class="card-title fw-bold text-dark">{{ $treatment->name }}</h5>
+                <h5 class="card-title fw-bold text-dark">
+                    {{ $treatment->name }}
+                    @if($treatment->is_promo)
+                        <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">PROMO</span>
+                    @endif
+                </h5>
                 <p class="card-text text-muted mb-3">
                     <span class="badge bg-light-primary text-primary mb-2">{{ $treatment->category->name ?? '-' }}</span><br>
                     <div class="small">

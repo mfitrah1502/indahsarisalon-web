@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\SendOtpMail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
 class ProfileController extends Controller
@@ -26,7 +27,7 @@ class ProfileController extends Controller
             'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         if ($request->hasFile('avatar')) {
             // Hapus foto lama di Supabase jika ada
@@ -71,7 +72,7 @@ class ProfileController extends Controller
 
     public function updateProfile(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $request->validate([
             'name' => 'required|string|max:255',
@@ -105,7 +106,7 @@ class ProfileController extends Controller
             'new_password' => 'required|min:8|confirmed',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json(['success' => false, 'message' => 'Kata sandi saat ini salah!'], 422);
@@ -119,7 +120,7 @@ class ProfileController extends Controller
     // AJAX: Kirim OTP Lupa Password (saat sedang login)
     public function sendOtp(Request $request)
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $otp = rand(100000, 999999);
 
         PasswordReset::updateOrCreate(
@@ -143,7 +144,7 @@ class ProfileController extends Controller
             'new_password' => 'required|min:8|confirmed',
         ]);
 
-        $user = auth()->user();
+        $user = Auth::user();
         $otpData = PasswordReset::where('email', $user->email)
                                 ->where('otp', $request->otp)
                                 ->first();

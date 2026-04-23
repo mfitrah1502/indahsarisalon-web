@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login & Register | Indah Sari Salon</title>
+    <!-- Favicon -->
+    <link rel="icon" href="{{ asset('assets/images/indahsarisalonimg.jpg') }}" type="image/x-icon" />
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -145,11 +147,19 @@
 
         .right-panel {
             flex: 1;
-            background: #FFF0F2;
+            background: linear-gradient(45deg, #FFF0F2, #EA8290, #962536, #EA8290);
+            background-size: 300% 300%;
+            animation: gradientAnimation 10s ease infinite;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 40px;
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         /* ===== AUTH CARD & FORMS ===== */

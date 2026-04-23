@@ -5,14 +5,22 @@
 @push('styles')
     <style>
         .welcome-card {
-            background: linear-gradient(135deg, #EA8290 0%, #f7a7b3 100%);
+            background: linear-gradient(45deg, #f7a7b3, #EA8290, #962536, #EA8290);
+            background-size: 300% 300%;
+            animation: gradientAnimation 8s ease infinite;
             border-radius: 20px;
             overflow: hidden;
             position: relative;
             color: white;
             border: none;
             margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(234, 130, 144, 0.2);
+            box-shadow: 0 10px 30px rgba(234, 130, 144, 0.3);
+        }
+
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .welcome-content {

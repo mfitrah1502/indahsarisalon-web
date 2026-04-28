@@ -17,6 +17,9 @@ class Treatment extends Model
         'promo_value',
         'image',
         'allow_multi_select',
+        'is_active',
+        'promo_start_date',
+        'promo_end_date',
     ];
 
     // Relasi ke detail

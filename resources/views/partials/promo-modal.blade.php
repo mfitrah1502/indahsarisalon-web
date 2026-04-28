@@ -26,8 +26,7 @@
                                     </div>
                                     <div class="col-md-6 p-4 d-flex flex-column justify-content-center">
                                         <div class="mb-2">
-                                            <span class="badge bg-danger px-3 py-2 rounded-pill mb-2">PROMO {{ $promo->promo_type == 'fixed' ? 'Rp '.number_format($promo->promo_value, 0) : $promo->promo_value.'%' }}</span>
-                                            <span class="badge bg-light-primary text-primary px-3 py-2 rounded-pill mb-2 ms-1">{{ $promo->category->name ?? '-' }}</span>
+                                            <span class="badge bg-danger px-3 py-2 rounded-pill mb-2">PROMO</span>
                                         </div>
                                         <h2 class="fw-bold text-dark mb-3">{{ $promo->name }}</h2>
                                         <p class="text-muted mb-4">Nikmati layanan unggulan kami dengan harga spesial. Jangan lewatkan kesempatan terbatas ini!</p>
@@ -46,7 +45,6 @@
                                                 <div class="d-flex justify-content-between border-bottom py-2">
                                                     <span class="small text-dark">{{ $detail->name }}</span>
                                                     <div>
-                                                        <span class="text-muted text-decoration-line-through small me-2">Rp {{ number_format($originalPrice, 0, ',', '.') }}</span>
                                                         <span class="fw-bold text-primary">Rp {{ number_format(max(0, $discountedPrice), 0, ',', '.') }}</span>
                                                     </div>
                                                 </div>

@@ -96,6 +96,7 @@
                                 <tr class="bg-transparent shadow-none">
                                     <th class="text-muted small fw-bold px-3 py-2">PELANGGAN</th>
                                     <th class="text-muted small fw-bold py-2">KONTAK</th>
+                                    <th class="text-muted small fw-bold py-2">TIER / LOYALTY</th>
                                     <th class="text-muted small fw-bold py-2">STATUS</th>
                                     <th class="text-muted small fw-bold py-2 text-end px-3">AKSI</th>
                                 </tr>
@@ -135,6 +136,14 @@
                         <div class="list-group-item d-flex justify-content-between align-items-center p-3">
                             <span class="text-muted small"><i class="ti ti-phone me-2"></i>Telepon</span>
                             <span id="popupPhone" class="fw-medium"></span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <span class="text-muted small"><i class="ti ti-crown me-2"></i>Tier Member</span>
+                            <span id="popupTier" class="badge rounded-pill px-3"></span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <span class="text-muted small"><i class="ti ti-receipt-2 me-2"></i>Total Belanja</span>
+                            <span id="popupTotalSpending" class="fw-bold text-dark"></span>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center p-3">
                             <span class="text-muted small"><i class="ti ti-activity me-2"></i>Status</span>
@@ -178,7 +187,14 @@
             $('#popupUsername').text('@' + btn.data('username'));
             $('#popupEmail').text(btn.data('email')); 
             $('#popupPhone').text(btn.data('phone') || '-');
+            $('#popupTotalSpending').text('Rp ' + btn.data('spending').toLocaleString('id-ID'));
             
+            let tier = btn.data('tier');
+            let tierBadge = $('#popupTier');
+            tierBadge.text(tier);
+            let tierClass = tier === 'Platinum' ? 'bg-info text-white' : (tier === 'Gold' ? 'bg-warning text-dark' : (tier === 'Silver' ? 'bg-secondary text-white' : 'bg-light text-muted'));
+            tierBadge.removeClass().addClass('badge rounded-pill px-3 ' + tierClass);
+
             let status = btn.data('status');
             let statusBadge = $('#popupStatus');
             statusBadge.text(status.charAt(0).toUpperCase() + status.slice(1));

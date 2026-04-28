@@ -2,10 +2,6 @@
     <tr class="treatment-row" 
         data-name="{{ $treatment->name }}"
         data-category="{{ $treatment->category->name ?? '-' }}"
-        data-promo="{{ $treatment->is_promo ? ($treatment->promo_type == 'percentage' ? $treatment->promo_value.'%' : 'Rp '.number_format($treatment->promo_value)) : '-' }}"
-        data-is-promo="{{ $treatment->is_promo ? '1' : '0' }}"
-        data-promo-type="{{ $treatment->promo_type }}"
-        data-promo-value="{{ $treatment->promo_value }}"
         data-details='@json($treatment->details)'
         data-image="{{ $treatment->image }}">
         <td class="px-3">
@@ -27,20 +23,28 @@
             </div>
         </td>
         <td>
-            <span class="category-badge">{{ $treatment->category->name ?? '-' }}</span>
+            <div class="d-flex align-items-center gap-2">
+                <span class="category-badge">{{ $treatment->category->name ?? '-' }}</span>
+                @if($treatment->category && $treatment->category->name == 'Promo')
+                    <span class="promo-tag shadow-sm animate__animated animate__pulse animate__infinite">
+                        <i class="ti ti-discount-2 me-1"></i>PROMO
+                    </span>
+                @endif
+            </div>
+        </td>
+        <td>
+            @if($treatment->is_active)
+                <span class="badge bg-light-success text-success border border-success border-opacity-10 px-3 rounded-pill">
+                    <i class="ti ti-circle-check me-1"></i> Aktif
+                </span>
+            @else
+                <span class="badge bg-light-danger text-danger border border-danger border-opacity-10 px-3 rounded-pill">
+                    <i class="ti ti-circle-x me-1"></i> Non-aktif
+                </span>
+            @endif
         </td>
         <td>
             <span class="fw-bold text-dark">Rp {{ number_format($treatment->details->min('price') ?? 0, 0, ',', '.') }}</span>
-        </td>
-        <td>
-            @if($treatment->is_promo)
-                <span class="promo-tag">
-                    <i class="ti ti-discount-2 me-1"></i>
-                    {{ $treatment->promo_type == 'percentage' ? $treatment->promo_value.'%' : 'Rp '.number_format($treatment->promo_value) }}
-                </span>
-            @else
-                <span class="text-muted small">-</span>
-            @endif
         </td>
         <td class="text-end px-3">
             <div class="d-flex justify-content-end gap-2">

@@ -25,6 +25,21 @@
             </div>
         </td>
         <td>
+            <div class="d-flex flex-column gap-1">
+                @php
+                    $tier = $pelanggan->tier;
+                    $tierClass = match($tier) {
+                        'Platinum' => 'bg-info text-white',
+                        'Gold' => 'bg-warning text-dark',
+                        'Silver' => 'bg-secondary text-white',
+                        default => 'bg-light text-muted',
+                    };
+                @endphp
+                <span class="badge {{ $tierClass }} rounded-pill px-3">{{ $tier }} Member</span>
+                <small class="text-muted fw-bold">Rp {{ number_format($pelanggan->total_spending, 0, ',', '.') }}</small>
+            </div>
+        </td>
+        <td>
             @php
                 $statusClass = $pelanggan->status === 'aktif' ? 'bg-light-success text-success' : 'bg-light-secondary text-secondary';
             @endphp
@@ -38,6 +53,8 @@
                         data-email="{{ $pelanggan->email }}"
                         data-phone="{{ $pelanggan->phone }}"
                         data-status="{{ $pelanggan->status }}"
+                        data-tier="{{ $pelanggan->tier }}"
+                        data-spending="{{ $pelanggan->total_spending }}"
                         title="Lihat Detail">
                     <i class="ti ti-eye fs-5"></i>
                 </button>
@@ -55,7 +72,7 @@
     </tr>
 @empty
     <tr>
-        <td colspan="4" class="text-center py-5">
+        <td colspan="5" class="text-center py-5">
             <div class="py-4">
                 <i class="ti ti-users fs-1 text-muted mb-3 d-block"></i>
                 <h5 class="text-muted">Tidak ada pelanggan yang ditemukan</h5>

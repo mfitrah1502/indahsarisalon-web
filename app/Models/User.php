@@ -37,7 +37,7 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @var array
      */
-    protected $appends = ['avatar_url'];
+    protected $appends = ['avatar_url', 'tier', 'total_spending'];
 
     /**
      * Get the user's avatar URL.
@@ -84,10 +84,95 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
-   public function absensi()
+    public function absensi()
     {
         return $this->hasMany(\App\Models\Absensi::class, 'user_id', 'id');
     }
+
+    public function bookings()
+    {
+        return $this->hasMany(\App\Models\Booking::class, 'user_id', 'id');
+    }
+
+    /**
+     * Get total successful spending
+     */
+    public function getTotalSpendingAttribute()
+    {
+        return $this->bookings()
+            ->where('status', 'berhasil')
+            ->where('payment_status', 'paid')
+            ->sum('total_price');
+    }
+
+    /**
+     * Get Membership Tier
+     */
+    public function getTierAttribute()
+    {
+        $total = $this->total_spending;
+
+        if ($total > 3000000) return 'Platinum';
+        if ($total > 2000000) return 'Gold';
+        if ($total > 1000000) return 'Silver';
+        
+        return 'Regular';
+    }
+
+    /**
+     * Get General Tier Discount Percentage
+     */
+    public function getTierDiscountAttribute()
+    {
+        return 0; // Tiers are informational only, no general discount
+    }
+
+    /**
+     * Check for Coloring Loyalty (Spend > 1.5M on Coloring in last 2 years)
+     */
+    public function getHasColoringLoyaltyAttribute()
+    {
+        // Hitung pengeluaran khusus kategori 'Coloring'
+        $coloringSpend = \App\Models\BookingDetail::whereHas('booking', function($q) {
+                $q->where('user_id', $this->id)
+                  ->where('status', 'berhasil')
+                  ->where('payment_status', 'paid')
+                  ->where('reservation_datetime', '>=', now()->subYears(2));
+            })
+            ->whereHas('treatmentDetail.treatment.category', function($q) {
+                $q->where('name', 'like', '%Coloring%');
+            })
+            ->sum('price');
+
+        return $coloringSpend >= 1500000;
+    }
+
+    /**
+     * Progress to Next Tier
+     */
+    public function getNextTierInfoAttribute()
+    {
+        $total = $this->total_spending;
+        
+        if ($total > 3000000) {
+            return ['next' => null, 'needed' => 0, 'percent' => 100];
+        }
+        
+        if ($total > 2000000) {
+            $needed = 3000000 - $total;
+            $percent = (($total - 2000000) / 1000000) * 100;
+            return ['next' => 'Platinum', 'needed' => $needed, 'percent' => $percent];
+        }
+        
+        if ($total > 1000000) {
+            $needed = 2000000 - $total;
+            $percent = (($total - 1000000) / 1000000) * 100;
+            return ['next' => 'Gold', 'needed' => $needed, 'percent' => $percent];
+        }
+        
+        $needed = 1000000 - $total;
+        $percent = ($total / 1000000) * 100;
+        return ['next' => 'Silver', 'needed' => $needed, 'percent' => $percent];
+    }
     
 }
-

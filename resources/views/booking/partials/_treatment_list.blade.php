@@ -13,6 +13,18 @@
                     @if($treatment->is_promo)
                         <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">PROMO</span>
                     @endif
+                    @if(Auth::check())
+                        @php
+                            $isColoring = $treatment->category && stripos($treatment->category->name, 'Coloring') !== false;
+                            $showLoyaltyBadge = false;
+                            if ($isColoring && Auth::user()->has_coloring_loyalty) {
+                                $showLoyaltyBadge = true;
+                            }
+                        @endphp
+                        @if($showLoyaltyBadge)
+                            <span class="badge bg-info ms-1 animate__animated animate__pulse animate__infinite" style="font-size: 0.65rem;">LOYALTY 35%</span>
+                        @endif
+                    @endif
                 </h5>
                 <p class="card-text text-muted mb-3">
                     <span class="badge bg-light-primary text-primary mb-2">{{ $treatment->category->name ?? '-' }}</span><br>
@@ -24,6 +36,7 @@
                                 $promoType = $treatment->promo_type;
                                 $promoValue = $treatment->promo_value;
 
+                                // Base Price Calculation
                                 if ($detail->has_stylist_price) {
                                     $prices = array_filter([(int)$detail->price_senior, (int)$detail->price_junior]);
                                     $minPrice = count($prices) > 0 ? min($prices) : (int)$detail->price;
@@ -38,6 +51,15 @@
                                             $maxPrice -= $promoValue;
                                         }
                                     }
+
+                                    // Apply ONLY Coloring Loyalty Preview (35%)
+                                    if (Auth::check()) {
+                                        $isColoring = $treatment->category && stripos($treatment->category->name, 'Coloring') !== false;
+                                        if ($isColoring && Auth::user()->has_coloring_loyalty) {
+                                            $minPrice -= ($minPrice * 35 / 100);
+                                            $maxPrice -= ($maxPrice * 35 / 100);
+                                        }
+                                    }
                                 } else {
                                     $price = $originalPrice;
                                     if ($isPromo) {
@@ -47,6 +69,14 @@
                                             $price -= $promoValue;
                                         }
                                     }
+
+                                    // Apply ONLY Coloring Loyalty Preview (35%)
+                                    if (Auth::check()) {
+                                        $isColoring = $treatment->category && stripos($treatment->category->name, 'Coloring') !== false;
+                                        if ($isColoring && Auth::user()->has_coloring_loyalty) {
+                                            $price -= ($price * 35 / 100);
+                                        }
+                                    }
                                 }
                             @endphp
                             <div class="d-flex justify-content-between border-bottom py-1">
@@ -54,12 +84,12 @@
                                 <span class="fw-bold text-primary">
                                     @if($detail->has_stylist_price)
                                         @if($minPrice != $maxPrice)
-                                            Rp {{ number_format(max(0, $minPrice), 0) }} - {{ number_format(max(0, $maxPrice), 0) }}
+                                            Rp {{ number_format(max(0, $minPrice), 0, ',', '.') }} - {{ number_format(max(0, $maxPrice), 0, ',', '.') }}
                                         @else
-                                            Rp {{ number_format(max(0, $minPrice), 0) }}
+                                            Rp {{ number_format(max(0, $minPrice), 0, ',', '.') }}
                                         @endif
                                     @else
-                                        Rp {{ number_format(max(0, $price), 0) }}
+                                        Rp {{ number_format(max(0, $price), 0, ',', '.') }}
                                     @endif
                                 </span>
                             </div>

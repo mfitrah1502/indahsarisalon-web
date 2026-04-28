@@ -155,7 +155,15 @@
         <div class="col-12 mt-4">
             <div class="card border-0 shadow-sm" style="border-radius: 20px;">
                 <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0 fw-bold">Statistik Pemasukan Tahun {{ $currentYear ?? now()->year }}</h5>
+                    <h5 class="mb-0 fw-bold" id="chart-title-text">{{ $chartTitle }}</h5>
+                    <div class="btn-group btn-group-sm rounded-pill p-1 bg-light">
+                        <button onclick="updateChartFilter('daily', this)" 
+                           class="btn filter-btn {{ $filter === 'daily' ? 'btn-primary shadow-sm' : 'btn-light border-0' }} rounded-pill px-3">Harian</button>
+                        <button onclick="updateChartFilter('weekly', this)" 
+                           class="btn filter-btn {{ $filter === 'weekly' ? 'btn-primary shadow-sm' : 'btn-light border-0' }} rounded-pill px-3">Mingguan</button>
+                        <button onclick="updateChartFilter('monthly', this)" 
+                           class="btn filter-btn {{ $filter === 'monthly' ? 'btn-primary shadow-sm' : 'btn-light border-0' }} rounded-pill px-3">Bulanan</button>
+                    </div>
                 </div>
                 <div class="card-body px-4 pb-4">
                     <div id="growth-chart" style="min-height: 350px;">
@@ -171,11 +179,12 @@
     <!-- Apex Chart could be re-added here if needed -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
+        let chart;
         document.addEventListener('DOMContentLoaded', function() {
             var options = {
                 series: [{
                     name: 'Pemasukan (Rp)',
-                    data: {!! json_encode($monthlyIncome ?? [0,0,0,0,0,0,0,0,0,0,0,0]) !!}
+                    data: {!! json_encode($chartData) !!}
                 }],
                 chart: {
                     type: 'area',
@@ -187,7 +196,7 @@
                 dataLabels: { enabled: false },
                 stroke: { curve: 'smooth', width: 3 },
                 xaxis: {
-                    categories: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'],
+                    categories: {!! json_encode($chartLabels) !!},
                 },
                 yaxis: {
                     labels: {
@@ -215,8 +224,41 @@
                 }
             };
 
-            var chart = new ApexCharts(document.querySelector("#growth-chart"), options);
+            chart = new ApexCharts(document.querySelector("#growth-chart"), options);
             chart.render();
         });
+
+        window.updateChartFilter = function(mode, btn) {
+            // Update button styles
+            document.querySelectorAll('.filter-btn').forEach(b => {
+                b.classList.remove('btn-primary', 'shadow-sm');
+                b.classList.add('btn-light', 'border-0');
+            });
+            btn.classList.remove('btn-light', 'border-0');
+            btn.classList.add('btn-primary', 'shadow-sm');
+
+            // Fetch new data
+            fetch(`{{ route('dashboard') }}?chart_filter=${mode}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Update title
+                document.getElementById('chart-title-text').innerText = data.title;
+                
+                // Update chart
+                chart.updateOptions({
+                    xaxis: {
+                        categories: data.labels
+                    },
+                    series: [{
+                        data: data.data
+                    }]
+                });
+            })
+            .catch(error => console.error('Error fetching chart data:', error));
+        };
     </script>
 @endpush

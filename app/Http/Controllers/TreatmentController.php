@@ -29,14 +29,19 @@ class TreatmentController extends Controller
             $query->where('name', 'like', "%{$request->search}%");
         }
 
-        // Sort
+        // Sort & Prioritize "Promo" category
+        $query->leftJoin('categories', 'treatments.category_id', '=', 'categories.id')
+              ->select('treatments.*', 'categories.name as category_name')
+              ->orderByRaw("CASE WHEN categories.name = 'Promo' THEN 0 ELSE 1 END")
+              ->orderBy('treatments.created_at', 'desc');
+
         if($request->sort) {
             switch($request->sort) {
                 case 'name_asc':
-                    $query->orderBy('name', 'asc');
+                    $query->orderBy('treatments.name', 'asc');
                     break;
                 case 'name_desc':
-                    $query->orderBy('name', 'desc');
+                    $query->orderBy('treatments.name', 'desc');
                     break;
                 case 'price_asc':
                     $query->withMin('details', 'price')->orderBy('details_min_price', 'asc');
@@ -45,8 +50,6 @@ class TreatmentController extends Controller
                     $query->withMin('details', 'price')->orderBy('details_min_price', 'desc');
                     break;
             }
-        } else {
-            $query->orderBy('created_at', 'desc');
         }
 
         $treatments = $query->with('category', 'details')->paginate(10);
@@ -89,6 +92,9 @@ class TreatmentController extends Controller
         'promo_value' => 'nullable|numeric',
         'image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         'allow_multi_select' => 'nullable|boolean',
+        'is_active' => 'nullable|boolean',
+        'promo_start_date' => 'nullable|date',
+        'promo_end_date' => 'nullable|date',
     ]);
 
     
@@ -110,6 +116,9 @@ class TreatmentController extends Controller
     $treatment->is_promo = $request->has('is_promo') ? 1 : 0;
     $treatment->promo_type = $request->promo_type;
     $treatment->promo_value = $request->promo_value;
+    $treatment->is_active = $request->has('is_active') ? 1 : 0;
+    $treatment->promo_start_date = $request->promo_start_date;
+    $treatment->promo_end_date = $request->promo_end_date;
     $treatment->allow_multi_select = $request->has('allow_multi_select') ? 1 : 0;
     // Upload gambar ke Supabase
         if ($request->hasFile('image')) {
@@ -165,6 +174,9 @@ class TreatmentController extends Controller
         $treatment->is_promo = $request->has('is_promo') ? 1 : 0;
         $treatment->promo_type = $request->promo_type;
         $treatment->promo_value = $request->promo_value;
+        $treatment->is_active = $request->has('is_active') ? 1 : 0;
+        $treatment->promo_start_date = $request->promo_start_date;
+        $treatment->promo_end_date = $request->promo_end_date;
         $treatment->allow_multi_select = $request->has('allow_multi_select') ? 1 : 0;
          // Upload gambar baru
         if ($request->hasFile('image')) {
@@ -254,13 +266,19 @@ public function filter(Request $request)
         $query->where('name', 'like', "%{$request->search}%");
     }
 
+    // Sort & Prioritize "Promo"
+    $query->leftJoin('categories', 'treatments.category_id', '=', 'categories.id')
+          ->select('treatments.*', 'categories.name as category_name')
+          ->orderByRaw("CASE WHEN categories.name = 'Promo' THEN 0 ELSE 1 END")
+          ->orderBy('treatments.created_at', 'desc');
+
     if ($request->sort) {
         switch ($request->sort) {
             case 'name_asc':
-                $query->orderBy('name', 'asc');
+                $query->orderBy('treatments.name', 'asc');
                 break;
             case 'name_desc':
-                $query->orderBy('name', 'desc');
+                $query->orderBy('treatments.name', 'desc');
                 break;
             case 'price_asc':
                 $query->withMin('details', 'price')->orderBy('details_min_price', 'asc');
@@ -269,8 +287,6 @@ public function filter(Request $request)
                 $query->withMin('details', 'price')->orderBy('details_min_price', 'desc');
                 break;
         }
-    } else {
-        $query->orderBy('created_at', 'desc');
     }
 
     $treatments = $query->get(); // AJAX load
@@ -280,7 +296,9 @@ public function filter(Request $request)
 
     public function broadcastPromo(\Illuminate\Http\Request $request)
     {
-        $promoTreatments = Treatment::where('is_promo', 1)->get();
+        $promoTreatments = Treatment::whereHas('category', function($q) {
+            $q->where('name', 'Promo');
+        })->where('is_active', 1)->get();
         if ($promoTreatments->isEmpty()) {
             return back()->with('error', 'Tidak ada treatment yang sedang promo saat ini.');
         }
@@ -296,8 +314,8 @@ public function filter(Request $request)
 
         $promoDetails = "";
         foreach ($promoTreatments as $promo) {
-            $typeStr = ($promo->promo_type == 'percentage' || $promo->promo_type == 'percent') ? $promo->promo_value . '%' : 'Rp ' . number_format($promo->promo_value, 0, ',', '.');
-            $promoDetails .= "- *{$promo->name}* (Diskon {$typeStr})\n";
+            $minPrice = $promo->details->min('price');
+            $promoDetails .= "- *{$promo->name}* (Mulai Rp " . number_format($minPrice, 0, ',', '.') . ")\n";
         }
 
         $successCount = 0;

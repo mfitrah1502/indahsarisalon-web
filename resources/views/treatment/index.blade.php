@@ -126,8 +126,8 @@
                                 <tr class="bg-transparent shadow-none">
                                     <th class="text-muted small fw-bold px-3 py-2">LAYANAN</th>
                                     <th class="text-muted small fw-bold py-2">KATEGORI</th>
+                                    <th class="text-muted small fw-bold py-2">STATUS</th>
                                     <th class="text-muted small fw-bold py-2">HARGA MULAI</th>
-                                    <th class="text-muted small fw-bold py-2">PROMO</th>
                                     <th class="text-muted small fw-bold py-2 text-end px-3">AKSI</th>
                                 </tr>
                             </thead>
@@ -136,10 +136,6 @@
                                     <tr class="treatment-row" 
                                         data-name="{{ $treatment->name }}"
                                         data-category="{{ $treatment->category->name ?? '-' }}"
-                                        data-promo="{{ $treatment->is_promo ? ($treatment->promo_type == 'percentage' ? $treatment->promo_value.'%' : 'Rp '.number_format($treatment->promo_value)) : '-' }}"
-                                        data-is-promo="{{ $treatment->is_promo ? '1' : '0' }}"
-                                        data-promo-type="{{ $treatment->promo_type }}"
-                                        data-promo-value="{{ $treatment->promo_value }}"
                                         data-details='@json($treatment->details)'
                                         data-image="{{ $treatment->image }}">
                                         <td class="px-3">
@@ -161,20 +157,36 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <span class="category-badge">{{ $treatment->category->name ?? '-' }}</span>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="category-badge">{{ $treatment->category->name ?? '-' }}</span>
+                                                @if($treatment->category && $treatment->category->name == 'Promo')
+                                                    <span class="promo-tag shadow-sm animate__animated animate__pulse animate__infinite">
+                                                        <i class="ti ti-discount-2 me-1"></i>PROMO
+                                                    </span>
+                                                    @if($treatment->promo_start_date || $treatment->promo_end_date)
+                                                        <div class="mt-1 extra-small text-muted" style="font-size: 0.65rem;">
+                                                            <i class="ti ti-calendar-event me-1"></i>
+                                                            {{ $treatment->promo_start_date ? \Carbon\Carbon::parse($treatment->promo_start_date)->format('d/m') : '...' }}
+                                                            -
+                                                            {{ $treatment->promo_end_date ? \Carbon\Carbon::parse($treatment->promo_end_date)->format('d/m/y') : '...' }}
+                                                        </div>
+                                                    @endif
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if($treatment->is_active)
+                                                <span class="badge bg-light-success text-success border border-success border-opacity-10 px-3 rounded-pill">
+                                                    <i class="ti ti-circle-check me-1"></i> Aktif
+                                                </span>
+                                            @else
+                                                <span class="badge bg-light-danger text-danger border border-danger border-opacity-10 px-3 rounded-pill">
+                                                    <i class="ti ti-circle-x me-1"></i> Non-aktif
+                                                </span>
+                                            @endif
                                         </td>
                                         <td>
                                             <span class="fw-bold text-dark">Rp {{ number_format($treatment->details->min('price') ?? 0, 0, ',', '.') }}</span>
-                                        </td>
-                                        <td>
-                                            @if($treatment->is_promo)
-                                                <span class="promo-tag">
-                                                    <i class="ti ti-discount-2 me-1"></i>
-                                                    {{ $treatment->promo_type == 'percentage' ? $treatment->promo_value.'%' : 'Rp '.number_format($treatment->promo_value) }}
-                                                </span>
-                                            @else
-                                                <span class="text-muted small">-</span>
-                                            @endif
                                         </td>
                                         <td class="text-end px-3">
                                             <div class="d-flex justify-content-end gap-2">
@@ -309,9 +321,9 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
 
-                            <div class="promo-info mb-4" id="popupPromoWrapper">
+                            <div class="promo-info mb-4" id="popupPromoWrapper" style="display: none;">
                                 <span class="promo-tag">
-                                    <i class="ti ti-discount-2 me-1"></i> Promo: <span id="popupPromo"></span>
+                                    <i class="ti ti-discount-2 me-1"></i> PROMO SPESIAL
                                 </span>
                             </div>
 
@@ -371,37 +383,14 @@
             $('#popupName').text(row.data('name'));
             $('#popupCategory').text(row.data('category'));
             
-            if(row.data('promo') && row.data('promo') !== '-') {
-                $('#popupPromo').text(row.data('promo'));
-                $('#popupPromoWrapper').show();
-            } else {
-                $('#popupPromoWrapper').hide();
-            }
-
-            let baseUrl = "https://{{ env('SUPABASE_PROJECT_REF') }}.supabase.co/storage/v1/object/public/{{ env('SUPABASE_BUCKET') }}/";
-            $('#popupImage').attr('src', image ? baseUrl + image : "{{ asset('assets/images/no-image.jpg') }}");
-
-            let isPromo = row.data('is-promo') == '1';
-            let pType = row.data('promo-type');
-            let pVal = parseFloat(row.data('promo-value') || 0);
-
+            let isPromo = row.data('category') == 'Promo';
             let html = '';
             details.forEach(function (d) {
                 let currentPrice = d.price;
                 let priceHtml = `<span class="fw-bold text-primary">Rp ${new Intl.NumberFormat('id-ID').format(currentPrice)}</span>`;
 
                 if (isPromo) {
-                    let discounted = currentPrice;
-                    if (pType === 'percentage' || pType === 'percent') discounted = currentPrice - (currentPrice * pVal / 100);
-                    else discounted = currentPrice - pVal;
-                    
-                    discounted = Math.max(0, discounted);
-                    priceHtml = `
-                        <div>
-                            <span class="text-muted text-decoration-line-through small me-2">Rp ${new Intl.NumberFormat('id-ID').format(currentPrice)}</span>
-                            <span class="fw-bold text-primary">Rp ${new Intl.NumberFormat('id-ID').format(discounted)}</span>
-                        </div>
-                    `;
+                    $('#popupPromoWrapper').show();
                 }
 
                 html += `

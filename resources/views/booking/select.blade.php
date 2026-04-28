@@ -235,6 +235,7 @@
                                                     data-is-promo="{{ $treatment->is_promo ? '1' : '0' }}"
                                                     data-promo-type="{{ $treatment->promo_type }}"
                                                     data-promo-value="{{ $treatment->promo_value }}"
+                                                    data-is-coloring="{{ (stripos($treatment->category->name ?? '', 'Coloring') !== false) ? '1' : '0' }}"
                                                     data-duration="{{ $d->duration }}" onchange="togglePrimaryDetail(this)">
                                                 <label class="form-check-label p-2 w-100 border rounded cursor-pointer h-100"
                                                     for="detail_{{ $d->id }}">
@@ -312,8 +313,8 @@
 
                         <form id="bookingForm">
                             <div class="row">
-                                {{-- Jika login sebagai Admin atau Karyawan, tampilkan input Nama Pelanggan --}}
-                                @if($isStaff)
+                                {{-- Hanya muncul jika login sebagai Admin atau Karyawan --}}
+                                @if(in_array(strtolower(Auth::user()->role), ['admin', 'karyawan']))
                                     <div class="col-md-12 mb-4">
                                         <div class="p-4 rounded-4 border bg-white shadow-sm">
                                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -591,6 +592,7 @@
                                                             data-is-promo="{{ $item->is_promo ? '1' : '0' }}"
                                                             data-promo-type="{{ $item->promo_type }}"
                                                             data-promo-value="{{ $item->promo_value }}"
+                                                            data-is-coloring="{{ (stripos($item->category->name ?? '', 'Coloring') !== false) ? '1' : '0' }}"
                                                             data-duration="{{ $d->duration }}">
                                                             Pilih
                                                         </button>
@@ -739,6 +741,7 @@
         // Initialize variables
         const isStaff = @json($isStaff);
         const customers = @json($customers);
+        let hasColoringLoyalty = {{ Auth::user()->has_coloring_loyalty ? 'true' : 'false' }};
 
         // Logic for Customer Selection Modal (Staff Only)
         if (isStaff) {
@@ -767,6 +770,13 @@
                 emailInput.value = email || '';
                 userIdInput.value = id;
                 if (memberBadge) memberBadge.style.display = 'block';
+
+                // Update Loyalty Status dynamically for Staff booking
+                const selectedCustomer = customers.find(c => c.id == id);
+                if (selectedCustomer) {
+                    hasColoringLoyalty = selectedCustomer.has_coloring_loyalty;
+                    renderSelectedTreatments(); // Recalculate prices
+                }
                 
                 // Close modal safely
                 const modalEl = document.getElementById('modalCustomerList');
@@ -797,6 +807,10 @@
                 emailInput.value = '';
                 userIdInput.value = '';
                 if (memberBadge) memberBadge.style.display = 'none';
+
+                // Reset to logged-in user loyalty status
+                hasColoringLoyalty = {{ Auth::user()->has_coloring_loyalty ? 'true' : 'false' }};
+                renderSelectedTreatments();
             };
         }
 
@@ -848,24 +862,24 @@
             // 2. Generate Time Slots
             function updateTimeSlots() {
                 const selectedDate = dateInput.value;
-                const today = new Date().toISOString().split('T')[0];
-                const currentTime = new Date();
+                const now = new Date();
+                
+                // Perbandingan tanggal lokal yang lebih akurat
+                const selectedDateObj = new Date(selectedDate);
+                const isToday = now.toDateString() === selectedDateObj.toDateString();
                 
                 timeSelect.innerHTML = '<option value="">-- Pilih Jam --</option>';
                 
-                let startH = 9;
-                let startM = 0;
-
                 for (let h = 9; h <= 18; h++) {
                     for (let m = 0; m < 60; m += 15) {
-                        // Max is 18:00
+                        // Max jam operasional adalah 18:00
                         if (h === 18 && m > 0) break;
 
                         const timeVal = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
                         
-                        // If today, only show future slots
-                        if (selectedDate === today) {
-                            if (h < currentTime.getHours() || (h === currentTime.getHours() && m <= currentTime.getMinutes())) {
+                        // Jika tanggal yang dipilih adalah hari ini, sembunyikan jam yang sudah lewat
+                        if (isToday) {
+                            if (h < now.getHours() || (h === now.getHours() && m <= now.getMinutes())) {
                                 continue;
                             }
                         }
@@ -876,9 +890,12 @@
                         timeSelect.appendChild(option);
                     }
                 }
+                
+                // Pastikan select tidak disabled
+                timeSelect.disabled = false;
             }
 
-            // Removed redundant dateInput.addEventListener('change', updateTimeSlots);
+            // Jalankan pertama kali
             updateTimeSlots();
         }
         initTimeSelection();
@@ -905,7 +922,8 @@
                         isPrimary: true,
                         isPromo: {{ $treatment->is_promo ? 'true' : 'false' }},
                         promoType: {!! json_encode($treatment->promo_type) !!},
-                        promoValue: {{ (int)$treatment->promo_value }}
+                        promoValue: {{ (int)$treatment->promo_value }},
+                        isColoring: {{ (stripos($treatment->category->name ?? '', 'Coloring') !== false) ? 'true' : 'false' }}
                     },
                 @endforeach
             @endif
@@ -947,7 +965,8 @@
                         isPrimary: true,
                         isPromo: checkbox.getAttribute('data-is-promo') === '1',
                         promoType: checkbox.getAttribute('data-promo-type'),
-                        promoValue: parseInt(checkbox.getAttribute('data-promo-value') || 0)
+                        promoValue: parseInt(checkbox.getAttribute('data-promo-value') || 0),
+                        isColoring: checkbox.getAttribute('data-is-coloring') === '1'
                     });
                 }
             } else {
@@ -1158,7 +1177,7 @@
                 else if (d.stylistKategori === 'junior') finalPrice = d.priceJunior;
             }
 
-            // Apply Promo
+            // Apply Promo (Manual/Bundling)
             if (d.isPromo) {
                 if (d.promoType === 'percentage' || d.promoType === 'percent') {
                     finalPrice = finalPrice - (finalPrice * d.promoValue / 100);
@@ -1166,6 +1185,12 @@
                     finalPrice = finalPrice - d.promoValue;
                 }
             }
+
+            // Apply Coloring Loyalty (35%)
+            if (hasColoringLoyalty && d.isColoring) {
+                finalPrice = finalPrice - (finalPrice * 35 / 100);
+            }
+
             return Math.max(0, finalPrice);
         }
 
@@ -1234,7 +1259,8 @@
                     isPrimary: false,
                     isPromo: this.getAttribute('data-is-promo') === '1',
                     promoType: this.getAttribute('data-promo-type'),
-                    promoValue: parseInt(this.getAttribute('data-promo-value') || 0)
+                    promoValue: parseInt(this.getAttribute('data-promo-value') || 0),
+                    isColoring: this.getAttribute('data-is-coloring') === '1'
                 });
 
                 renderSelectedTreatments();
@@ -1338,10 +1364,15 @@
                         sNameText = `<div class="extra-small text-muted">Stylist: ${sName}</div>`;
                     }
 
+                    let discountBadge = '';
+                    if (hasColoringLoyalty && detail.isColoring) {
+                        discountBadge = '<span class="badge bg-soft-info text-info extra-small ms-1">Loyalty 35%</span>';
+                    }
+
                     summaryHtml += `
                             <div class="list-group-item px-0 py-1 d-flex justify-content-between align-items-center border-0 border-bottom">
                                 <div>
-                                    <div class="small fw-bold">${detail.parentName} - ${detail.name} ${detail.customPrice !== undefined ? '<span class="badge bg-soft-warning text-warning extra-small ms-1">Custom Price</span>' : ''}</div>
+                                    <div class="small fw-bold">${detail.parentName} - ${detail.name} ${detail.customPrice !== undefined ? '<span class="badge bg-soft-warning text-warning extra-small ms-1">Custom Price</span>' : ''} ${discountBadge}</div>
                                     ${sNameText}
                                 </div>
                                 <span class="fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(currentPrice)}</span>

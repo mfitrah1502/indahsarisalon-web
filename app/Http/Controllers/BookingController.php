@@ -61,11 +61,17 @@ class BookingController extends Controller
         $allTreatments = Treatment::with(['details', 'category'])->get();
         $categories = Category::all();
         
-        // Ambil data staff untuk UI
-        $isStaff = in_array(strtolower(Auth::user()->role), ['admin', 'karyawan']) || Auth::user()->type === 'karyawan';
+        // Ambil data staff untuk UI (Hanya Admin dan Karyawan)
+        $isStaff = in_array(strtolower(Auth::user()->role ?? ''), ['admin', 'karyawan']);
         $customers = [];
         if ($isStaff) {
-            $customers = User::where('role', 'pelanggan')->orderBy('name', 'asc')->get(['id', 'name', 'email', 'phone']);
+            $customers = User::where('role', 'pelanggan')
+                ->orderBy('name', 'asc')
+                ->get(['id', 'name', 'email', 'phone'])
+                ->map(function($user) {
+                    $user->has_coloring_loyalty = $user->has_coloring_loyalty; // Trigger accessor
+                    return $user;
+                });
         }
 
         // Ambil tanggal libur
@@ -163,6 +169,24 @@ class BookingController extends Controller
         $total_price = 0;
         $booking_details_data = [];
         $customPrices = $request->custom_prices ?? [];
+        
+        // Robust Staff Detection
+        $authUser = Auth::user();
+        $isStaff = false;
+        if ($authUser) {
+            $role = strtolower(trim($authUser->role ?? ''));
+            $type = strtolower(trim($authUser->type ?? ''));
+            if ($role === 'admin' || $role === 'karyawan' || $type === 'karyawan' || $authUser->id === 1) {
+                $isStaff = true;
+            }
+        }
+
+        $customer = null;
+        if ($request->selected_user_id) {
+            $customer = User::find($request->selected_user_id);
+        } elseif (!$isStaff && Auth::check()) {
+            $customer = $authUser;
+        }
 
         foreach ($detailIds as $index => $dId) {
             $detail = TreatmentDetail::findOrFail($dId);
@@ -180,18 +204,40 @@ class BookingController extends Controller
                 }
             }
 
-            // 2. Terapkan Potongan Promo (jika treatment induk sedang promo)
-            $parentTreatment = $detail->treatment;
-            if ($parentTreatment && $parentTreatment->is_promo) {
-                if ($parentTreatment->promo_type === 'percentage' || $parentTreatment->promo_type === 'percent') {
-                    $discount = ($price * $parentTreatment->promo_value) / 100;
-                    $price = $price - $discount;
-                } elseif ($parentTreatment->promo_type === 'fixed') {
-                    $price = $price - $parentTreatment->promo_value;
+            // 2. LOGIKA DISKON OTOMATIS (MEMBERSHIP & LOYALTY)
+            $bestDiscount = 0;
+            if ($customer) {
+                // Diskon Loyalitas Coloring (35%)
+                $isColoring = false;
+                if ($detail->treatment && $detail->treatment->category) {
+                    if (stripos($detail->treatment->category->name, 'Coloring') !== false) {
+                        $isColoring = true;
+                    }
+                }
+
+                if ($isColoring && $customer->has_coloring_loyalty) {
+                    $bestDiscount = 35;
                 }
             }
 
-            // 3. Gunakan harga kustom jika disediakan oleh staff (timpa promo)
+            // 3. Terapkan Potongan Promo (Legacy Logic - Jika masih ada)
+            $parentTreatment = $detail->treatment;
+            if ($parentTreatment && $parentTreatment->is_promo) {
+                // Jika ada promo manual, kita bisa bandingkan mana yang lebih besar
+                $promoVal = 0;
+                if ($parentTreatment->promo_type === 'percentage' || $parentTreatment->promo_type === 'percent') {
+                    $promoVal = $parentTreatment->promo_value;
+                }
+                if ($promoVal > $bestDiscount) $bestDiscount = $promoVal;
+            }
+
+            // Eksekusi Diskon Terbaik
+            if ($bestDiscount > 0) {
+                $discountAmount = ($price * $bestDiscount) / 100;
+                $price = $price - $discountAmount;
+            }
+
+            // 4. Gunakan harga kustom jika disediakan oleh staff (timpa semua diskon)
             if (isset($customPrices[$index]) && $customPrices[$index] !== '') {
                 $price = (int)$customPrices[$index];
             }
@@ -199,29 +245,15 @@ class BookingController extends Controller
             $booking_details_data[] = [
                 'treatment_detail_id' => $detail->id,
                 'stylist_id' => $sId,
-                'price' => max(0, $price), // Harga tidak boleh negatif
+                'price' => max(0, $price),
                 'parent_treatment_id' => $detail->treatment_id
             ];
             $total_price += max(0, $price);
         }
 
-        // Robust Staff Detection with Logging
-        $authId = Auth::id();
-        $authUser = $authId ? \App\Models\User::find($authId) : null;
-        $isStaff = false;
-        
-        if ($authUser) {
-            $role = strtolower(trim($authUser->role));
-            $type = strtolower(trim($authUser->type));
-            // Sangat inklusif: admin, karyawan, atau ID 1 (Primary Admin)
-            if ($role === 'admin' || $role === 'karyawan' || $type === 'karyawan' || $authUser->id === 1) {
-                $isStaff = true;
-            }
-        }
-
         Log::info('Booking Attempt', [
             'booking_id_potential' => 'next',
-            'auth_id' => $authId,
+            'auth_id' => Auth::id(),
             'role' => $authUser->role ?? 'N/A',
             'type' => $authUser->type ?? 'N/A',
             'is_staff_detected' => $isStaff,

@@ -23,9 +23,6 @@ class PageController extends Controller
             $q->where('name', 'Promo');
         })->where('is_active', true)
           ->where(function($q) use ($today) {
-              $q->whereNull('promo_start_date')->orWhere('promo_start_date', '<=', $today);
-          })
-          ->where(function($q) use ($today) {
               $q->whereNull('promo_end_date')->orWhere('promo_end_date', '>=', $today);
           })
           ->with('details')->get();
@@ -120,14 +117,8 @@ class PageController extends Controller
                                 ->latest()
                                 ->first();
 
-        $categories = \App\Models\Category::where('name', '!=', 'Promo')->with(['treatments' => function($q) use ($today) {
-            $q->where('is_active', true)
-              ->where(function($sub) use ($today) {
-                  $sub->whereNull('promo_start_date')->orWhere('promo_start_date', '<=', $today);
-              })
-              ->where(function($sub) use ($today) {
-                  $sub->whereNull('promo_end_date')->orWhere('promo_end_date', '>=', $today);
-              });
+        $categories = \App\Models\Category::where('name', '!=', 'Promo')->with(['treatments' => function($q) {
+            $q->where('is_active', true);
         }])->get();
 
         return view('dashboard.homepage-user', compact('latestBooking', 'categories', 'promoTreatments'));

@@ -97,6 +97,16 @@
                     </div>
                 </p>
                 <div class="mt-auto">
+                    @if($treatment->is_promo && ($treatment->promo_start_date || $treatment->promo_end_date))
+                        <div class="mb-2 p-2 bg-light-danger rounded-3 text-center">
+                            <small class="text-danger fw-bold d-block" style="font-size: 0.7rem;">
+                                <i class="ti ti-calendar-event me-1"></i>Valid: 
+                                {{ $treatment->promo_start_date ? \Carbon\Carbon::parse($treatment->promo_start_date)->format('d/m') : '' }}
+                                - 
+                                {{ $treatment->promo_end_date ? \Carbon\Carbon::parse($treatment->promo_end_date)->format('d/m/y') : '' }}
+                            </small>
+                        </div>
+                    @endif
                     <a href="{{ route('booking.select', $treatment->id) }}" class="btn btn-primary w-100 rounded-pill">
                         Pilih Treatment <i class="ti ti-chevron-right ms-1"></i>
                     </a>

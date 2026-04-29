@@ -320,7 +320,7 @@ public function filter(Request $request)
 
         $successCount = 0;
         $supabaseUrl = env('SUPABASE_URL');
-        $supabaseBucket = env('SUPABASE_BUCKET');
+        $supabaseBucket = env('SUPABASE_PROMO_BUCKET', env('SUPABASE_BUCKET'));
         $supabaseKey = env('SUPABASE_SERVICE_KEY');
 
         // Upload custom promo images if provided
@@ -330,11 +330,12 @@ public function filter(Request $request)
                 $filename = 'promo_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
                 $fileContents = file_get_contents($file->getRealPath());
 
+                $mimeType = $file->getMimeType();
                 $response = \Illuminate\Support\Facades\Http::withHeaders([
                     'Authorization' => 'Bearer ' . $supabaseKey,
                     'apikey' => $supabaseKey,
-                    'Content-Type' => 'application/octet-stream',
-                ])->withBody($fileContents, 'application/octet-stream')
+                    'Content-Type' => $mimeType,
+                ])->withBody($fileContents, $mimeType)
                 ->post($supabaseUrl . '/storage/v1/object/' . $supabaseBucket . '/' . $filename);
 
                 if ($response->successful()) {
@@ -350,36 +351,23 @@ public function filter(Request $request)
             $message = "Halo *{$customer->name}*, ada promo spesial di *Indah Sari Salon*!\n\n";
             $message .= "Berikut treatment yang sedang promo hari ini:\n\n";
             $message .= $promoDetails;
-            $message .= "\nBooking sekarang sebelum kehabisan slot: " . route('dashboard') . "\n\nSampai jumpa di salon!";
+            $message .= "\nBooking sekarang sebelum kehabisan slot!\n\nSampai jumpa di salon!";
 
-            // Jika admin mengunggah gambar promo khusus
+            // Ambil gambar untuk dikirim (Gunakan URL langsung agar valid sebagai link http)
+            $imageToSend = null;
+
             if (count($uploadedUrls) > 0) {
-                // Kirim pesan utama dengan gambar pertama
-                if (\App\Services\WhatsAppService::sendMessage($customer->phone, $message, $uploadedUrls[0])) {
-                    $successCount++;
-                    // Kirim gambar sisa jika ada
-                    for ($i = 1; $i < count($uploadedUrls); $i++) {
-                        \App\Services\WhatsAppService::sendMessage($customer->phone, "", $uploadedUrls[$i]);
-                    }
-                }
+                $imageToSend = $uploadedUrls[0];
             } else {
-                // Fallback: Kirim dengan gambar treatment bawaan
                 $firstPromo = $promoTreatments->first();
-                $firstImageUrl = $firstPromo->image 
-                    ? "{$supabaseUrl}/storage/v1/object/public/{$supabaseBucket}/{$firstPromo->image}"
-                    : null;
-
-                if (\App\Services\WhatsAppService::sendMessage($customer->phone, $message, $firstImageUrl)) {
-                    $successCount++;
-                    if ($promoTreatments->count() > 1) {
-                        foreach ($promoTreatments->skip(1) as $promo) {
-                            if ($promo->image) {
-                                $imageUrl = "{$supabaseUrl}/storage/v1/object/public/{$supabaseBucket}/{$promo->image}";
-                                \App\Services\WhatsAppService::sendMessage($customer->phone, "Treatment: *{$promo->name}*", $imageUrl);
-                            }
-                        }
-                    }
+                if ($firstPromo && $firstPromo->image) {
+                    $imageToSend = "{$supabaseUrl}/storage/v1/object/public/{$supabaseBucket}/{$firstPromo->image}";
                 }
+            }
+
+            // Kirim Pesan via WhatsAppService (Format JSON sudah diatur di sana)
+            if (\App\Services\WhatsAppService::sendMessage($customer->phone, $message, $imageToSend)) {
+                $successCount++;
             }
         }
 

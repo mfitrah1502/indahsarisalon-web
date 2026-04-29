@@ -28,7 +28,7 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         $categories = Category::all();
-        $query = Treatment::with(['details','category']);
+        $query = Treatment::with(['details','category'])->where('is_active', true);
 
         if ($request->filled('category')) {
             $query->where('category_id', $request->category);
@@ -38,7 +38,12 @@ class BookingController extends Controller
             $query->where('name', 'like', '%'.$request->search.'%');
         }
 
-        $treatments = $query->orderBy('is_promo', 'desc')->orderBy('name', 'asc')->get();
+        $treatments = $query->select('treatments.*')
+            ->join('categories', 'treatments.category_id', '=', 'categories.id')
+            ->orderByRaw("CASE WHEN categories.name = 'Promo' THEN 0 ELSE 1 END")
+            ->orderBy('is_promo', 'desc')
+            ->orderBy('name', 'asc')
+            ->get();
 
         // Cek jam operasional (09:00 - 18:00)
         $now = Carbon::now();
@@ -69,8 +74,7 @@ class BookingController extends Controller
                 ->orderBy('name', 'asc')
                 ->get(['id', 'name', 'email', 'phone'])
                 ->map(function($user) {
-                    $user->has_coloring_loyalty = $user->has_coloring_loyalty; // Trigger accessor
-                    return $user;
+                    return $user->append('has_coloring_loyalty');
                 });
         }
 
@@ -220,15 +224,26 @@ class BookingController extends Controller
                 }
             }
 
-            // 3. Terapkan Potongan Promo (Legacy Logic - Jika masih ada)
+            // 3. Terapkan Potongan Promo (Date-Aware)
             $parentTreatment = $detail->treatment;
             if ($parentTreatment && $parentTreatment->is_promo) {
-                // Jika ada promo manual, kita bisa bandingkan mana yang lebih besar
-                $promoVal = 0;
-                if ($parentTreatment->promo_type === 'percentage' || $parentTreatment->promo_type === 'percent') {
-                    $promoVal = $parentTreatment->promo_value;
+                $resDate = Carbon::parse($request->reservation_date)->toDateString();
+                $isWithinPromo = true;
+
+                if ($parentTreatment->promo_start_date && $resDate < $parentTreatment->promo_start_date) {
+                    $isWithinPromo = false;
                 }
-                if ($promoVal > $bestDiscount) $bestDiscount = $promoVal;
+                if ($parentTreatment->promo_end_date && $resDate > $parentTreatment->promo_end_date) {
+                    $isWithinPromo = false;
+                }
+
+                if ($isWithinPromo) {
+                    $promoVal = 0;
+                    if ($parentTreatment->promo_type === 'percentage' || $parentTreatment->promo_type === 'percent') {
+                        $promoVal = $parentTreatment->promo_value;
+                    }
+                    if ($promoVal > $bestDiscount) $bestDiscount = $promoVal;
+                }
             }
 
             // Eksekusi Diskon Terbaik

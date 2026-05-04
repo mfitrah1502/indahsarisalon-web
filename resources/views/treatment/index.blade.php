@@ -127,7 +127,7 @@
                                     <th class="text-muted small fw-bold px-3 py-2">LAYANAN</th>
                                     <th class="text-muted small fw-bold py-2">KATEGORI</th>
                                     <th class="text-muted small fw-bold py-2">STATUS</th>
-                                    <th class="text-muted small fw-bold py-2">HARGA MULAI</th>
+                                    <th class="text-muted small fw-bold py-2">HARGA</th>
                                     <th class="text-muted small fw-bold py-2 text-end px-3">AKSI</th>
                                 </tr>
                             </thead>
@@ -186,7 +186,17 @@
                                             @endif
                                         </td>
                                         <td>
-                                            <span class="fw-bold text-dark">Rp {{ number_format($treatment->details->min('price') ?? 0, 0, ',', '.') }}</span>
+                                            <span class="fw-bold text-dark">
+                                                @php
+                                                    $minPrice = $treatment->details->min('price') ?? 0;
+                                                    $maxPrice = $treatment->details->max('price') ?? 0;
+                                                @endphp
+                                                @if($minPrice != $maxPrice)
+                                                    Rp {{ number_format($minPrice, 0, ',', '.') }} - Rp {{ number_format($maxPrice, 0, ',', '.') }}
+                                                @else
+                                                    Rp {{ number_format($minPrice, 0, ',', '.') }}
+                                                @endif
+                                            </span>
                                         </td>
                                         <td class="text-end px-3">
                                             <div class="d-flex justify-content-end gap-2">

@@ -1,16 +1,8 @@
 @extends('layout.dashboard')
 
 @section('title', 'Booking Appointment')
-<link rel="icon" href="{{ asset('assets/images/indahsarisalonimg.jpg') }}" type="image/x-icon" />
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
-    id="main-font-link" />
-<link rel="stylesheet" href="{{ asset('assets/fonts/phosphor/duotone/style.css') }}" />
-<link rel="stylesheet" href="{{ asset('assets/fonts/tabler-icons.min.css') }}" />
-<link rel="stylesheet" href="{{ asset('assets/fonts/feather.css') }}" />
-<link rel="stylesheet" href="{{ asset('assets/fonts/fontawesome.css') }}" />
-<link rel="stylesheet" href="{{ asset('assets/fonts/material.css') }}" />
-<link rel="stylesheet" href="{{ asset('assets/css/style.css') }}" id="main-style-link" />
-<link rel="stylesheet" href="{{ asset('assets/css/style-preset.css') }}" />
+
+@push('styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
     /* Styling Flatpickr agar senada dengan UI Pink */
@@ -116,9 +108,7 @@
         font-size: 0.6rem;
         display: block;
     }
-</style>
 
-<style>
     .stepper-wrapper {
         display: flex;
         justify-content: space-between;
@@ -181,6 +171,8 @@
         cursor: pointer;
     }
 </style>
+@endpush
+
 @section('content')
     <div class="row">
         <div class="col-12">
@@ -251,20 +243,22 @@
                                                                 $isPromo = $treatment->is_promo;
                                                                 $promoType = $treatment->promo_type;
                                                                 $promoValue = $treatment->promo_value;
-                                                                
-                                                                $applyPromo = function($p) use ($isPromo, $promoType, $promoValue) {
-                                                                    if (!$isPromo) return $p;
-                                                                    if ($promoType === 'percentage' || $promoType === 'percent') return $p - ($p * $promoValue / 100);
+
+                                                                $applyPromo = function ($p) use ($isPromo, $promoType, $promoValue) {
+                                                                    if (!$isPromo)
+                                                                        return $p;
+                                                                    if ($promoType === 'percentage' || $promoType === 'percent')
+                                                                        return $p - ($p * $promoValue / 100);
                                                                     return $p - $promoValue;
                                                                 };
                                                             @endphp
 
                                                             @if($d->has_stylist_price)
                                                                 @php
-                                                                    $prices = array_filter([(int)$d->price_senior, (int)$d->price_junior]);
-                                                                    $minPrice = count($prices) > 0 ? min($prices) : (int)$d->price;
-                                                                    $maxPrice = count($prices) > 0 ? max($prices) : (int)$d->price;
-                                                                    
+                                                                    $prices = array_filter([(int) $d->price_senior, (int) $d->price_junior]);
+                                                                    $minPrice = count($prices) > 0 ? min($prices) : (int) $d->price;
+                                                                    $maxPrice = count($prices) > 0 ? max($prices) : (int) $d->price;
+
                                                                     $minPromo = $applyPromo($minPrice);
                                                                     $maxPromo = $applyPromo($maxPrice);
                                                                 @endphp
@@ -479,14 +473,7 @@
     </div>
 
     <!-- JS -->
-    <script src="{{ asset('assets/js/plugins/popper.min.js') }}"></script>
-    <script src="{{ asset('assets/js/plugins/simplebar.min.js') }}"></script>
-    <script src="{{ asset('assets/js/plugins/bootstrap.min.js') }}"></script>
-    <script src="{{ asset('assets/js/fonts/custom-font.js') }}"></script>
-    <script src="{{ asset('assets/js/script.js') }}"></script>
-    <script src="{{ asset('assets/js/theme.js') }}"></script>
-    <script src="{{ asset('assets/js/plugins/feather.min.js') }}"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 
     <!-- Modal Pilih Treatment -->
     <div class="modal fade" id="modalAddTreatment" tabindex="-1">
@@ -550,20 +537,22 @@
                                                                 $isItemPromo = $item->is_promo;
                                                                 $itemPromoType = $item->promo_type;
                                                                 $itemPromoValue = $item->promo_value;
-                                                                
-                                                                $applyItemPromo = function($p) use ($isItemPromo, $itemPromoType, $itemPromoValue) {
-                                                                    if (!$isItemPromo) return $p;
-                                                                    if ($itemPromoType === 'percentage' || $itemPromoType === 'percent') return $p - ($p * $itemPromoValue / 100);
+
+                                                                $applyItemPromo = function ($p) use ($isItemPromo, $itemPromoType, $itemPromoValue) {
+                                                                    if (!$isItemPromo)
+                                                                        return $p;
+                                                                    if ($itemPromoType === 'percentage' || $itemPromoType === 'percent')
+                                                                        return $p - ($p * $itemPromoValue / 100);
                                                                     return $p - $itemPromoValue;
                                                                 };
                                                             @endphp
 
                                                             @if($d->has_stylist_price)
                                                                 @php
-                                                                    $iPrices = array_filter([(int)$d->price_senior, (int)$d->price_junior]);
-                                                                    $iMin = count($iPrices) > 0 ? min($iPrices) : (int)$d->price;
-                                                                    $iMax = count($iPrices) > 0 ? max($iPrices) : (int)$d->price;
-                                                                    
+                                                                    $iPrices = array_filter([(int) $d->price_senior, (int) $d->price_junior]);
+                                                                    $iMin = count($iPrices) > 0 ? min($iPrices) : (int) $d->price;
+                                                                    $iMax = count($iPrices) > 0 ? max($iPrices) : (int) $d->price;
+
                                                                     $iMinPromo = $applyItemPromo($iMin);
                                                                     $iMaxPromo = $applyItemPromo($iMax);
                                                                 @endphp
@@ -611,60 +600,60 @@
     </div>
 
     @if($isStaff)
-    <!-- MODAL DAFTAR PELANGGAN -->
-    <div class="modal fade" id="modalCustomerList" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title text-white fw-bold"><i class="ti ti-users me-2"></i>Daftar Pelanggan Terdaftar</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-0">
-                    <div class="p-3 bg-light border-bottom">
-                        <div class="input-group shadow-sm">
-                            <span class="input-group-text bg-white border-end-0"><i class="ti ti-search text-muted"></i></span>
-                            <input type="text" id="customerSearchInput" class="form-control border-start-0 ps-0" placeholder="Cari nama, email, atau no handphone...">
-                        </div>
+        <!-- MODAL DAFTAR PELANGGAN -->
+        <div class="modal fade" id="modalCustomerList" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title text-white fw-bold"><i class="ti ti-users me-2"></i>Daftar Pelanggan Terdaftar</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="ps-3">Nama Pelanggan</th>
-                                    <th>Kontak</th>
-                                    <th class="text-end pe-3">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="customerTableBody">
-                                @forelse($customers as $c)
-                                <tr class="customer-row" data-search="{{ strtolower($c->name . ' ' . $c->email . ' ' . $c->phone) }}">
-                                    <td class="ps-3">
-                                        <div class="fw-bold text-dark">{{ $c->name }}</div>
-                                        <div class="small text-muted">ID: #{{ $c->id }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="small"><i class="ti ti-mail me-1"></i>{{ $c->email ?? '-' }}</div>
-                                        <div class="small"><i class="ti ti-brand-whatsapp me-1"></i>{{ $c->phone ?? '-' }}</div>
-                                    </td>
-                                    <td class="text-end pe-3">
-                                        <button type="button" class="btn btn-primary btn-sm rounded-pill px-3" 
-                                            onclick="selectCustomerFromModal({{ $c->id }}, '{{ addslashes($c->name) }}', '{{ $c->phone }}', '{{ $c->email }}')">
-                                            Pilih
-                                        </button>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="3" class="text-center py-4 text-muted">Belum ada pelanggan terdaftar.</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+                    <div class="modal-body p-0">
+                        <div class="p-3 bg-light border-bottom">
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-white border-end-0"><i class="ti ti-search text-muted"></i></span>
+                                <input type="text" id="customerSearchInput" class="form-control border-start-0 ps-0" placeholder="Cari nama, email, atau no handphone...">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-3">Nama Pelanggan</th>
+                                        <th>Kontak</th>
+                                        <th class="text-end pe-3">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customerTableBody">
+                                    @forelse($customers as $c)
+                                        <tr class="customer-row" data-search="{{ strtolower($c->name . ' ' . $c->email . ' ' . $c->phone) }}">
+                                            <td class="ps-3">
+                                                <div class="fw-bold text-dark">{{ $c->name }}</div>
+                                                <div class="small text-muted">ID: #{{ $c->id }}</div>
+                                            </td>
+                                            <td>
+                                                <div class="small"><i class="ti ti-mail me-1"></i>{{ $c->email ?? '-' }}</div>
+                                                <div class="small"><i class="ti ti-brand-whatsapp me-1"></i>{{ $c->phone ?? '-' }}</div>
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <button type="button" class="btn btn-primary btn-sm rounded-pill px-3" 
+                                                    onclick="selectCustomerFromModal({{ $c->id }}, '{{ addslashes($c->name) }}', '{{ $c->phone }}', '{{ $c->email }}')">
+                                                    Pilih
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="text-center py-4 text-muted">Belum ada pelanggan terdaftar.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
     @endif
 
     <!-- MODAL KONFIRMASI AKHIR -->
@@ -712,9 +701,7 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
+     @push('scripts')
     <!-- Midtrans Snap JS -->
     <script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js"
         data-client-key="{{ config('services.midtrans.client_key') }}"></script>
@@ -727,7 +714,7 @@
         allStylists.forEach(s => {
             s.avatar_url = "{{ asset('assets/images/user/avatar-2.jpg') }}"; // Initial fallback
         });
-        
+
         // Re-map with actual calculated URLs from PHP to be safe
         const stylistAvatars = {
             @foreach($stylists as $s)
@@ -777,7 +764,7 @@
                     hasColoringLoyalty = selectedCustomer.has_coloring_loyalty;
                     renderSelectedTreatments(); // Recalculate prices
                 }
-                
+
                 // Close modal safely
                 const modalEl = document.getElementById('modalCustomerList');
                 if (modalEl) {
@@ -788,7 +775,7 @@
                         // Fallback if instance not found
                         $(modalEl).modal('hide');
                     }
-                    
+
                     // Force remove backdrop if it gets stuck (common BS5 issue)
                     setTimeout(() => {
                         if (document.querySelector('.modal-backdrop')) {
@@ -826,7 +813,7 @@
         function initTimeSelection() {
             const dateInput = document.getElementById('reservation_date');
             const timeSelect = document.getElementById('reservation_time');
-            
+
             // Tanggal Libur dari Backend
             const holidayDates = {!! json_encode($holidays) !!};
 
@@ -848,7 +835,7 @@
                 const now = new Date();
                 const hour = now.getHours();
                 const todayStr = now.toISOString().split('T')[0];
-                
+
                 if (hour >= 18 || holidayDates.includes(todayStr)) {
                     now.setDate(now.getDate() + 1);
                     while(holidayDates.includes(now.toISOString().split('T')[0])) {
@@ -863,20 +850,20 @@
             function updateTimeSlots() {
                 const selectedDate = dateInput.value;
                 const now = new Date();
-                
+
                 // Perbandingan tanggal lokal yang lebih akurat
                 const selectedDateObj = new Date(selectedDate);
                 const isToday = now.toDateString() === selectedDateObj.toDateString();
-                
+
                 timeSelect.innerHTML = '<option value="">-- Pilih Jam --</option>';
-                
+
                 for (let h = 9; h <= 18; h++) {
                     for (let m = 0; m < 60; m += 15) {
                         // Max jam operasional adalah 18:00
                         if (h === 18 && m > 0) break;
 
                         const timeVal = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                        
+
                         // Jika tanggal yang dipilih adalah hari ini, sembunyikan jam yang sudah lewat
                         if (isToday) {
                             if (h < now.getHours() || (h === now.getHours() && m <= now.getMinutes())) {
@@ -890,7 +877,7 @@
                         timeSelect.appendChild(option);
                     }
                 }
-                
+
                 // Pastikan select tidak disabled
                 timeSelect.disabled = false;
             }
@@ -914,15 +901,15 @@
                         id: {{ $d->id }},
                         name: {!! json_encode($d->name) !!},
                         parentName: {!! json_encode($treatment->name) !!},
-                        price: {{ (int)$d->price }},
-                        priceSenior: {{ (int)($d->price_senior ?: $d->price) }},
-                        priceJunior: {{ (int)($d->price_junior ?: $d->price) }},
+                        price: {{ (int) $d->price }},
+                        priceSenior: {{ (int) ($d->price_senior ?: $d->price) }},
+                        priceJunior: {{ (int) ($d->price_junior ?: $d->price) }},
                         hasStylistPrice: {{ $d->has_stylist_price ? 'true' : 'false' }},
-                        duration: {{ (int)$d->duration }},
+                        duration: {{ (int) $d->duration }},
                         isPrimary: true,
                         isPromo: {{ $treatment->is_promo ? 'true' : 'false' }},
                         promoType: {!! json_encode($treatment->promo_type) !!},
-                        promoValue: {{ (int)$treatment->promo_value }},
+                        promoValue: {{ (int) $treatment->promo_value }},
                         isColoring: {{ (stripos($treatment->category->name ?? '', 'Coloring') !== false) ? 'true' : 'false' }}
                     },
                 @endforeach
@@ -990,7 +977,7 @@
                 // Gunakan harga kustom jika ada, jika tidak gunakan harga kalkulasi standar
                 const basePrice = calculateDetailPrice(d);
                 const currentPrice = d.customPrice !== undefined ? d.customPrice : basePrice;
-                
+
                 total += currentPrice;
                 hiddenInputs += `<input type="hidden" name="treatment_detail_ids[]" value="${d.id}">`;
                 hiddenInputs += `<input type="hidden" name="stylist_ids[]" value="${d.stylistId || ''}">`;
@@ -1208,7 +1195,7 @@
 
         window.updateGlobalStylist = function (stylistId, element) {
             const kat = stylistId ? element.getAttribute('data-kategori') : null;
-            
+
             // UI Update for Global
             element.parentElement.querySelectorAll('.stylist-card-modern').forEach(c => c.classList.remove('active'));
             element.classList.add('active');
@@ -1353,7 +1340,7 @@
                 selectedDetails.forEach(detail => {
                     const basePrice = calculateDetailPrice(detail);
                     const currentPrice = detail.customPrice !== undefined ? detail.customPrice : basePrice;
-                    
+
                     let sNameText = '';
                     if (detail.hasStylistPrice) {
                         let sName = 'Belum dipilih';
@@ -1580,4 +1567,6 @@
         checkStylistAvailability();
         showStep(currentStep);
     </script>
+@endpush
+
 @endsection

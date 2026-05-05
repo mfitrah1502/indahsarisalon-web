@@ -238,7 +238,7 @@
                                                     </div>
                                                     <div class="d-flex justify-content-between">
                                                         <small class="text-muted extra-small">{{ $d->duration }} menit</small>
-                                                        <small class="fw-bold text-primary">
+                                                        <small class="fw-bold text-primary variant-price-container" data-detail-id="{{ $d->id }}">
                                                             @php
                                                                 $isPromo = $treatment->is_promo;
                                                                 $promoType = $treatment->promo_type;
@@ -272,20 +272,24 @@
                                                                     $minFinal = $applyDiscounts($minPrice);
                                                                     $maxFinal = $applyDiscounts($maxPrice);
                                                                 @endphp
-                                                                @if($showStrikethrough)
+                                                                <span class="strikethrough-part" style="{{ $showStrikethrough ? '' : 'display:none;' }}">
                                                                     <span class="text-muted text-decoration-line-through extra-small me-1">Rp {{ number_format($minPrice, 0) }}</span>
-                                                                @endif
-                                                                @if($minFinal != $maxFinal)
-                                                                    Rp {{ number_format(max(0, $minFinal), 0) }} - {{ number_format(max(0, $maxFinal), 0) }}
-                                                                @else
-                                                                    Rp {{ number_format(max(0, $minFinal), 0) }}
-                                                                @endif
+                                                                </span>
+                                                                <span class="final-price-part">
+                                                                    @if($minFinal != $maxFinal)
+                                                                        Rp {{ number_format(max(0, $minFinal), 0) }} - {{ number_format(max(0, $maxFinal), 0) }}
+                                                                    @else
+                                                                        Rp {{ number_format(max(0, $minFinal), 0) }}
+                                                                    @endif
+                                                                </span>
                                                             @else
                                                                 @php $priceFinal = $applyDiscounts($d->price); @endphp
-                                                                @if($showStrikethrough)
+                                                                <span class="strikethrough-part" style="{{ $showStrikethrough ? '' : 'display:none;' }}">
                                                                     <span class="text-muted text-decoration-line-through extra-small me-1">Rp {{ number_format($d->price, 0) }}</span>
-                                                                @endif
-                                                                Rp {{ number_format(max(0, $priceFinal), 0) }}
+                                                                </span>
+                                                                <span class="final-price-part">
+                                                                    Rp {{ number_format(max(0, $priceFinal), 0) }}
+                                                                </span>
                                                             @endif
                                                         </small>
                                                     </div>
@@ -772,7 +776,8 @@
                 const selectedCustomer = customers.find(c => c.id == id);
                 if (selectedCustomer) {
                     hasColoringLoyalty = selectedCustomer.has_coloring_loyalty;
-                    renderSelectedTreatments(); // Recalculate prices
+                    updateVariantLabels(); // Update selection grid labels
+                    renderSelectedTreatments(); // Recalculate prices for selected list
                 }
 
                 // Close modal safely
@@ -807,8 +812,70 @@
 
                 // Reset to logged-in user loyalty status
                 hasColoringLoyalty = {{ Auth::user()->has_coloring_loyalty ? 'true' : 'false' }};
+                updateVariantLabels();
                 renderSelectedTreatments();
             };
+        }
+
+        // New function to update prices in the variant grid
+        function updateVariantLabels() {
+            document.querySelectorAll('.variant-price-container').forEach(container => {
+                const detailId = container.getAttribute('data-detail-id');
+                const checkbox = document.getElementById('detail_' + detailId);
+                if (!checkbox) return;
+
+                // Extract data from checkbox
+                const data = {
+                    price: parseInt(checkbox.getAttribute('data-price')),
+                    priceSenior: parseInt(checkbox.getAttribute('data-price-senior') || checkbox.getAttribute('data-price')),
+                    priceJunior: parseInt(checkbox.getAttribute('data-price-junior') || checkbox.getAttribute('data-price')),
+                    hasStylistPrice: checkbox.getAttribute('data-has-stylist-price') === '1',
+                    isPromo: checkbox.getAttribute('data-is-promo') === '1',
+                    promoType: checkbox.getAttribute('data-promo-type'),
+                    promoValue: parseInt(checkbox.getAttribute('data-promo-value') || 0),
+                    isColoring: checkbox.getAttribute('data-is-coloring') === '1'
+                };
+
+                const showStrikethrough = data.isPromo || (hasColoringLoyalty && data.isColoring);
+                
+                // Update Strikethrough visibility
+                const strikethroughPart = container.querySelector('.strikethrough-part');
+                if (strikethroughPart) {
+                    strikethroughPart.style.display = showStrikethrough ? '' : 'none';
+                }
+
+                // Calculate final price (we use min price for display in ranges)
+                const applyLocalDiscounts = (p) => {
+                    let final = p;
+                    if (data.isPromo) {
+                        if (data.promoType === 'percentage' || data.promoType === 'percent')
+                            final = p - (p * data.promoValue / 100);
+                        else
+                            final = p - data.promoValue;
+                    }
+                    if (hasColoringLoyalty && data.isColoring) {
+                        final = final - (final * 35 / 100);
+                    }
+                    return Math.max(0, final);
+                };
+
+                const finalPricePart = container.querySelector('.final-price-part');
+                if (finalPricePart) {
+                    if (data.hasStylistPrice) {
+                        const minFinal = applyLocalDiscounts(data.priceJunior < data.priceSenior ? data.priceJunior : data.priceSenior);
+                        const maxFinal = applyLocalDiscounts(data.priceJunior > data.priceSenior ? data.priceJunior : data.priceSenior);
+                        
+                        if (minFinal !== maxFinal) {
+                            finalPricePart.innerText = `Rp ${new Intl.NumberFormat('id-ID').format(minFinal)} - ${new Intl.NumberFormat('id-ID').format(maxFinal)}`;
+                        } else {
+                            finalPricePart.innerText = `Rp ${new Intl.NumberFormat('id-ID').format(minFinal)}`;
+                        }
+                    } else {
+                        const final = applyLocalDiscounts(data.price);
+                        finalPricePart.innerText = `Rp ${new Intl.NumberFormat('id-ID').format(final)}`;
+                    }
+                }
+            });
         }
 
         window.updateCustomPrice = function(detailId, val) {

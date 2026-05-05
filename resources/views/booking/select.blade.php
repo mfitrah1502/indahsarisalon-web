@@ -243,13 +243,23 @@
                                                                 $isPromo = $treatment->is_promo;
                                                                 $promoType = $treatment->promo_type;
                                                                 $promoValue = $treatment->promo_value;
+                                                                $isColoring = (stripos($treatment->category->name ?? '', 'Coloring') !== false);
+                                                                $hasLoyalty = Auth::user()->has_coloring_loyalty;
+                                                                
+                                                                $showStrikethrough = $isPromo || ($isColoring && $hasLoyalty);
 
-                                                                $applyPromo = function ($p) use ($isPromo, $promoType, $promoValue) {
-                                                                    if (!$isPromo)
-                                                                        return $p;
-                                                                    if ($promoType === 'percentage' || $promoType === 'percent')
-                                                                        return $p - ($p * $promoValue / 100);
-                                                                    return $p - $promoValue;
+                                                                $applyDiscounts = function ($p) use ($isPromo, $promoType, $promoValue, $isColoring, $hasLoyalty) {
+                                                                    $final = $p;
+                                                                    if ($isPromo) {
+                                                                        if ($promoType === 'percentage' || $promoType === 'percent')
+                                                                            $final = $p - ($p * $promoValue / 100);
+                                                                        else
+                                                                            $final = $p - $promoValue;
+                                                                    }
+                                                                    if ($isColoring && $hasLoyalty) {
+                                                                        $final = $final - ($final * 35 / 100);
+                                                                    }
+                                                                    return $final;
                                                                 };
                                                             @endphp
 
@@ -259,23 +269,23 @@
                                                                     $minPrice = count($prices) > 0 ? min($prices) : (int) $d->price;
                                                                     $maxPrice = count($prices) > 0 ? max($prices) : (int) $d->price;
 
-                                                                    $minPromo = $applyPromo($minPrice);
-                                                                    $maxPromo = $applyPromo($maxPrice);
+                                                                    $minFinal = $applyDiscounts($minPrice);
+                                                                    $maxFinal = $applyDiscounts($maxPrice);
                                                                 @endphp
-                                                                @if($isPromo)
+                                                                @if($showStrikethrough)
                                                                     <span class="text-muted text-decoration-line-through extra-small me-1">Rp {{ number_format($minPrice, 0) }}</span>
                                                                 @endif
-                                                                @if($minPromo != $maxPromo)
-                                                                    Rp {{ number_format(max(0, $minPromo), 0) }} - {{ number_format(max(0, $maxPromo), 0) }}
+                                                                @if($minFinal != $maxFinal)
+                                                                    Rp {{ number_format(max(0, $minFinal), 0) }} - {{ number_format(max(0, $maxFinal), 0) }}
                                                                 @else
-                                                                    Rp {{ number_format(max(0, $minPromo), 0) }}
+                                                                    Rp {{ number_format(max(0, $minFinal), 0) }}
                                                                 @endif
                                                             @else
-                                                                @php $pricePromo = $applyPromo($d->price); @endphp
-                                                                @if($isPromo)
+                                                                @php $priceFinal = $applyDiscounts($d->price); @endphp
+                                                                @if($showStrikethrough)
                                                                     <span class="text-muted text-decoration-line-through extra-small me-1">Rp {{ number_format($d->price, 0) }}</span>
                                                                 @endif
-                                                                Rp {{ number_format(max(0, $pricePromo), 0) }}
+                                                                Rp {{ number_format(max(0, $priceFinal), 0) }}
                                                             @endif
                                                         </small>
                                                     </div>
@@ -998,7 +1008,10 @@
                                                    placeholder="Harga">
                                         </div>
                                     @else
-                                        <div class="text-primary small fw-semibold">Rp ${new Intl.NumberFormat('id-ID').format(currentPrice)}</div>
+                                        <div class="text-primary small fw-semibold">
+                                            ${(hasColoringLoyalty && d.isColoring) || d.isPromo ? `<span class="text-muted text-decoration-line-through me-1" style="font-size: 0.7rem;">Rp ${new Intl.NumberFormat('id-ID').format(getOriginalDetailPrice(d))}</span>` : ''}
+                                            Rp ${new Intl.NumberFormat('id-ID').format(currentPrice)}
+                                        </div>
                                     @endif
                                 </div>
                                 <div>
@@ -1157,13 +1170,18 @@
             renderSelectedTreatments();
         };
 
-        function calculateDetailPrice(d) {
-            let finalPrice = d.price;
+        function getOriginalDetailPrice(d) {
+            let originalPrice = d.price;
             if (d.hasStylistPrice && d.stylistKategori) {
-                if (d.stylistKategori === 'senior') finalPrice = d.priceSenior;
-                else if (d.stylistKategori === 'junior') finalPrice = d.priceJunior;
+                if (d.stylistKategori === 'senior') originalPrice = d.priceSenior;
+                else if (d.stylistKategori === 'junior') originalPrice = d.priceJunior;
             }
+            return originalPrice;
+        }
 
+        function calculateDetailPrice(d) {
+            let finalPrice = getOriginalDetailPrice(d);
+            
             // Apply Promo (Manual/Bundling)
             if (d.isPromo) {
                 if (d.promoType === 'percentage' || d.promoType === 'percent') {
@@ -1362,7 +1380,10 @@
                                     <div class="small fw-bold">${detail.parentName} - ${detail.name} ${detail.customPrice !== undefined ? '<span class="badge bg-soft-warning text-warning extra-small ms-1">Custom Price</span>' : ''} ${discountBadge}</div>
                                     ${sNameText}
                                 </div>
-                                <span class="fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(currentPrice)}</span>
+                                <div class="text-end">
+                                    ${((hasColoringLoyalty && detail.isColoring) || detail.isPromo) && detail.customPrice === undefined ? `<div class="text-muted text-decoration-line-through extra-small">Rp ${new Intl.NumberFormat('id-ID').format(getOriginalDetailPrice(detail))}</div>` : ''}
+                                    <span class="fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(currentPrice)}</span>
+                                </div>
                             </div>
                         `;
                 });

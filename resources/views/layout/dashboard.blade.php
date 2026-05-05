@@ -306,10 +306,9 @@
         <div class="pc-content">
             @yield('content')
         </div>
+        <!-- Footer -->
+        @include('partials.footer')
     </div>
-
-    <!-- Footer -->
-    @include('partials.footer')
 
     <!-- Required Js -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

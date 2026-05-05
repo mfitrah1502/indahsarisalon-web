@@ -61,7 +61,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return rtrim($baseUrl, '/') . '/storage/v1/object/public/avatars/' . $filename;
         }
 
-        return asset('assets/images/user/avatar-2.jpg');
+        return asset('assets/images/user/default-avatar.svg');
     }
 
     /**

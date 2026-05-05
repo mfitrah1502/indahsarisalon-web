@@ -17,30 +17,33 @@
         <!-- [Mobile Media Block end] -->
         <div class="ms-auto">
             <ul class="list-unstyled">
-                <!-- Theme Toggle Button -->
+                {{-- <!-- Theme Toggle Button -->
                 <li class="pc-h-item">
-                    <a href="#" class="pc-head-link head-link-primary ms-0" id="theme-toggle" title="Toggle Dark/Light Mode">
+                    <a href="#" class="pc-head-link head-link-primary ms-0" id="theme-toggle"
+                        title="Toggle Dark/Light Mode">
                         <i class="ti ti-moon fs-4" id="theme-icon"></i>
                     </a>
-                </li>
+                </li> --}}
 
                 <li class="dropdown pc-h-item header-user-profile">
-                    <button class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0 d-flex align-items-center border-0 bg-transparent" 
-                       id="profile-dropdown-btn"
-                       data-bs-toggle="dropdown" type="button" 
-                       aria-haspopup="false" aria-expanded="false" style="padding: 6px 15px; border-radius: 50px;">
-                        <img src="{{ Auth::user()->avatar_url }}"
-                            alt="avatar" class="user-avtar" style="width: 35px; height: 35px; object-fit: cover; border-radius: 50%;" />
+                    <button
+                        class="pc-head-link head-link-primary dropdown-toggle arrow-none me-0 d-flex align-items-center border-0 bg-transparent"
+                        id="profile-dropdown-btn" data-bs-toggle="dropdown" type="button" aria-haspopup="false"
+                        aria-expanded="false" style="padding: 6px 15px; border-radius: 50px;">
+                        <img src="{{ Auth::user()->avatar_url }}" alt="avatar" class="user-avtar"
+                            style="width: 35px; height: 35px; object-fit: cover; border-radius: 50%;" />
                         <span class="ms-2">
                             <i class="ti ti-settings fs-4"></i>
                         </span>
                     </button>
-                    <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown" id="profile-dropdown-menu">
+                    <div class="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown"
+                        id="profile-dropdown-menu">
                         <div class="dropdown-header">
                             <div class="d-flex align-items-center mb-3">
                                 <div class="flex-shrink-0">
-                                    <img src="{{ Auth::user()->avatar_url }}"
-                                        alt="user-image" class="user-avtar rounded-circle" style="width: 45px; height: 45px; object-fit: cover;" />
+                                    <img src="{{ Auth::user()->avatar_url }}" alt="user-image"
+                                        class="user-avtar rounded-circle"
+                                        style="width: 45px; height: 45px; object-fit: cover;" />
                                 </div>
                                 <div class="flex-grow-1 ms-3">
                                     @php
@@ -61,15 +64,18 @@
                                 </div>
                             </div>
                             <hr />
-                            <div class="profile-notification-scroll position-relative" style="max-height: calc(100vh - 280px)">
+                            <div class="profile-notification-scroll position-relative"
+                                style="max-height: calc(100vh - 280px)">
                                 <a href="{{ route('profile') }}" class="dropdown-item">
                                     <i class="ti ti-user"></i>
                                     <span>My Profile</span>
                                 </a>
-                                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                                <form id="logout-form" action="{{ route('logout') }}" method="POST"
+                                    style="display: none;">
                                     @csrf
                                 </form>
-                                <a href="#" class="dropdown-item" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <a href="#" class="dropdown-item"
+                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                                     <i class="ti ti-logout"></i>
                                     <span>Logout</span>
                                 </a>

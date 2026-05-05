@@ -29,12 +29,18 @@ class WhatsAppService
         try {
             $postData = [
                 'target' => $to,
-                'message' => $message ?: ' ', // Cegah pesan benar-benar kosong
+                'message' => $message ?: ' ',
             ];
 
             if ($url) {
-                $postData['url'] = $url;
+                // Gunakan parameter 'file' untuk link URL (Beberapa akun Fonnte butuh ini agar caption muncul)
+                $postData['file'] = $url;
             }
+
+            $postData['delay'] = '2';
+            $postData['countryCode'] = '62';
+
+            Log::info("Sending WhatsApp Form-Data to Fonnte: " . $to . ($url ? " with media URL" : " text only"));
 
             $curl = curl_init();
             curl_setopt_array($curl, [
@@ -42,14 +48,15 @@ class WhatsAppService
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_ENCODING => '',
                 CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 0,
+                CURLOPT_TIMEOUT => 60,
                 CURLOPT_FOLLOWLOCATION => true,
                 CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
                 CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => json_encode($postData), // Gunakan JSON Murni
+                CURLOPT_POSTFIELDS => http_build_query($postData), // Kembali ke Form-Data
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => false,
                 CURLOPT_HTTPHEADER => [
                     "Authorization: $apiKey",
-                    "Content-Type: application/json" // Beri tahu Fonnte bahwa ini JSON
                 ],
             ]);
 

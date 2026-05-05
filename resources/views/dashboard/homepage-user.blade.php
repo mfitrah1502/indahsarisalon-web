@@ -164,16 +164,30 @@
                                     <p class="text-muted small mb-3 text-truncate-2">
                                         Kesempatan terbaik untuk mencoba {{ $promo->name }} dengan harga spesial.
                                     </p>
-                                    <div class="mt-auto d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <small class="text-muted d-block">Harga Promo</small>
-                                            <span class="fw-bold text-danger h5 mb-0">Rp
-                                                {{ number_format($promo->details->min('price') ?? 0, 0, ',', '.') }}</span>
+                                    <div class="mt-auto">
+                                        <div class="mb-3">
+                                            <small class="text-muted d-block mb-1"><i class="ti ti-calendar-time me-1"></i>Periode Promo:</small>
+                                            @if($promo->promo_start_date || $promo->promo_end_date)
+                                                <span class="badge bg-light-danger text-danger border border-danger border-opacity-10 w-100 py-2">
+                                                    {{ $promo->promo_start_date ? \Carbon\Carbon::parse($promo->promo_start_date)->format('d M') : 'Mulai Sekarang' }} 
+                                                    - 
+                                                    {{ $promo->promo_end_date ? \Carbon\Carbon::parse($promo->promo_end_date)->format('d M Y') : 'Selesai' }}
+                                                </span>
+                                            @else
+                                                <span class="badge bg-light-secondary text-secondary w-100 py-2">Selama Persediaan Ada</span>
+                                            @endif
                                         </div>
-                                        <a href="{{ route('booking.select', $promo->id) }}"
-                                            class="btn btn-danger rounded-pill px-4 shadow-sm">
-                                            Ambil Promo
-                                        </a>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <small class="text-muted d-block">Harga Promo</small>
+                                                <span class="fw-bold text-danger h5 mb-0">Rp
+                                                    {{ number_format($promo->details->min('price') ?? 0, 0, ',', '.') }}</span>
+                                            </div>
+                                            <a href="{{ route('booking.select', $promo->id) }}"
+                                                class="btn btn-danger rounded-pill px-4 shadow-sm">
+                                                Ambil Promo
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

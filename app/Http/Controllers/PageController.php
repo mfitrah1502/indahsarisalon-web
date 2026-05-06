@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Absensi;
 use App\Models\Booking;
+use App\Models\Expense;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class PageController extends Controller
 {
@@ -45,18 +47,23 @@ class PageController extends Controller
         }
 
         if (strtolower($user->role) === 'admin') {
-            // Stats untuk admin dashboard
+            $grandTotalPemasukan = Booking::where('payment_status', 'paid')
+                                            ->where('status', '!=', 'dibatalkan')
+                                            ->sum('total_price');
+            $grandTotalPengeluaran = Expense::sum('amount');
+            
             $stats = [
                 'total_pelanggan' => \App\Models\User::where('role', 'pelanggan')->count(),
-                'total_pemasukan' => Booking::where('payment_status', 'paid')
-                                            ->where('status', '!=', 'dibatalkan')
-                                            ->sum('total_price'),
+                'total_pemasukan' => $grandTotalPemasukan,
+                'total_pengeluaran' => $grandTotalPengeluaran,
+                'profit' => $grandTotalPemasukan - $grandTotalPengeluaran,
                 'today_bookings' => Booking::whereDate('reservation_datetime', now()->toDateString())->count(),
             ];
 
             // --- LOGIKA STATISTIK KEUANGAN DINAMIS ---
             $filter = request('chart_filter', 'monthly'); // default monthly
-            $chartData = [];
+            $incomeData = [];
+            $expenseData = [];
             $chartLabels = [];
             $currentDate = now();
 
@@ -68,10 +75,13 @@ class PageController extends Controller
                                      ->where('payment_status', 'paid')
                                      ->where('status', '!=', 'dibatalkan')
                                      ->sum('total_price');
-                    $chartData[] = (int)$income;
+                    $expense = Expense::whereDate('expense_date', $date)->sum('amount');
+                    
+                    $incomeData[] = (int)$income;
+                    $expenseData[] = (int)$expense;
                     $chartLabels[] = now()->subDays($i)->format('d M');
                 }
-                $chartTitle = "Statistik Pemasukan 7 Hari Terakhir";
+                $chartTitle = "Statistik Keuangan 7 Hari Terakhir";
             } elseif ($filter === 'weekly') {
                 // 4 Minggu Terakhir
                 for ($i = 3; $i >= 0; $i--) {
@@ -81,10 +91,13 @@ class PageController extends Controller
                                      ->where('payment_status', 'paid')
                                      ->where('status', '!=', 'dibatalkan')
                                      ->sum('total_price');
-                    $chartData[] = (int)$income;
+                    $expense = Expense::whereBetween('expense_date', [$start, $end])->sum('amount');
+
+                    $incomeData[] = (int)$income;
+                    $expenseData[] = (int)$expense;
                     $chartLabels[] = "Minggu " . ($i === 0 ? "Ini" : now()->subWeeks($i)->format('W'));
                 }
-                $chartTitle = "Statistik Pemasukan 4 Minggu Terakhir";
+                $chartTitle = "Statistik Keuangan 4 Minggu Terakhir";
             } else {
                 // Bulanan (Tahun Berjalan)
                 $currentYear = now()->year;
@@ -94,21 +107,27 @@ class PageController extends Controller
                                      ->where('payment_status', 'paid')
                                      ->where('status', '!=', 'dibatalkan')
                                      ->sum('total_price');
-                    $chartData[] = (int)$income;
+                    $expense = Expense::whereYear('expense_date', $currentYear)
+                                     ->whereMonth('expense_date', $i)
+                                     ->sum('amount');
+
+                    $incomeData[] = (int)$income;
+                    $expenseData[] = (int)$expense;
                 }
                 $chartLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
-                $chartTitle = "Statistik Pemasukan Tahun " . $currentYear;
+                $chartTitle = "Statistik Keuangan Tahun " . $currentYear;
             }
 
             if (request()->ajax()) {
                 return response()->json([
-                    'data' => $chartData,
+                    'income' => $incomeData,
+                    'expense' => $expenseData,
                     'labels' => $chartLabels,
                     'title' => $chartTitle
                 ]);
             }
 
-            return view('dashboard.homepage', compact('stats', 'chartData', 'chartLabels', 'chartTitle', 'filter', 'promoTreatments'));
+            return view('dashboard.homepage', compact('stats', 'incomeData', 'expenseData', 'chartLabels', 'chartTitle', 'filter', 'promoTreatments'));
         }
 
         // Dashboard untuk Pelanggan (User)

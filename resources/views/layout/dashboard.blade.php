@@ -112,6 +112,16 @@
         }
 
     </style>
+    <style>
+        .pc-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        .pc-content {
+            flex: 1;
+        }
+    </style>
     @stack('styles')
     <style>
         /* === THE ULTIMATE DARK MODE HAMMER (ABSOLUTE PRIORITY) === */

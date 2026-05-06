@@ -158,11 +158,47 @@ class KeuanganController extends Controller
 
     public function exportProfitPdf()
     {
-        $grandTotalPemasukan = Booking::where('payment_status', 'paid')->where('status', '!=', 'dibatalkan')->sum('total_price');
-        $grandTotalPengeluaran = Expense::sum('amount');
+        $bookings = Booking::where('payment_status', 'paid')
+                           ->where('status', '!=', 'dibatalkan')
+                           ->orderBy('reservation_datetime', 'asc')
+                           ->get();
+
+        $expenses = Expense::orderBy('expense_date', 'asc')->get();
+
+        // Combine into a single history
+        $history = [];
+        foreach ($bookings as $b) {
+            $history[] = [
+                'date' => Carbon::parse($b->reservation_datetime)->format('d/m/Y'),
+                'raw_date' => $b->reservation_datetime,
+                'type' => 'Pemasukan',
+                'description' => 'Layanan Salon (' . ($b->treatment->name ?? 'Treatment') . ')',
+                'amount' => $b->total_price,
+                'class' => 'text-success'
+            ];
+        }
+        foreach ($expenses as $e) {
+            $history[] = [
+                'date' => Carbon::parse($e->expense_date)->format('d/m/Y'),
+                'raw_date' => $e->expense_date,
+                'type' => 'Pengeluaran',
+                'description' => $e->category . ($e->description ? ' - ' . $e->description : ''),
+                'amount' => $e->amount,
+                'class' => 'text-danger'
+            ];
+        }
+
+        // Sort history by raw_date ascending
+        usort($history, function($a, $b) {
+            return strtotime($a['raw_date']) - strtotime($b['raw_date']);
+        });
+
+        $grandTotalPemasukan = $bookings->sum('total_price');
+        $grandTotalPengeluaran = $expenses->sum('amount');
         $grandProfit = $grandTotalPemasukan - $grandTotalPengeluaran;
         
         $data = [
+            'history' => $history,
             'pemasukan' => $grandTotalPemasukan,
             'pengeluaran' => $grandTotalPengeluaran,
             'profit' => $grandProfit,

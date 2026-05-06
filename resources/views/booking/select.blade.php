@@ -220,6 +220,7 @@
                                                 <input class="form-check-input d-none primary-detail-checkbox"
                                                     type="{{ $treatment->allow_multi_select ? 'checkbox' : 'radio' }}"
                                                     name="primary_detail" id="detail_{{ $d->id }}" value="{{ $d->id }}"
+                                                    data-parent-id="{{ $treatment->id }}"
                                                     data-name="{{ $d->name }}" data-parent-name="{{ $treatment->name }}"
                                                     data-price="{{ $d->price }}" data-price-senior="{{ $d->price_senior }}"
                                                     data-price-junior="{{ $d->price_junior }}"
@@ -587,7 +588,9 @@
                                                             @endif
                                                         </div>
                                                         <button type="button" class="btn btn-primary btn-xs add-detail-btn"
-                                                            data-id="{{ $d->id }}" data-name="{{ $d->name }}"
+                                                            data-id="{{ $d->id }}" 
+                                                            data-parent-id="{{ $item->id }}"
+                                                            data-name="{{ $d->name }}"
                                                             data-parent-name="{{ $item->name }}" data-price="{{ $d->price }}"
                                                             data-price-senior="{{ $d->price_senior }}"
                                                             data-price-junior="{{ $d->price_junior }}"
@@ -976,6 +979,7 @@
                 @foreach($treatment->details as $d)
                     {
                         id: {{ $d->id }},
+                        parentId: {{ $treatment->id }},
                         name: {!! json_encode($d->name) !!},
                         parentName: {!! json_encode($treatment->name) !!},
                         price: {{ (int) $d->price }},
@@ -1019,6 +1023,7 @@
                 if (!selectedDetails.some(d => d.id === id)) {
                     selectedDetails.push({
                         id: id,
+                        parentId: parseInt(checkbox.getAttribute('data-parent-id')),
                         name: checkbox.getAttribute('data-name'),
                         parentName: checkbox.getAttribute('data-parent-name'),
                         price: parseInt(checkbox.getAttribute('data-price')),
@@ -1314,15 +1319,25 @@
         document.querySelectorAll('.add-detail-btn').forEach(btn => {
             btn.addEventListener('click', function () {
                 const id = parseInt(this.getAttribute('data-id'));
+                const parentId = parseInt(this.getAttribute('data-parent-id'));
+                const parentName = this.getAttribute('data-parent-name');
+
                 if (selectedDetails.some(d => d.id === id)) {
                     alert('Layanan ini sudah ditambahkan.');
                     return;
                 }
 
+                // New logic: Check if another variant of the same treatment is already added
+                if (selectedDetails.some(d => d.parentId === parentId)) {
+                    alert(`Layanan dari kategori "${parentName}" sudah ditambahkan. \n\nMohon maaf, Anda hanya dapat memilih satu jenis layanan untuk setiap kategori treatment yang sama demi keamanan perawatan.`);
+                    return;
+                }
+
                 selectedDetails.push({
                     id: id,
+                    parentId: parentId,
                     name: this.getAttribute('data-name'),
-                    parentName: this.getAttribute('data-parent-name'),
+                    parentName: parentName,
                     price: parseInt(this.getAttribute('data-price')),
                     priceSenior: parseInt(this.getAttribute('data-price-senior') || this.getAttribute('data-price')),
                     priceJunior: parseInt(this.getAttribute('data-price-junior') || this.getAttribute('data-price')),

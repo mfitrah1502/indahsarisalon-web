@@ -144,9 +144,11 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         // Hari Libur
         Route::resource('holidays', HolidayController::class)->only(['index', 'store', 'destroy']);
 
-        // Keuangan (Not yet implemented)
-        Route::get('/admin/keuangan/pemasukan', function () { abort(404); })->name('keuangan.pemasukan');
-        Route::get('/admin/keuangan/pengeluaran', function () { abort(404); })->name('keuangan.pengeluaran');
+        // Keuangan
+        Route::get('/admin/keuangan/pemasukan', [App\Http\Controllers\KeuanganController::class, 'pemasukan'])->name('keuangan.pemasukan');
+        Route::get('/admin/keuangan/pengeluaran', [App\Http\Controllers\KeuanganController::class, 'pengeluaran'])->name('keuangan.pengeluaran');
+        Route::post('/admin/keuangan/pengeluaran', [App\Http\Controllers\KeuanganController::class, 'storePengeluaran'])->name('keuangan.pengeluaran.store');
+        Route::get('/admin/keuangan/profit/export', [App\Http\Controllers\KeuanganController::class, 'exportProfitPdf'])->name('keuangan.profit.export');
     });
 
 

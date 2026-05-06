@@ -97,6 +97,17 @@ class BookingController extends Controller
             'payment_method' => 'required|in:cash,transfer'
         ]);
 
+        // Server-side validation: Ensure one variant per treatment
+        $treatmentIds = \App\Models\TreatmentDetail::whereIn('id', $request->treatment_detail_ids)
+            ->pluck('treatment_id')
+            ->toArray();
+        
+        if (count($treatmentIds) !== count(array_unique($treatmentIds))) {
+            $msg = 'Mohon maaf, Anda hanya dapat memilih satu jenis layanan untuk setiap kategori treatment yang sama demi keamanan perawatan.';
+            if ($request->ajax()) return response()->json(['message' => $msg], 422);
+            return redirect()->back()->with('error', $msg);
+        }
+
         // Validasi Hari Libur
         $isHoliday = \App\Models\Holiday::where('date', $request->reservation_date)->exists();
         if ($isHoliday) {

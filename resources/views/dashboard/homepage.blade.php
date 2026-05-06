@@ -115,8 +115,8 @@
         </div>
 
         <!-- Dashboard Stats -->
-        <div class="col-xl-4 col-md-6">
-            <div class="card stat-card">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card h-100">
                 <div class="card-body">
                     <div class="stat-icon icon-pelanggan">
                         <i class="ti ti-users"></i>
@@ -127,26 +127,52 @@
             </div>
         </div>
 
-        <div class="col-xl-4 col-md-6">
-            <div class="card stat-card">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card h-100 border-start border-4 border-success">
                 <div class="card-body">
                     <div class="stat-icon icon-pemasukan">
                         <i class="ti ti-cash"></i>
                     </div>
-                    <div class="stat-value">Rp {{ number_format($stats['total_pemasukan'], 0, ',', '.') }}</div>
+                    <div class="stat-value text-success">Rp {{ number_format($stats['total_pemasukan'], 0, ',', '.') }}</div>
                     <div class="stat-label">Total Pemasukan</div>
                 </div>
             </div>
         </div>
 
-        <div class="col-xl-4 col-md-6">
-            <div class="card stat-card">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card h-100 border-start border-4 border-danger">
                 <div class="card-body">
-                    <div class="stat-icon icon-bookings">
+                    <div class="stat-icon bg-light-danger text-danger" style="width: 50px; height: 50px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 20px;">
+                        <i class="ti ti-receipt-off"></i>
+                    </div>
+                    <div class="stat-value text-danger">Rp {{ number_format($stats['total_pengeluaran'], 0, ',', '.') }}</div>
+                    <div class="stat-label">Total Pengeluaran</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card h-100 border-start border-4 border-primary">
+                <div class="card-body">
+                    <div class="stat-icon bg-light-primary text-primary" style="width: 50px; height: 50px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 20px;">
+                        <i class="ti ti-chart-pie"></i>
+                    </div>
+                    <div class="stat-value text-primary">Rp {{ number_format($stats['profit'], 0, ',', '.') }}</div>
+                    <div class="stat-label">Profit Bersih</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mb-4">
+            <div class="card stat-card py-2">
+                <div class="card-body d-flex align-items-center gap-4">
+                    <div class="stat-icon icon-bookings mb-0">
                         <i class="ti ti-calendar-check"></i>
                     </div>
-                    <div class="stat-value">{{ number_format($stats['today_bookings']) }}</div>
-                    <div class="stat-label">Booking Hari Ini</div>
+                    <div>
+                        <div class="stat-value mb-0">{{ number_format($stats['today_bookings']) }}</div>
+                        <div class="stat-label">Booking Hari Ini</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -184,7 +210,10 @@
             var options = {
                 series: [{
                     name: 'Pemasukan (Rp)',
-                    data: {!! json_encode($chartData) !!}
+                    data: {!! json_encode($incomeData) !!}
+                }, {
+                    name: 'Pengeluaran (Rp)',
+                    data: {!! json_encode($expenseData) !!}
                 }],
                 chart: {
                     type: 'area',
@@ -192,7 +221,7 @@
                     toolbar: { show: false },
                     fontFamily: "'Inter', sans-serif"
                 },
-                colors: ['#EA8290'],
+                colors: ['#EA8290', '#4680ff'],
                 dataLabels: { enabled: false },
                 stroke: { curve: 'smooth', width: 3 },
                 xaxis: {
@@ -205,19 +234,39 @@
                         }
                     }
                 },
+                legend: {
+                    position: 'top',
+                    horizontalAlign: 'right',
+                },
                 tooltip: {
                     theme: 'light',
+                    shared: true,
+                    intersect: false,
                     y: {
                         formatter: function (val) {
                             return "Rp " + val.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
                         }
+                    },
+                    custom: function({series, seriesIndex, dataPointIndex, w}) {
+                        let income = series[0][dataPointIndex];
+                        let expense = series[1][dataPointIndex];
+                        let profit = income - expense;
+                        let profitColor = profit >= 0 ? '#4CAF50' : '#F44336';
+                        
+                        return '<div class="p-3">' +
+                            '<div class="fw-bold mb-2">' + w.globals.categoryLabels[dataPointIndex] + '</div>' +
+                            '<div class="d-flex justify-content-between mb-1"><span>Pemasukan:</span> <span class="fw-bold text-pink ms-3">Rp ' + income.toLocaleString('id-ID') + '</span></div>' +
+                            '<div class="d-flex justify-content-between mb-1"><span>Pengeluaran:</span> <span class="fw-bold text-primary ms-3">Rp ' + expense.toLocaleString('id-ID') + '</span></div>' +
+                            '<hr class="my-2">' +
+                            '<div class="d-flex justify-content-between fw-bold"><span>Profit:</span> <span style="color:' + profitColor + '">Rp ' + profit.toLocaleString('id-ID') + '</span></div>' +
+                            '</div>';
                     }
                 },
                 fill: {
                     type: 'gradient',
                     gradient: {
                         shadeIntensity: 1,
-                        opacityFrom: 0.7,
+                        opacityFrom: 0.5,
                         opacityTo: 0.1,
                         stops: [0, 90, 100]
                     }
@@ -254,7 +303,11 @@
                         categories: data.labels
                     },
                     series: [{
-                        data: data.data
+                        name: 'Pemasukan (Rp)',
+                        data: data.income
+                    }, {
+                        name: 'Pengeluaran (Rp)',
+                        data: data.expense
                     }]
                 });
             })

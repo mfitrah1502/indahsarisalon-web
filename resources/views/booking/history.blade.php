@@ -311,17 +311,29 @@
                                 </div>
                             </div>
             <div class="list-group list-group-flush border-top border-bottom mb-3">
-                <div class="list-group-item d-flex justify-content-between px-0">
-                    <span class="text-muted">Jadwal</span>
-                    <span class="fw-bold text-dark">${formattedDate}</span>
+                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    <span class="text-muted small">Nama Pelanggan</span>
+                    <span class="fw-bold text-dark text-end">${booking.customer_name}</span>
                 </div>
-                <div class="list-group-item d-flex justify-content-between px-0">
-                    <span class="text-muted">Waktu</span>
-                    <span class="fw-bold text-dark">${formattedTime} WIB</span>
+                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    <span class="text-muted small">No. HP</span>
+                    <span class="fw-bold text-dark text-end">${booking.customer_phone || '-'}</span>
                 </div>
-                <div class="list-group-item d-flex justify-content-between px-0">
-                    <span class="text-muted">Stylist</span>
-                    <span class="fw-bold text-dark">${booking.stylist ? booking.stylist.name : 'Belum Ditentukan'}</span>
+                <div class="list-group-item d-flex justify-content-between align-items-start px-0">
+                    <span class="text-muted small">Email</span>
+                    <span class="fw-bold text-dark text-end text-break" style="max-width: 70%;">${booking.customer_email || '-'}</span>
+                </div>
+                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    <span class="text-muted small">Jadwal</span>
+                    <span class="fw-bold text-dark text-end">${formattedDate}</span>
+                </div>
+                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    <span class="text-muted small">Waktu</span>
+                    <span class="fw-bold text-dark text-end">${formattedTime} WIB</span>
+                </div>
+                <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    <span class="text-muted small">Stylist</span>
+                    <span class="fw-bold text-dark text-end">${booking.stylist ? booking.stylist.name : 'Belum Ditentukan'}</span>
                 </div>
                 <div class="list-group-item d-flex justify-content-between px-0">
                     <span class="text-muted">Total Tagihan</span>

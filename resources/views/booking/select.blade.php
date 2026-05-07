@@ -422,13 +422,15 @@
                         <div class="p-3 rounded bg-light">
                             <h5 class="mb-3">📋 Ringkasan Booking</h5>
 
-                            <p><strong>Customer:</strong> <span id="summaryCustomer">{{ Auth::user()->name }}</span></p>
+                            <p class="mb-1"><strong>Customer:</strong> <span id="summaryCustomer">{{ Auth::user()->name }}</span></p>
+                            <p class="mb-1"><strong>No. HP:</strong> <span id="summaryPhone">{{ Auth::user()->phone ?? '-' }}</span></p>
+                            <p class="mb-3"><strong>Email:</strong> <span id="summaryEmail">{{ Auth::user()->email ?? '-' }}</span></p>
 
                             <div id="summaryTreatments">
                                 <!-- Will be populated by JS -->
                             </div>
 
-                            <p><strong>Stylist:</strong> <span id="summaryStylist"></span></p>
+                            <p class="mt-3"><strong>Stylist:</strong> <span id="summaryStylist"></span></p>
                             <p><strong>Waktu:</strong> <span id="summaryDatetime"></span></p>
 
                             <hr>
@@ -453,9 +455,9 @@
                                     value="{{ Auth::user()->name }}">
                                 <input type="hidden" name="reservation_date" id="paymentDate">
                                 <input type="hidden" name="reservation_time" id="paymentTime">
-                                <input type="hidden" name="customer_email" id="paymentCustomerEmail">
-                                <input type="hidden" name="customer_phone" id="paymentCustomerPhone">
-                                <input type="hidden" name="selected_user_id" id="paymentSelectedUserId">
+                                <input type="hidden" name="customer_email" id="paymentCustomerEmail" value="{{ Auth::user()->email }}">
+                                <input type="hidden" name="customer_phone" id="paymentCustomerPhone" value="{{ Auth::user()->phone }}">
+                                <input type="hidden" name="selected_user_id" id="paymentSelectedUserId" value="{{ Auth::user()->role === 'pelanggan' ? Auth::user()->id : '' }}">
 
                                 <div class="mb-3">
                                     <label class="form-label">Metode Pembayaran</label>
@@ -523,9 +525,14 @@
                     <div class="row g-4" id="treatmentList">
                         @foreach($allTreatments as $item)
                             @php
-                                $imageUrl = $item->image
-                                    ? env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $item->image
-                                    : asset('assets/images/no-image.jpg');
+                                if (!$item->image) {
+                                    $imageUrl = asset('assets/images/no-image.jpg');
+                                } elseif (strpos($item->image, 'http') === 0) {
+                                    $imageUrl = $item->image;
+                                } else {
+                                    $bucket = ($item->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                                    $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $item->image;
+                                }
                             @endphp
                             <div class="col-md-4 col-lg-3 treatment-item-container" data-category="{{ $item->category_id }}"
                                 data-name="{{ strtolower($item->name) }}">
@@ -1484,9 +1491,15 @@
                     document.getElementById('summaryCustomer').innerText = customName.value;
                     document.getElementById('paymentCustomerName').value = customName.value;
                 }
-                if (customPhone) document.getElementById('paymentCustomerPhone').value = customPhone.value;
-                if (customEmail) document.getElementById('paymentCustomerEmail').value = customEmail.value;
-                if (selUserId) document.getElementById('paymentSelectedUserId').value = selUserId.value;
+                if (customPhone && customPhone.value) {
+                    document.getElementById('summaryPhone').innerText = customPhone.value;
+                    document.getElementById('paymentCustomerPhone').value = customPhone.value;
+                }
+                if (customEmail && customEmail.value) {
+                    document.getElementById('summaryEmail').innerText = customEmail.value;
+                    document.getElementById('paymentCustomerEmail').value = customEmail.value;
+                }
+                if (selUserId && selUserId.value) document.getElementById('paymentSelectedUserId').value = selUserId.value;
 
                 document.getElementById('paymentDate').value = dateInput.value;
                 document.getElementById('paymentTime').value = timeInput.value;

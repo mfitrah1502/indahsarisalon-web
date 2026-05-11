@@ -21,6 +21,14 @@ class Treatment extends Model
         'promo_start_date',
         'promo_end_date',
     ];
+    
+    protected $casts = [
+        'promo_start_date' => 'date',
+        'promo_end_date' => 'date',
+        'is_promo' => 'boolean',
+        'is_active' => 'boolean',
+        'allow_multi_select' => 'boolean',
+    ];
 
     // Relasi ke detail
     public function details()

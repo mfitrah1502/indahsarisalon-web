@@ -145,6 +145,7 @@
                                         data-id="{{ $treatment->id }}"
                                         data-name="{{ $treatment->name }}"
                                         data-category="{{ $treatment->category->name ?? '-' }}"
+                                        data-promo-end="{{ $treatment->promo_end_date ? \Carbon\Carbon::parse($treatment->promo_end_date)->format('d F Y') : '' }}"
                                         data-details='@json($treatment->details)'
                                         data-image="{{ $imageUrl }}">
                                         <td class="px-3">
@@ -166,22 +167,23 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <span class="category-badge">{{ $treatment->category->name ?? '-' }}</span>
-                                                @if($treatment->category && $treatment->category->name == 'Promo')
-                                                    <span class="promo-tag shadow-sm animate__animated animate__pulse animate__infinite">
-                                                        <i class="ti ti-discount-2 me-1"></i>PROMO
-                                                    </span>
-                                                    @if($treatment->promo_start_date || $treatment->promo_end_date)
-                                                        <div class="mt-1 extra-small text-muted" style="font-size: 0.65rem;">
-                                                            <i class="ti ti-calendar-event me-1"></i>
-                                                            {{ $treatment->promo_start_date ? \Carbon\Carbon::parse($treatment->promo_start_date)->format('d/m') : '...' }}
-                                                            -
-                                                            {{ $treatment->promo_end_date ? \Carbon\Carbon::parse($treatment->promo_end_date)->format('d/m/y') : '...' }}
-                                                        </div>
-                                                    @endif
+                                                @if($treatment->is_promo)
+                                                    <div class="d-block">
+                                                        <span class="promo-tag shadow-sm animate__animated animate__pulse animate__infinite mb-1 d-inline-block">
+                                                            <i class="ti ti-discount-2 me-1"></i>PROMO
+                                                        </span>
+                                                        @if($treatment->promo_start_date || $treatment->promo_end_date)
+                                                            <div class="mt-1 extra-small text-pink-600 fw-bold" style="font-size: 0.65rem;">
+                                                                <i class="ti ti-calendar-event me-1"></i>
+                                                                {{ $treatment->promo_start_date ? $treatment->promo_start_date->format('d/m') : '...' }}
+                                                                -
+                                                                {{ $treatment->promo_end_date ? $treatment->promo_end_date->format('d/m/y') : '...' }}
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <span class="category-badge">{{ $treatment->category->name ?? '-' }}</span>
                                                 @endif
-                                            </div>
                                         </td>
                                         <td>
                                             @if($treatment->is_active)
@@ -509,6 +511,7 @@
                 id: row.data('id'),
                 name: row.data('name'),
                 category: row.data('category'),
+                promoEnd: row.data('promo-end'),
                 image: image,
                 details: details
             });
@@ -565,14 +568,30 @@
 
         async function spreadPromo(customer, treatment, groupLink = null) {
             // 1. Construct Caption
-            let caption = `Halo${customer ? ' ' + customer.name : ''}, ada promo spesial nih di *Indah Sari Salon*!\n\n`;
+            let caption = `Halo ${customer ? '*' + customer.name + '*' : 'semuanya'}! 🌸\n\n`;
+            caption += `Ada promo menarik di *Indah Sari Salon*:\n\n`;
             caption += `*${treatment.name}*\n`;
             
-            treatment.details.forEach(d => {
-                caption += `- ${d.name}: *Rp ${new Intl.NumberFormat('id-ID').format(d.price)}*\n`;
-            });
+            // Get price display (first price or range)
+            let prices = treatment.details.map(d => d.price);
+            let minPrice = Math.min(...prices);
+            let maxPrice = Math.max(...prices);
+            let priceText = minPrice === maxPrice 
+                ? `Rp ${new Intl.NumberFormat('id-ID').format(minPrice)}`
+                : `Mulai Rp ${new Intl.NumberFormat('id-ID').format(minPrice)}`;
+            
+            caption += `Hanya *${priceText}*!\n\n`;
 
-            caption += `\nBooking sekarang ya! Klik link ini: ${window.location.origin}/booking/select/${treatment.id || ''}\n\nSampai jumpa di salon!`;
+            // List variations
+            let variations = treatment.details.map(d => d.name).join(', ');
+            caption += `Treatment: ${variations}\n`;
+
+            if (treatment.promoEnd) {
+                caption += `Berlaku sampai: ${treatment.promoEnd}\n`;
+            }
+
+            caption += `\nYuk booking sekarang lewat aplikasi atau hubungi kami langsung!\n`;
+            caption += `Klik link ini: ${window.location.origin}/booking/select/${treatment.id || ''}\n\nSampai jumpa di salon!`;
 
             // 2. Copy Image to Clipboard
             const btn = customer ? $('#btnConfirmSendCustomer') : $('#btnToCommunity');

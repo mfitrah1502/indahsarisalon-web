@@ -16,27 +16,21 @@
                             <tr>
                                 <th>No</th>
                                 <th>Tanggal</th>
-                                <th>Jam Masuk</th>
-                                <th>Jam Keluar</th>
-                                <th>Keterangan</th>
+                                <th>Status Kehadiran</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($presensi as $index => $p)
                                 <tr>
                                     <td>{{ $index + 1 }}</td>
-                                    <td>{{ $p->tanggal }}</td>
-                                    <td>{{ $p->jam_masuk ?? '-' }}</td>
-                                    <td>{{ $p->jam_keluar ?? '-' }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($p->tanggal)->format('d F Y') }}</td>
                                     <td>
-                                        @if(!$p->jam_masuk && !$p->jam_keluar)
-                                            Tidak Absen
-                                        @elseif(!$p->jam_masuk)
-                                            Tidak Masuk
-                                        @elseif(!$p->jam_keluar)
-                                            Tidak Keluar
+                                        @if($p->status == 'hadir')
+                                            <span class="badge bg-light-success text-success px-3 rounded-pill">Presence</span>
+                                        @elseif($p->status == 'off')
+                                            <span class="badge bg-light-danger text-danger px-3 rounded-pill">Off Work</span>
                                         @else
-                                            Hadir
+                                            <span class="badge bg-light-secondary text-secondary px-3 rounded-pill">{{ ucfirst($p->status ?? '-') }}</span>
                                         @endif
                                     </td>
                                 </tr>

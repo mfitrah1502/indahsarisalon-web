@@ -60,6 +60,7 @@
                             <select name="role" class="form-select" required id="roleSelect">
                                 <option value="owner" {{ $karyawan->role == 'owner' ? 'selected' : '' }}>Owner</option>
                                 <option value="admin" {{ $karyawan->role == 'admin' ? 'selected' : '' }}>Admin
+                                <option value="karyawan" {{ $karyawan->role == 'karyawan' ? 'selected' : '' }}>Karyawan
                                 </option>
                             </select>
                         </div>

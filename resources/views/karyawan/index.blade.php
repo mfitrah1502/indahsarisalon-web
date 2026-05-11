@@ -95,6 +95,7 @@
                                 <option value="">Semua Role</option>
                                 <option value="owner">Owner</option>
                                 <option value="admin">Admin</option>
+                                <option value="karyawan">Karyawan</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -136,10 +137,10 @@
                     <h5 class="fw-bold"><i class="ti ti-calendar-event me-2 text-primary"></i>Riwayat Presensi: <span
                             id="employeeName"></span></h5>
                     <div class="ms-auto d-flex gap-2">
-                        @if(Auth::user()->role === 'admin')
+                        @if(Auth::user()->role === 'owner')
                             <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-none"
                                 id="btnSetOffWork">
-                                <i class="ti ti-calendar-off me-1"></i> Setel Libur (Off Work)
+                                <i class="ti ti-calendar-check me-1"></i> Atur Kehadiran
                             </button>
                         @endif
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -171,9 +172,7 @@
                             <thead class="bg-light sticky-top">
                                 <tr>
                                     <th class="small fw-bold py-3">TANGGAL</th>
-                                    <th class="small fw-bold text-center py-3">JAM MASUK</th>
-                                    <th class="small fw-bold text-center py-3">JAM KELUAR</th>
-                                    <th class="small fw-bold text-center py-3">STATUS</th>
+                                    <th class="small fw-bold text-center py-3">STATUS KEHADIRAN</th>
                                 </tr>
                             </thead>
                             <tbody id="absensiTable"></tbody>
@@ -219,17 +218,19 @@
                                 </td></tr>`;
                 } else {
                     data.forEach(function (item) {
+                        let statusDisplay = item.status ?? 'Hadir';
+                        if (statusDisplay.toLowerCase() === 'hadir') statusDisplay = 'Presence';
+                        if (statusDisplay.toLowerCase() === 'off' || statusDisplay.toLowerCase() === 'off work') statusDisplay = 'Off Work';
+
                         let badgeClass = 'bg-light-success text-success';
+                        if (statusDisplay === 'Presence') badgeClass = 'bg-light-success text-success';
+                        if (statusDisplay === 'Off Work') badgeClass = 'bg-light-secondary text-secondary';
                         if (item.status === 'Terlambat') badgeClass = 'bg-light-warning text-warning';
-                        if (item.status === 'Off Work' || item.status === 'Libur') badgeClass = 'bg-light-secondary text-secondary';
                         if (item.status === 'Tidak Hadir' || item.status === 'Alpha') badgeClass = 'bg-light-danger text-danger';
-                        if (item.status === 'Tidak Absensi Pulang') badgeClass = 'bg-light-warning text-warning';
 
                         rows += `<tr>
                                 <td class="fw-medium">${item.tanggal}</td>
-                                <td class="text-center">${item.jam_masuk ? (item.jam_masuk.includes(' ') ? item.jam_masuk.split(' ')[1] : item.jam_masuk) : '-'}</td>
-                                <td class="text-center">${item.jam_keluar ? (item.jam_keluar.includes(' ') ? item.jam_keluar.split(' ')[1] : item.jam_keluar) : '-'}</td>
-                                <td class="text-center"><span class="badge ${badgeClass} rounded-pill px-3">${item.status ?? 'Hadir'}</span></td>
+                                <td class="text-center"><span class="badge ${badgeClass} rounded-pill px-3">${statusDisplay}</span></td>
                             </tr>`;
                     });
                 }
@@ -342,11 +343,15 @@
                                     renderAbsensi(data);
                                 }
                             });
-                            alert('Karyawan berhasil diliburkan pada tanggal tersebut.');
+                            alert('Data kehadiran berhasil disimpan.');
                         }
                     },
                     error: function (err) {
-                        alert('Gagal menyimpan data libur.');
+                        let msg = 'Gagal menyimpan data kehadiran.';
+                        if (err.responseJSON && err.responseJSON.message) {
+                            msg = err.responseJSON.message;
+                        }
+                        alert(msg);
                     }
                 });
             });
@@ -357,21 +362,26 @@
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content border-0 shadow-lg rounded-4">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="fw-bold">Setel Libur (Off Work)</h5>
+                    <h5 class="fw-bold">Atur Kehadiran Manual</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
                     <form id="offWorkForm">
                         @csrf
                         <input type="hidden" name="user_id" id="offWorkUserId">
-                        <input type="hidden" name="status" value="Off Work">
                         <div class="mb-3">
                             <label class="form-label small fw-bold">Pilih Tanggal</label>
                             <input type="date" name="tanggal" class="form-control border-0 shadow-sm" required
                                 value="{{ date('Y-m-d') }}">
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 rounded-pill pt-2 pb-2 shadow">Simpan Status
-                            Libur</button>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Status Kehadiran</label>
+                            <select name="status" class="form-select border-0 shadow-sm" required>
+                                <option value="hadir">Presence</option>
+                                <option value="off">Off Work</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 rounded-pill pt-2 pb-2 shadow">Simpan Kehadiran</button>
                     </form>
                 </div>
             </div>

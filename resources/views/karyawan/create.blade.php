@@ -59,6 +59,7 @@
                             <select name="role" class="form-select" required id="roleSelect">
                                 <option value="owner">Owner</option>
                                 <option value="admin">Admin</option>
+                                <option value="karyawan">Karyawan</option>
                             </select>
                         </div>
 

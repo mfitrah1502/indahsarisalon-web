@@ -43,10 +43,15 @@
 
                     <div class="row g-3">
                         <div class="col-12">
-                            @if($absensi && $absensi->status === 'Hadir')
+                             @if($absensi && (strtolower($absensi->status) === 'hadir'))
                                 <button class="btn btn-secondary w-100 d-flex flex-column align-items-center py-3 disabled">
                                     <i class="ti ti-check fs-2 mb-2"></i>
                                     <span>Presenced</span>
+                                </button>
+                            @elseif($absensi && (strtolower($absensi->status) === 'off' || strtolower($absensi->status) === 'off work'))
+                                <button class="btn btn-outline-danger w-100 d-flex flex-column align-items-center py-3 disabled">
+                                    <i class="ti ti-calendar-off fs-2 mb-2"></i>
+                                    <span>Off Work Today</span>
                                 </button>
                             @else
                                 <button id="btn-presence"
@@ -60,15 +65,24 @@
 
                     <div class="mt-4 p-3 bg-light rounded-3 border border-dashed">
                         <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted small">Presensi di Jam : </span>
-                            <span class="badge bg-light-success text-success"
-                                id="status-masuk">{{ $absensi && $absensi->jam_masuk ? \Carbon\Carbon::parse($absensi->jam_masuk)->format('H:i') : '--:--' }}</span>
+                            <span class="text-muted small">Status Hari Ini : </span>
+                            @php
+                                $statusDisplay = $absensi ? ($absensi->status ?? 'Belum Presensi') : 'Belum Presensi';
+                                if (strtolower($statusDisplay) === 'hadir') $statusDisplay = 'Presence';
+                                if (strtolower($statusDisplay) === 'off' || strtolower($statusDisplay) === 'off work') $statusDisplay = 'Off Work';
+                                
+                                $badgeClass = 'bg-light-secondary text-secondary';
+                                if ($statusDisplay === 'Presence') $badgeClass = 'bg-light-success text-success';
+                                if ($statusDisplay === 'Off Work') $badgeClass = 'bg-light-danger text-danger';
+                            @endphp
+                            <span class="badge {{ $badgeClass }}" id="status-masuk">{{ $statusDisplay }}</span>
                         </div>
-                        {{-- <div class="d-flex justify-content-between">
-                            <span class="text-muted small">Jam Keluar</span>
-                            <span class="badge bg-light-danger text-danger"
-                                id="status-keluar">{{ $absensi && $absensi->jam_keluar ? \Carbon\Carbon::parse($absensi->jam_keluar)->format('H:i') : '--:--' }}</span>
-                        </div> --}}
+                        @if($absensi && $absensi->jam_masuk)
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">Waktu Presensi : </span>
+                                <span class="text-dark fw-bold small">{{ \Carbon\Carbon::parse($absensi->jam_masuk)->format('H:i') }}</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>

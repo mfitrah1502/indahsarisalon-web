@@ -223,6 +223,11 @@
                                                     placeholder="Contoh: Ukuran Medium" required>
                                             </div>
 
+                                            <div class="mb-3">
+                                                <label class="small fw-bold mb-1">Gambar Variasi (Opsional)</label>
+                                                <input type="file" name="details[0][image]" class="form-control glass-input form-control-sm" accept="image/*">
+                                            </div>
+
                                             <div class="row g-2 mb-3">
                                                 <div class="col-7">
                                                     <label class="small fw-bold mb-1 text-primary">Harga Dasar</label>
@@ -305,6 +310,11 @@
                                 <div class="mb-3">
                                     <label class="small fw-bold mb-1">Nama Variasi</label>
                                     <input type="text" name="details[${detail_index}][name]" class="form-control glass-input" placeholder="Contoh: Ukuran Long" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="small fw-bold mb-1">Gambar Variasi (Opsional)</label>
+                                    <input type="file" name="details[${detail_index}][image]" class="form-control glass-input form-control-sm" accept="image/*">
                                 </div>
 
                                 <div class="row g-2 mb-3">

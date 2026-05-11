@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Treatment extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -29,6 +30,53 @@ class Treatment extends Model
         'is_active' => 'boolean',
         'allow_multi_select' => 'boolean',
     ];
+
+    protected $appends = ['main_image_url', 'all_images'];
+
+    /**
+     * Get main image URL
+     */
+    public function getMainImageUrlAttribute()
+    {
+        if (!$this->image) {
+            return asset('assets/images/no-image.jpg');
+        }
+
+        if (strpos($this->image, 'http') === 0) {
+            return $this->image;
+        }
+
+        $bucket = ($this->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+        $baseUrl = env('SUPABASE_URL');
+
+        if (!$baseUrl) {
+            return asset('assets/images/no-image.jpg');
+        }
+
+        return $baseUrl . '/storage/v1/object/public/' . $bucket . '/' . $this->image;
+    }
+
+    /**
+     * Get all images (main + details)
+     */
+    public function getAllImagesAttribute()
+    {
+        $images = [];
+
+        // Collect from details
+        foreach ($this->details as $detail) {
+            if ($detail->image_url && !in_array($detail->image_url, $images)) {
+                $images[] = $detail->image_url;
+            }
+        }
+
+        // If no detail images, use main image
+        if (count($images) == 0) {
+            $images[] = $this->main_image_url;
+        }
+
+        return $images;
+    }
 
     // Relasi ke detail
     public function details()

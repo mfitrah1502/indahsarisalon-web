@@ -73,6 +73,14 @@ class TreatmentController extends Controller
             ->where('phone', '!=', '')
             ->get();
 
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'data' => $treatments,
+                'categories' => $categories
+            ]);
+        }
+
         return view('treatment.index', compact('treatments', 'categories', 'customers'));
     }
 
@@ -147,8 +155,8 @@ class TreatmentController extends Controller
     $treatment->save();
 
     // Simpan detail treatment
-    foreach ($request->details as $detail) {
-        $treatment->details()->create([
+    foreach ($request->details as $index => $detail) {
+        $detailData = [
             'name' => $detail['name'],
             'duration' => $detail['duration'] ?? 0,
             'price' => $detail['price'] ?? 0,
@@ -156,8 +164,26 @@ class TreatmentController extends Controller
             'has_stylist_price' => isset($detail['has_stylist_price']) ? 1 : 0,
             'price_senior' => $detail['price_senior'] ?? null,
             'price_junior' => $detail['price_junior'] ?? null,
-        ]);
+        ];
 
+        if (isset($detail['image']) && $detail['image'] instanceof \Illuminate\Http\UploadedFile) {
+            $file = $detail['image'];
+            $filename = 'detail_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $fileContents = file_get_contents($file->getRealPath());
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . env('SUPABASE_SERVICE_KEY'),
+                'apikey' => env('SUPABASE_SERVICE_KEY'),
+                'Content-Type' => 'application/octet-stream',
+            ])->withBody($fileContents, 'application/octet-stream')
+            ->post(env('SUPABASE_URL') . '/storage/v1/object/' . env('SUPABASE_BUCKET') . '/' . $filename, $fileContents);
+
+            if ($response->successful()) {
+                $bucket = env('SUPABASE_BUCKET');
+                $detailData['image_url'] = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $filename;
+            }
+        }
+
+        $treatment->details()->create($detailData);
     }
 
     return redirect()->route('treatment.index')->with('success','Treatment berhasil ditambahkan');
@@ -215,7 +241,7 @@ class TreatmentController extends Controller
         $existingDetailIds = $treatment->details()->pluck('id')->toArray();
         $submittedDetailIds = [];
 
-        foreach ($request->details as $detail) {
+        foreach ($request->details as $index => $detail) {
             $data = [
                 'name' => $detail['name'],
                 'duration' => $detail['duration'],
@@ -225,6 +251,23 @@ class TreatmentController extends Controller
                 'price_senior' => $detail['price_senior'] ?? null,
                 'price_junior' => $detail['price_junior'] ?? null,
             ];
+
+            if (isset($detail['image']) && $detail['image'] instanceof \Illuminate\Http\UploadedFile) {
+                $file = $detail['image'];
+                $filename = 'detail_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $fileContents = file_get_contents($file->getRealPath());
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . env('SUPABASE_SERVICE_KEY'),
+                    'apikey' => env('SUPABASE_SERVICE_KEY'),
+                    'Content-Type' => 'application/octet-stream',
+                ])->withBody($fileContents, 'application/octet-stream')
+                ->post(env('SUPABASE_URL') . '/storage/v1/object/' . env('SUPABASE_BUCKET') . '/' . $filename, $fileContents);
+
+                if ($response->successful()) {
+                    $bucket = env('SUPABASE_BUCKET');
+                    $data['image_url'] = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $filename;
+                }
+            }
 
             if (isset($detail['id']) && in_array($detail['id'], $existingDetailIds)) {
                 \App\Models\TreatmentDetail::where('id', $detail['id'])->update($data);
@@ -250,9 +293,17 @@ class TreatmentController extends Controller
     }
 
     // Hapus treatment
-    public function destroy(Treatment $treatment)
+    public function destroy(Request $request, Treatment $treatment)
     {
         $treatment->delete();
+
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Treatment berhasil dihapus'
+            ]);
+        }
+
         return redirect()->route('treatment.index')->with('success','Treatment berhasil dihapus');
     }
     // app/Http/Controllers/TreatmentController.php

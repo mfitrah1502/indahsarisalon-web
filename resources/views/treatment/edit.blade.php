@@ -117,7 +117,11 @@
                                             <small class="text-muted">JPG or PNG (Max. 2MB)</small>
                                         </div>
                                         @php
-                                            if (!$treatment->image) {
+                                            $detailImage = $treatment->details->whereNotNull('image_url')->first();
+                                            
+                                            if ($detailImage && $detailImage->image_url) {
+                                                $imageUrl = $detailImage->image_url;
+                                            } elseif (!$treatment->image) {
                                                 $imageUrl = '';
                                             } elseif (strpos($treatment->image, 'http') === 0) {
                                                 $imageUrl = $treatment->image;

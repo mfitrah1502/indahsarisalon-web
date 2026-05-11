@@ -132,13 +132,21 @@
                             <tbody>
                                 @forelse($treatments as $treatment)
                                     @php
-                                        if (!$treatment->image) {
+                                        $detailImage = $treatment->details->whereNotNull('image_url')->first();
+                                        $hasImage = false;
+                                        
+                                        if ($detailImage && $detailImage->image_url) {
+                                            $imageUrl = $detailImage->image_url;
+                                            $hasImage = true;
+                                        } elseif (!$treatment->image) {
                                             $imageUrl = asset('assets/images/no-image.jpg');
                                         } elseif (strpos($treatment->image, 'http') === 0) {
                                             $imageUrl = $treatment->image;
+                                            $hasImage = true;
                                         } else {
                                             $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
                                             $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
+                                            $hasImage = true;
                                         }
                                     @endphp
                                     <tr class="treatment-row" 
@@ -151,7 +159,7 @@
                                         <td class="px-3">
                                             <div class="d-flex align-items-center">
                                                 <div class="treatment-icon me-3">
-                                                    @if($treatment->image)
+                                                    @if($hasImage)
                                                         <img src="{{ $imageUrl }}" 
                                                              class="rounded-3 shadow-sm" width="50" height="50" style="object-fit:cover;">
                                                     @else

@@ -68,7 +68,12 @@ class TreatmentController extends Controller
     return $treatment;
 });
 
-        return view('treatment.index', compact('treatments', 'categories'));
+        $customers = \App\Models\User::where('role', 'pelanggan')
+            ->whereNotNull('phone')
+            ->where('phone', '!=', '')
+            ->get();
+
+        return view('treatment.index', compact('treatments', 'categories', 'customers'));
     }
 
     // Menampilkan form tambah treatment

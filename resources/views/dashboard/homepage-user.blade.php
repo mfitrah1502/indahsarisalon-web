@@ -152,19 +152,29 @@
                             <div class="card treatment-card border-0 shadow-sm h-100 overflow-hidden border-top border-danger border-4">
                                 <div class="position-relative">
                                     @php
-                                        if (!$promo->image) {
-                                            $imageUrl = asset('assets/images/no-image.jpg');
-                                        } elseif (strpos($promo->image, 'http') === 0) {
-                                            $imageUrl = $promo->image;
-                                        } else {
-                                            $bucket = ($promo->is_promo && env('SUPABASE_PROMO_BUCKET')) 
-                                                ? env('SUPABASE_PROMO_BUCKET') 
-                                                : env('SUPABASE_BUCKET');
-                                            $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $promo->image;
-                                        }
+                                        $images = $promo->all_images;
                                     @endphp
-                                    <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $promo->name }}"
-                                        style="height: 180px; object-fit: cover;">
+                                    
+                                    @if(count($images) > 1)
+                                        <div id="carouselPromo{{ $promo->id }}" class="carousel slide" data-bs-ride="carousel">
+                                            <div class="carousel-inner">
+                                                @foreach($images as $idx => $img)
+                                                    <div class="carousel-item {{ $idx == 0 ? 'active' : '' }}">
+                                                        <img src="{{ $img }}" class="card-img-top" alt="{{ $promo->name }}" style="height: 180px; object-fit: cover;">
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                            <button class="carousel-control-prev" type="button" data-bs-target="#carouselPromo{{ $promo->id }}" data-bs-slide="prev">
+                                                <span class="carousel-control-prev-icon" aria-hidden="true" style="width: 1.5rem; height: 1.5rem;"></span>
+                                            </button>
+                                            <button class="carousel-control-next" type="button" data-bs-target="#carouselPromo{{ $promo->id }}" data-bs-slide="next">
+                                                <span class="carousel-control-next-icon" aria-hidden="true" style="width: 1.5rem; height: 1.5rem;"></span>
+                                            </button>
+                                        </div>
+                                    @else
+                                        <img src="{{ $images[0] ?? asset('assets/images/no-image.jpg') }}" class="card-img-top" alt="{{ $promo->name }}" style="height: 180px; object-fit: cover;">
+                                    @endif
+
                                     <div class="position-absolute top-0 end-0 m-2">
                                         <span class="badge bg-danger animate__animated animate__pulse animate__infinite px-3 py-2 rounded-pill shadow">
                                             PROMO
@@ -192,8 +202,11 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
                                                 <small class="text-muted d-block">Harga Promo</small>
+                                                @php
+                                                    $minPrice = $promo->details->map(fn($d) => $d->getMinMaxCalculatedPrice()['min'])->min();
+                                                @endphp
                                                 <span class="fw-bold text-danger h5 mb-0">Rp
-                                                    {{ number_format($promo->details->min('price') ?? 0, 0, ',', '.') }}</span>
+                                                    {{ number_format($minPrice ?? 0, 0, ',', '.') }}</span>
                                             </div>
                                             <a href="{{ route('booking.select', $promo->id) }}"
                                                 class="btn btn-danger rounded-pill px-4 shadow-sm">
@@ -229,19 +242,29 @@
                                 <div class="card treatment-card border-0 shadow-sm h-100 overflow-hidden">
                                     <div class="position-relative">
                                         @php
-                                            if (!$treatment->image) {
-                                                $imageUrl = asset('assets/images/no-image.jpg');
-                                            } elseif (strpos($treatment->image, 'http') === 0) {
-                                                $imageUrl = $treatment->image;
-                                            } else {
-                                                $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) 
-                                                    ? env('SUPABASE_PROMO_BUCKET') 
-                                                    : env('SUPABASE_BUCKET');
-                                                $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
-                                            }
+                                            $images = $treatment->all_images;
                                         @endphp
-                                        <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $treatment->name }}"
-                                            style="height: 200px; object-fit: cover;">
+
+                                        @if(count($images) > 1)
+                                            <div id="carouselTreatment{{ $treatment->id }}" class="carousel slide" data-bs-ride="carousel">
+                                                <div class="carousel-inner">
+                                                    @foreach($images as $idx => $img)
+                                                        <div class="carousel-item {{ $idx == 0 ? 'active' : '' }}">
+                                                            <img src="{{ $img }}" class="card-img-top" alt="{{ $treatment->name }}" style="height: 200px; object-fit: cover;">
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                                <button class="carousel-control-prev" type="button" data-bs-target="#carouselTreatment{{ $treatment->id }}" data-bs-slide-to="prev">
+                                                    <span class="carousel-control-prev-icon" aria-hidden="true" style="width: 1.5rem; height: 1.5rem;"></span>
+                                                </button>
+                                                <button class="carousel-control-next" type="button" data-bs-target="#carouselTreatment{{ $treatment->id }}" data-bs-slide-to="next">
+                                                    <span class="carousel-control-next-icon" aria-hidden="true" style="width: 1.5rem; height: 1.5rem;"></span>
+                                                </button>
+                                            </div>
+                                        @else
+                                            <img src="{{ $images[0] ?? asset('assets/images/no-image.jpg') }}" class="card-img-top" alt="{{ $treatment->name }}" style="height: 200px; object-fit: cover;">
+                                        @endif
+                                        
                                         <div class="position-absolute top-0 start-0 m-3">
                                             <span class="badge bg-blur text-white px-3 py-2 rounded-pill shadow-sm"
                                                 style="background: rgba(255,255,255,0.2); backdrop-filter: blur(8px);">
@@ -258,8 +281,11 @@
                                         <div class="mt-auto d-flex justify-content-between align-items-center">
                                             <div>
                                                 <small class="text-muted d-block">Mulai dari</small>
+                                                @php
+                                                    $minPrice = $treatment->details->map(fn($d) => $d->getMinMaxCalculatedPrice()['min'])->min();
+                                                @endphp
                                                 <span class="fw-bold text-primary h5 mb-0">Rp
-                                                    {{ number_format($treatment->details->min('price') ?? 0, 0, ',', '.') }}</span>
+                                                    {{ number_format($minPrice ?? 0, 0, ',', '.') }}</span>
                                             </div>
                                             <a href="{{ route('booking.select', $treatment->id) }}"
                                                 class="btn btn-primary rounded-pill px-3">

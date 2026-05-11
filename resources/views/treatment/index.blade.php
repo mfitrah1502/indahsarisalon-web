@@ -133,19 +133,29 @@
                             </thead>
                             <tbody>
                                 @forelse($treatments as $treatment)
+                                    @php
+                                        if (!$treatment->image) {
+                                            $imageUrl = asset('assets/images/no-image.jpg');
+                                        } elseif (strpos($treatment->image, 'http') === 0) {
+                                            $imageUrl = $treatment->image;
+                                        } else {
+                                            $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                                            $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
+                                        }
+                                    @endphp
                                     <tr class="treatment-row" 
                                         data-name="{{ $treatment->name }}"
                                         data-category="{{ $treatment->category->name ?? '-' }}"
                                         data-details='@json($treatment->details)'
-                                        data-image="{{ $treatment->image }}">
+                                        data-image="{{ $imageUrl }}">
                                         <td class="px-3">
                                             <div class="d-flex align-items-center">
                                                 <div class="treatment-icon me-3">
                                                     @if($treatment->image)
-                                                        <img src="https://{{ env('SUPABASE_PROJECT_REF') }}.supabase.co/storage/v1/object/public/{{ env('SUPABASE_BUCKET') }}/{{ $treatment->image }}" 
+                                                        <img src="{{ $imageUrl }}" 
                                                              class="rounded-3 shadow-sm" width="50" height="50" style="object-fit:cover;">
                                                     @else
-                                                        <div class="bg-light rounded-3 d-flex align-items-center justify-content-center" width="50" height="50">
+                                                        <div class="bg-light rounded-3 d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
                                                             <i class="ti ti-photo text-muted fs-4"></i>
                                                         </div>
                                                     @endif
@@ -392,8 +402,10 @@
             
             $('#popupName').text(row.data('name'));
             $('#popupCategory').text(row.data('category'));
+            $('#popupImage').attr('src', image);
             
             let isPromo = row.data('category') == 'Promo';
+
             let html = '';
             details.forEach(function (d) {
                 let currentPrice = d.price;

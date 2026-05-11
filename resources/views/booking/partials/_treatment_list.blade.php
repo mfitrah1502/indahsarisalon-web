@@ -2,16 +2,53 @@
     <div class="col-md-4 mb-4">
         <div class="card treatment-card h-100 border-0 shadow-sm">
             @php
-                if (!$treatment->image) {
-                    $imageUrl = asset('assets/images/no-image.jpg');
-                } elseif (strpos($treatment->image, 'http') === 0) {
-                    $imageUrl = $treatment->image;
-                } else {
-                    $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
-                    $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
+                $images = [];
+                foreach ($treatment->details as $detail) {
+                    if ($detail->image_url && !in_array($detail->image_url, $images)) {
+                        $images[] = $detail->image_url;
+                    }
+                }
+
+                if (count($images) == 0) {
+                    if ($treatment->image) {
+                        $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                        if (strpos($treatment->image, 'http') === 0) {
+                            $images[] = $treatment->image;
+                        } else {
+                            $images[] = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
+                        }
+                    } else {
+                        $images[] = asset('assets/images/no-image.jpg');
+                    }
                 }
             @endphp
-            <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $treatment->name }}">
+            
+            @if(count($images) > 1)
+                <div id="carouselTreatment{{ $treatment->id }}" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-indicators">
+                        @foreach($images as $idx => $img)
+                            <button type="button" data-bs-target="#carouselTreatment{{ $treatment->id }}" data-bs-slide-to="{{ $idx }}" class="{{ $idx == 0 ? 'active' : '' }}"></button>
+                        @endforeach
+                    </div>
+                    <div class="carousel-inner">
+                        @foreach($images as $idx => $img)
+                            <div class="carousel-item {{ $idx == 0 ? 'active' : '' }}">
+                                <img src="{{ $img }}" class="card-img-top w-100 d-block" alt="{{ $treatment->name }}" style="height: 250px; object-fit: cover;">
+                            </div>
+                        @endforeach
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselTreatment{{ $treatment->id }}" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#carouselTreatment{{ $treatment->id }}" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+            @else
+                <img src="{{ $images[0] }}" class="card-img-top w-100 d-block" alt="{{ $treatment->name }}" style="height: 250px; object-fit: cover;">
+            @endif
             <div class="card-body">
                 <h5 class="card-title fw-bold text-dark">
                     {{ $treatment->name }}

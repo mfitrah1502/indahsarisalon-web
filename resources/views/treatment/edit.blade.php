@@ -247,6 +247,17 @@
                                                         class="form-control glass-input" value="{{ $detail->name }}" required>
                                                 </div>
 
+                                                <div class="mb-3">
+                                                    <label class="small fw-bold mb-1">Gambar Variasi (Opsional)</label>
+                                                    @if($detail->image_url)
+                                                        <div class="mb-2">
+                                                            <img src="{{ $detail->image_url }}" class="img-thumbnail" style="max-height: 80px;">
+                                                        </div>
+                                                    @endif
+                                                    <input type="file" name="details[{{ $index }}][image]"
+                                                        class="form-control glass-input form-control-sm" accept="image/*">
+                                                </div>
+
                                                 <div class="row g-2 mb-3">
                                                     <div class="col-7">
                                                         <label class="small fw-bold mb-1 text-primary">Harga Dasar</label>
@@ -254,7 +265,7 @@
                                                             <span class="input-group-text bg-light border-end-0 small">Rp</span>
                                                             <input type="number" name="details[{{ $index }}][price]"
                                                                 class="form-control glass-input normal-price-input border-start-0"
-                                                                value="{{ $detail->price }}" {{ $detail->has_stylist_price ? 'disabled' : '' }} required>
+                                                                value="{{ (int)$detail->price }}" {{ $detail->has_stylist_price ? 'disabled' : '' }} required>
                                                         </div>
                                                     </div>
                                                     <div class="col-5">
@@ -285,13 +296,13 @@
                                                             <label class="extra-small fw-bold mb-1">Senior</label>
                                                             <input type="number" name="details[{{ $index }}][price_senior]"
                                                                 class="form-control glass-input form-control-sm stylist-price-input"
-                                                                value="{{ $detail->price_senior }}" {{ $detail->has_stylist_price ? 'required' : '' }}>
+                                                                value="{{ (int)$detail->price_senior }}" {{ $detail->has_stylist_price ? 'required' : '' }}>
                                                         </div>
                                                         <div class="col-6">
                                                             <label class="extra-small fw-bold mb-1">Junior</label>
                                                             <input type="number" name="details[{{ $index }}][price_junior]"
                                                                 class="form-control glass-input form-control-sm stylist-price-input"
-                                                                value="{{ $detail->price_junior }}" {{ $detail->has_stylist_price ? 'required' : '' }}>
+                                                                value="{{ (int)$detail->price_junior }}" {{ $detail->has_stylist_price ? 'required' : '' }}>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -332,6 +343,11 @@
                                 <div class="mb-3">
                                     <label class="small fw-bold mb-1">Nama Variasi</label>
                                     <input type="text" name="details[${detail_index}][name]" class="form-control glass-input" placeholder="Contoh: Ukuran Long" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="small fw-bold mb-1">Gambar Variasi (Opsional)</label>
+                                    <input type="file" name="details[${detail_index}][image]" class="form-control glass-input form-control-sm" accept="image/*">
                                 </div>
 
                                 <div class="row g-2 mb-3">

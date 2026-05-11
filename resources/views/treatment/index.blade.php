@@ -338,8 +338,24 @@
             <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
                 <div class="modal-body p-0">
                     <div class="row g-0">
-                        <div class="col-md-5 bg-light d-flex align-items-center justify-content-center p-4">
+                        <div class="col-md-5 bg-light d-flex align-items-center justify-content-center p-4 position-relative">
+                            <!-- Single Image -->
                             <img id="popupImage" src="" class="img-fluid rounded-4 shadow-sm" style="max-height: 300px; width: 100%; object-fit: cover;">
+                            
+                            <!-- Carousel for multiple images -->
+                            <div id="popupImageCarousel" class="carousel slide w-100" data-bs-ride="carousel" style="display: none;">
+                                <div class="carousel-inner rounded-4 shadow-sm" id="popupImageCarouselInner">
+                                    <!-- Carousel items go here -->
+                                </div>
+                                <button class="carousel-control-prev" type="button" data-bs-target="#popupImageCarousel" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 15px;"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                </button>
+                                <button class="carousel-control-next" type="button" data-bs-target="#popupImageCarousel" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; padding: 15px;"></span>
+                                    <span class="visually-hidden">Next</span>
+                                </button>
+                            </div>
                         </div>
                         <div class="col-md-7 p-4">
                             <div class="d-flex justify-content-between align-items-start mb-3">
@@ -486,7 +502,40 @@
             
             $('#popupName').text(row.data('name'));
             $('#popupCategory').text(row.data('category'));
-            $('#popupImage').attr('src', image);
+            
+            // Image Carousel Logic
+            let carouselImages = [];
+            if (image) {
+                carouselImages.push(image);
+            }
+            if (details && details.length > 0) {
+                details.forEach(function(d) {
+                    if (d.image_url) {
+                        carouselImages.push(d.image_url);
+                    }
+                });
+            }
+
+            if (carouselImages.length > 1) {
+                $('#popupImage').hide();
+                let innerHtml = '';
+                carouselImages.forEach(function(img, idx) {
+                    let active = idx === 0 ? 'active' : '';
+                    innerHtml += `
+                        <div class="carousel-item ${active}">
+                            <img src="${img}" class="d-block w-100" style="max-height: 300px; object-fit: cover;">
+                        </div>
+                    `;
+                });
+                $('#popupImageCarouselInner').html(innerHtml);
+                $('#popupImageCarousel').show();
+            } else if (carouselImages.length === 1) {
+                $('#popupImageCarousel').hide();
+                $('#popupImage').attr('src', carouselImages[0]).show();
+            } else {
+                $('#popupImageCarousel').hide();
+                $('#popupImage').attr('src', '').hide();
+            }
             
             let isPromo = row.data('category') == 'Promo';
 

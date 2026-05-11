@@ -212,7 +212,11 @@
                                             </div>
                                             <div class="d-flex flex-column">
                                                 <span class="fw-bold text-dark">{{ $booking->customer_name }}</span>
-                                                <small class="text-info" style="font-size: 0.75rem;">#BOOK-{{ $booking->id }}</small>
+                                                <div class="d-flex flex-column extra-small">
+                                                    <span class="text-muted"><i class="ti ti-mail me-1"></i>{{ $booking->customer_email ?? '-' }}</span>
+                                                    <span class="text-muted"><i class="ti ti-brand-whatsapp me-1"></i>{{ $booking->customer_phone ?? '-' }}</span>
+                                                </div>
+                                                <small class="text-info mt-1" style="font-size: 0.75rem;">#BOOK-{{ $booking->id }}</small>
                                             </div>
                                         </div>
                                     </td>
@@ -292,6 +296,10 @@
                                 <i class="ti ti-user text-pink" style="font-size: 3rem;"></i>
                             </div>
                             <h4 id="mdl_customer" class="fw-bold text-dark mb-1"></h4>
+                            <div class="small text-muted mb-2">
+                                <div id="mdl_customer_email"></div>
+                                <div id="mdl_customer_phone"></div>
+                            </div>
                             <span id="mdl_role_badge" class="badge bg-light-pink text-pink rounded-pill px-3"></span>
                         </div>
                         
@@ -360,6 +368,8 @@
                 success: function(data) {
                     $('#mdl_id').text('#' + data.id);
                     $('#mdl_customer').text(data.customer_name);
+                    $('#mdl_customer_email').html('<i class="ti ti-mail me-1"></i>' + (data.customer_email || '-'));
+                    $('#mdl_customer_phone').html('<i class="ti ti-brand-whatsapp me-1"></i>' + (data.customer_phone || '-'));
                     $('#mdl_role_badge').text(data.user ? 'Pelanggan Online' : 'Pelanggan Offline');
                     
                     const statusMap = {

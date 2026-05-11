@@ -322,8 +322,8 @@
 
                         <form id="bookingForm">
                             <div class="row">
-                                {{-- Hanya muncul jika login sebagai Admin atau Karyawan --}}
-                                @if(in_array(strtolower(Auth::user()->role), ['admin', 'karyawan']))
+                                {{-- Hanya muncul jika login sebagai Admin, Owner, atau Karyawan --}}
+                                @if($isStaff || strtolower(Auth::user()->role) === 'karyawan')
                                     <div class="col-md-12 mb-4">
                                         <div class="p-4 rounded-4 border bg-white shadow-sm">
                                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -463,7 +463,7 @@
                                     <label class="form-label">Metode Pembayaran</label>
                                     <select name="payment_method" class="form-select" required>
                                         <option value="">-- Pilih Metode --</option>
-                                        @if(Auth::user()->role === 'admin' || Auth::user()->role === 'karyawan')
+                                        @if(in_array(strtolower(Auth::user()->role), ['owner', 'admin', 'karyawan']))
                                             <option value="cash">Cash</option>
                                         @endif
                                         <option value="transfer">Transfer Bank (Midtrans)</option>
@@ -1584,7 +1584,7 @@
         }
 
         function showSuccessFinal(method) {
-            const isStaff = {{ in_array(Auth::user()->role, ['admin', 'karyawan']) ? 'true' : 'false' }};
+            const isStaff = {{ ($isStaff || strtolower(Auth::user()->role) === 'karyawan') ? 'true' : 'false' }};
 
             if (method === 'cash') {
                 if (isStaff) {

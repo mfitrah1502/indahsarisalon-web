@@ -18,6 +18,11 @@
                 </div>
                 
                 <div class="mt-2 text-muted small">
+                    <div class="mb-2">
+                        <span class="badge bg-light-warning text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill">
+                            <i class="ti ti-history me-1"></i> QR berganti dalam: <span id="countdown">10:00</span>
+                        </span>
+                    </div>
                     <strong>URL Terdeteksi:</strong> <code id="url-display">...</code><br>
                     <span class="text-danger" id="ip-warning" style="display:none;">
                         <i class="ti ti-alert-triangle"></i> Peringatan: Anda menggunakan 'localhost'. Scan tidak akan bekerja di HP!
@@ -65,6 +70,22 @@
             colorLight : "#ffffff",
             correctLevel : QRCode.CorrectLevel.H
         });
+
+        // Countdown Timer & Auto Refresh
+        let secondsLeft = 600; // 10 minutes
+        const countdownEl = document.getElementById('countdown');
+        
+        const timer = setInterval(() => {
+            secondsLeft--;
+            const mins = Math.floor(secondsLeft / 60);
+            const secs = secondsLeft % 60;
+            countdownEl.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
+            
+            if (secondsLeft <= 0) {
+                clearInterval(timer);
+                window.location.reload();
+            }
+        }, 1000);
     });
 </script>
 @endpush

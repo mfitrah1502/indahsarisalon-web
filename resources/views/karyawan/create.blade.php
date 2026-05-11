@@ -57,8 +57,8 @@
                         <div class="mb-3">
                             <label>Role</label>
                             <select name="role" class="form-select" required id="roleSelect">
+                                <option value="owner">Owner</option>
                                 <option value="admin">Admin</option>
-                                <option value="karyawan">Karyawan</option>
                             </select>
                         </div>
 
@@ -106,7 +106,7 @@
             let kategoriDiv = document.getElementById('kategoriDiv');
             let kategoriSelect = document.getElementById('kategoriSelect');
 
-            if (role === 'karyawan') {
+            if (role === 'admin') {
                 kategoriDiv.style.display = 'block';
                 kategoriSelect.setAttribute('required', 'required');
             } else {

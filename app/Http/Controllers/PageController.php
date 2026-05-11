@@ -19,7 +19,7 @@ class PageController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        $isStaff = in_array(strtolower($user->role), ['admin', 'karyawan']) || $user->type === 'karyawan';
+        $isStaff = in_array(strtolower($user->role), ['owner', 'admin']) || $user->type === 'karyawan';
         $today = now()->toDateString();
         $promoTreatments = \App\Models\Treatment::whereHas('category', function($q) {
             $q->where('name', 'Promo');
@@ -29,24 +29,27 @@ class PageController extends Controller
           })
           ->with('details')->get();
         
-        if (strtolower($user->role) === 'karyawan') {
+        if (in_array(strtolower($user->role), ['admin', 'karyawan'])) {
             $today = now()->format('Y-m-d');
             $absensi = Absensi::where('user_id', $user->id)
                              ->where('tanggal', $today)
                              ->first();
 
-            // Ambil ringkasan booking hari ini yang perlu diproses
-            $todayBookings = Booking::whereDate('reservation_datetime', $today)
-                                    ->where('status', 'pending')
-                                    ->with(['treatment', 'user'])
-                                    ->orderBy('reservation_datetime', 'asc')
-                                    ->take(5)
-                                    ->get();
+            // Ambil ringkasan booking hari ini yang perlu diproses (Hanya untuk Admin)
+            $todayBookings = collect();
+            if (strtolower($user->role) === 'admin') {
+                $todayBookings = Booking::whereDate('reservation_datetime', $today)
+                                        ->where('status', 'pending')
+                                        ->with(['treatment', 'user'])
+                                        ->orderBy('reservation_datetime', 'asc')
+                                        ->take(5)
+                                        ->get();
+            }
 
             return view('dashboard.homepage-karyawan', compact('absensi', 'todayBookings', 'promoTreatments'));
         }
 
-        if (strtolower($user->role) === 'admin') {
+        if (strtolower($user->role) === 'owner') {
             $grandTotalPemasukan = Booking::where('payment_status', 'paid')
                                             ->where('status', '!=', 'dibatalkan')
                                             ->sum('total_price');

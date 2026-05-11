@@ -58,8 +58,8 @@
                         <div class="mb-3">
                             <label>Role</label>
                             <select name="role" class="form-select" required id="roleSelect">
-                                <option value="admin" {{ $karyawan->role == 'admin' ? 'selected' : '' }}>Admin</option>
-                                <option value="karyawan" {{ $karyawan->role == 'karyawan' ? 'selected' : '' }}>Karyawan
+                                <option value="owner" {{ $karyawan->role == 'owner' ? 'selected' : '' }}>Owner</option>
+                                <option value="admin" {{ $karyawan->role == 'admin' ? 'selected' : '' }}>Admin
                                 </option>
                             </select>
                         </div>
@@ -110,7 +110,7 @@
             let kategoriDiv = document.getElementById('kategoriDiv');
             let kategoriSelect = document.getElementById('kategoriSelect');
 
-            if (role === 'karyawan') {
+            if (role === 'admin') {
                 kategoriDiv.style.display = 'block';
                 kategoriSelect.setAttribute('required', 'required');
             } else {

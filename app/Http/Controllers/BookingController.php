@@ -28,22 +28,31 @@ class BookingController extends Controller
     public function index(Request $request)
     {
         $categories = Category::all();
-        $query = Treatment::with(['details','category'])->where('is_active', true);
+        $query = Treatment::with(['details', 'category'])
+            ->join('categories', 'treatments.category_id', '=', 'categories.id')
+            ->where('treatments.is_active', true)
+            ->select('treatments.*');
 
         if ($request->filled('category')) {
-            $query->where('category_id', $request->category);
+            $query->where('treatments.category_id', $request->category);
         }
 
         if ($request->filled('search')) {
-            $query->where('name', 'like', '%'.$request->search.'%');
+            $query->where('treatments.name', 'like', '%' . $request->search . '%');
         }
 
-        $treatments = $query->select('treatments.*')
-            ->join('categories', 'treatments.category_id', '=', 'categories.id')
-            ->orderByRaw("CASE WHEN categories.name = 'Promo' THEN 0 ELSE 1 END")
-            ->orderBy('is_promo', 'desc')
-            ->orderBy('name', 'asc')
+        Log::info('Booking Index Request', [
+            'category' => $request->category,
+            'search' => $request->search,
+            'is_ajax' => $request->has('is_ajax') || $request->ajax()
+        ]);
+
+        $treatments = $query->orderByRaw("CASE WHEN categories.name = 'Promo' THEN 0 ELSE 1 END")
+            ->orderBy('treatments.is_promo', 'desc')
+            ->orderBy('treatments.name', 'asc')
             ->get();
+
+        Log::info('Treatments Found: ' . $treatments->count());
 
         // Cek jam operasional (09:00 - 18:00)
         $now = Carbon::now();
@@ -62,12 +71,12 @@ class BookingController extends Controller
     public function select($treatmentId)
     {
         $treatment = Treatment::with('details')->findOrFail($treatmentId);
-        $stylists = User::where('role', 'karyawan')->get();
+        $stylists = User::where('role', 'admin')->get();
         $allTreatments = Treatment::with(['details', 'category'])->get();
         $categories = Category::all();
         
         // Ambil data staff untuk UI (Hanya Admin dan Karyawan)
-        $isStaff = in_array(strtolower(Auth::user()->role ?? ''), ['admin', 'karyawan']);
+        $isStaff = in_array(strtolower(Auth::user()->role ?? ''), ['owner', 'admin']);
         $customers = [];
         if ($isStaff) {
             $customers = User::where('role', 'pelanggan')
@@ -191,7 +200,7 @@ class BookingController extends Controller
         if ($authUser) {
             $role = strtolower(trim($authUser->role ?? ''));
             $type = strtolower(trim($authUser->type ?? ''));
-            if ($role === 'admin' || $role === 'karyawan' || $type === 'karyawan' || $authUser->id === 1) {
+            if ($role === 'owner' || $role === 'admin' || $type === 'karyawan' || $authUser->id === 1) {
                 $isStaff = true;
             }
         }
@@ -374,7 +383,7 @@ class BookingController extends Controller
         return view('booking.summary', [
             'booking' => $booking,
             'treatment' => $booking->treatment,
-            'stylists' => User::where('role', 'karyawan')->get(), // optional
+            'stylists' => User::where('role', 'admin')->get(), // optional
             'stylist' => $booking->stylist,
             'reservation_datetime' => $booking->reservation_datetime,
             'total_price' => $booking->total_price
@@ -403,7 +412,7 @@ class BookingController extends Controller
 
         if (strtolower($user->role) === 'pelanggan' && $user->type !== 'karyawan') {
             $query->where('user_id', $user->id);
-        } elseif (in_array(strtolower($user->role), ['admin', 'karyawan']) || $user->type === 'karyawan') {
+        } elseif (in_array(strtolower($user->role), ['owner', 'admin']) || $user->type === 'karyawan') {
             $query->where(function ($q) use ($user) {
                 $q->where('cashier_id', $user->id)
                     ->orWhere('stylist_id', $user->id);
@@ -510,7 +519,7 @@ class BookingController extends Controller
         ];
 
         // Tentukan view berdasarkan role
-        $view = (strtolower(Auth::user()->role) === 'karyawan') ? 'karyawan.bookings.index' : 'admin.bookings.index';
+        $view = (strtolower(Auth::user()->role) === 'admin') ? 'karyawan.bookings.index' : 'admin.bookings.index';
 
         return view($view, compact('bookings', 'status', 'stats'));
     }
@@ -561,7 +570,7 @@ class BookingController extends Controller
         if ($authUser) {
             $role = strtolower(trim($authUser->role));
             $type = strtolower(trim($authUser->type));
-            if ($role === 'admin' || $role === 'karyawan' || $type === 'karyawan' || $authUser->id === 1) {
+            if ($role === 'owner' || $role === 'admin' || $type === 'karyawan' || $authUser->id === 1) {
                 $isStaff = true;
             }
         }

@@ -12,10 +12,8 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\AbsensiController;
 use App\Http\Controllers\TreatmentController;
-use App\Http\Controllers\CategoryController;
+use Illuminate\Support\Str;
 
-// ------------------------------
-// Home & Landing
 // ------------------------------
 Route::get('/', [PageController::class, 'landing'])->name('landing');
 
@@ -99,7 +97,7 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
     // ------------------------------
     // Management (Admin & Karyawan) - Pindahkan ke atas agar tidak bentrok dengan resource karyawan
     // ------------------------------
-    Route::middleware('role:admin,karyawan')->group(function () {
+    Route::middleware('role:owner,admin')->group(function () {
         // Booking Management (Shared Logic)
         Route::get('/admin/bookings', [BookingController::class, 'adminIndex'])->name('admin.bookings.index');
         Route::get('/karyawan/bookings', [BookingController::class, 'adminIndex'])->name('karyawan.bookings.index');
@@ -117,9 +115,8 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
     // ------------------------------
     // Absensi Kasir/Karyawan
     // ------------------------------
-    Route::prefix('absensi')->middleware('role:admin,karyawan')->group(function () {
-        Route::post('/masuk', [AbsensiController::class, 'absenMasuk'])->name('absensi.masuk');
-        Route::post('/keluar', [AbsensiController::class, 'absenKeluar'])->name('absensi.keluar');
+    Route::prefix('absensi')->middleware('role:owner,admin,karyawan')->group(function () {
+        Route::post('/presence', [AbsensiController::class, 'presence'])->name('absensi.presence');
         
         // QR Attendance
         Route::get('/scan', [AbsensiController::class, 'showScanner'])->name('absensi.scan');
@@ -128,7 +125,7 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
     });
 
     // Admin only
-    Route::middleware('role:admin')->group(function () {
+    Route::middleware('role:owner')->group(function () {
         Route::get('/admin/absensi/qr', [AbsensiController::class, 'showQR'])->name('admin.absensi.qr');
         Route::post('/admin/absensi/manual', [AbsensiController::class, 'storeManual'])->name('absensi.storeManual');
         // Treatment

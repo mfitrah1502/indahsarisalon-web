@@ -8,50 +8,36 @@ use Illuminate\Support\Facades\Auth;
 
 class AbsensiController extends Controller
 {
-    // Tombol absen masuk manual
-    public function absenMasuk(Request $request)
+    // Tombol presensi tunggal
+    public function presence(Request $request)
     {
         /** @var \App\Models\User|null $user */
         $user = Auth::user();
 
-        // cek role karyawan langsung di controller
-        if (!in_array($user->role, ['admin', 'karyawan'])) {
+        // cek role
+        if (!in_array($user->role, ['owner', 'admin', 'karyawan'])) {
             abort(403, 'Unauthorized');
         }
 
         $today = now()->format('Y-m-d');
 
-        // Cek apakah sudah absen hari ini
-        $absen = Absensi::firstOrCreate(
+        // Cek apakah sudah presensi hari ini
+        $exists = Absensi::where('user_id', $user->id)
+                         ->where('tanggal', $today)
+                         ->where('status', 'Hadir')
+                         ->exists();
+
+        if ($exists) {
+            return response()->json(['success' => false, 'message' => 'Anda sudah melakukan presensi hari ini.']);
+        }
+
+        // Simpan sebagai hadir
+        Absensi::updateOrCreate(
             ['user_id' => $user->id, 'tanggal' => $today],
             ['jam_masuk' => now(), 'status' => 'Hadir']
         );
 
-        return response()->json(['success' => true, 'message' => 'Absen masuk tercatat']);
-    }
-
-    // Tombol absen keluar manual
-    public function absenKeluar(Request $request)
-    {
-        $user = Auth::user();
-
-        // cek role
-        if (!in_array($user->role, ['admin', 'karyawan'])) {
-            abort(403, 'Unauthorized');
-        }
-
-        $today = now()->format('Y-m-d');
-
-        $absen = Absensi::where('user_id', $user->id)
-                        ->where('tanggal', $today)
-                        ->first();
-
-        if($absen){
-            $absen->update(['jam_keluar' => now()]);
-            return response()->json(['success' => true, 'message' => 'Absen keluar tercatat']);
-        }
-
-        return response()->json(['success' => false, 'message' => 'Belum absen masuk']);
+        return response()->json(['success' => true, 'message' => 'Presensi berhasil dicatat']);
     }
 
     public function showScanner()
@@ -63,9 +49,12 @@ class AbsensiController extends Controller
     {
         $token = $request->query('token');
         $date = now()->format('Y-m-d');
-        $expectedToken = md5($date . config('app.key'));
+        $timeBlock = floor(time() / 600); // 10 menit
+        
+        $expectedToken = md5($date . $timeBlock . config('app.key'));
+        $previousToken = md5($date . ($timeBlock - 1) . config('app.key'));
 
-        if (!$token || $token !== $expectedToken) {
+        if (!$token || ($token !== $expectedToken && $token !== $previousToken)) {
             abort(403, 'Link presensi tidak valid atau sudah kadaluarsa.');
         }
 
@@ -93,9 +82,10 @@ class AbsensiController extends Controller
 
     public function showQR()
     {
-        // Simple token: md5(date + APP_KEY)
+        // Simple token: md5(date + timeblock + APP_KEY)
         $date = now()->format('Y-m-d');
-        $token = md5($date . config('app.key'));
+        $timeBlock = floor(time() / 600); // 10 menit
+        $token = md5($date . $timeBlock . config('app.key'));
         
         return view('absensi.qr', compact('token'));
     }
@@ -105,9 +95,11 @@ class AbsensiController extends Controller
         $request->validate(['token' => 'required']);
         
         $today = now()->format('Y-m-d');
-        $expectedToken = md5($today . config('app.key'));
+        $timeBlock = floor(time() / 600);
+        $expectedToken = md5($today . $timeBlock . config('app.key'));
+        $previousToken = md5($today . ($timeBlock - 1) . config('app.key'));
 
-        if ($request->token !== $expectedToken) {
+        if ($request->token !== $expectedToken && $request->token !== $previousToken) {
             $msg = 'QR Code tidak valid atau sudah kadaluarsa.';
             if ($request->ajax()) return response()->json(['success' => false, 'message' => $msg]);
             return redirect()->back()->with('error', $msg);
@@ -115,32 +107,27 @@ class AbsensiController extends Controller
 
         $user = Auth::user();
 
-        // Logic Absen Masuk atau Keluar
+        // Logic Absen Tunggal
         $absen = Absensi::where('user_id', $user->id)
                         ->where('tanggal', $today)
                         ->first();
 
-        if (!$absen) {
-            // Belum absen hari ini -> Masuk
-            Absensi::create([
-                'user_id' => $user->id,
-                'tanggal' => $today,
+        if ($absen && $absen->status === 'Hadir') {
+            $msg = 'Anda sudah melakukan presensi hari ini.';
+            if ($request->ajax()) return response()->json(['success' => false, 'message' => $msg]);
+            return redirect()->back()->with('error', $msg);
+        }
+
+        Absensi::updateOrCreate(
+            ['user_id' => $user->id, 'tanggal' => $today],
+            [
                 'jam_masuk' => now(),
                 'status' => 'Hadir'
-            ]);
-            $msg = 'Absen MASUK berhasil tercatat.';
-            $type = 'masuk';
-        } else {
-            // Sudah absen masuk -> Keluar (jika belum absen keluar)
-            if ($absen->jam_keluar) {
-                $msg = 'Anda sudah melakukan absen masuk dan keluar hari ini.';
-                if ($request->ajax()) return response()->json(['success' => false, 'message' => $msg]);
-                return redirect()->back()->with('error', $msg);
-            }
-            $absen->update(['jam_keluar' => now()]);
-            $msg = 'Absen KELUAR berhasil tercatat.';
-            $type = 'keluar';
-        }
+            ]
+        );
+        
+        $msg = 'Presensi berhasil tercatat.';
+        $type = 'presence';
 
         if ($request->ajax()) {
             return response()->json(['success' => true, 'message' => $msg, 'type' => $type]);

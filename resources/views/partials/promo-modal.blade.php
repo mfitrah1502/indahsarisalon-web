@@ -17,10 +17,16 @@
                                 <div class="row g-0">
                                     <div class="col-md-6">
                                         @php
-                                            $bucket = config('services.supabase.bucket');
-                                            $imageUrl = $promo->image 
-                                                ? config('services.supabase.url') . '/storage/v1/object/public/' . $bucket . '/' . $promo->image 
-                                                : asset('assets/images/no-image.jpg');
+                                            if (!$promo->image) {
+                                                $imageUrl = asset('assets/images/no-image.jpg');
+                                            } elseif (strpos($promo->image, 'http') === 0) {
+                                                $imageUrl = $promo->image;
+                                            } else {
+                                                $bucket = ($promo->is_promo && env('SUPABASE_PROMO_BUCKET')) 
+                                                    ? env('SUPABASE_PROMO_BUCKET') 
+                                                    : env('SUPABASE_BUCKET');
+                                                $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $promo->image;
+                                            }
                                         @endphp
                                         <img src="{{ $imageUrl }}" class="img-fluid h-100" style="object-fit: cover; min-height: 400px;" alt="{{ $promo->name }}">
                                     </div>

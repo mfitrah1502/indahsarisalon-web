@@ -60,7 +60,15 @@ class BookingController extends Controller
         $end = Carbon::createFromTime(18, 0, 0);
         $isOpen = $now->between($start, $end);
 
-        if ($request->ajax() || $request->has('is_ajax')) {
+        if ($request->ajax() || $request->has('is_ajax') || $request->expectsJson() || $request->is('api/*')) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => true,
+                    'data' => $treatments,
+                    'categories' => $categories,
+                    'is_open' => $isOpen
+                ]);
+            }
             return view('booking.partials._treatment_list', compact('treatments'));
         }
 

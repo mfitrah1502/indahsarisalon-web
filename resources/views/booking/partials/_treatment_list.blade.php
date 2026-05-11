@@ -2,25 +2,7 @@
     <div class="col-md-4 mb-4">
         <div class="card treatment-card h-100 border-0 shadow-sm">
             @php
-                $images = [];
-                foreach ($treatment->details as $detail) {
-                    if ($detail->image_url && !in_array($detail->image_url, $images)) {
-                        $images[] = $detail->image_url;
-                    }
-                }
-
-                if (count($images) == 0) {
-                    if ($treatment->image) {
-                        $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
-                        if (strpos($treatment->image, 'http') === 0) {
-                            $images[] = $treatment->image;
-                        } else {
-                            $images[] = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
-                        }
-                    } else {
-                        $images[] = asset('assets/images/no-image.jpg');
-                    }
-                }
+                $images = $treatment->all_images;
             @endphp
             
             @if(count($images) > 1)
@@ -47,7 +29,7 @@
                     </button>
                 </div>
             @else
-                <img src="{{ $images[0] }}" class="card-img-top w-100 d-block" alt="{{ $treatment->name }}" style="height: 250px; object-fit: cover;">
+                <img src="{{ $images[0] ?? asset('assets/images/no-image.jpg') }}" class="card-img-top w-100 d-block" alt="{{ $treatment->name }}" style="height: 250px; object-fit: cover;">
             @endif
             <div class="card-body">
                 <h5 class="card-title fw-bold text-dark">
@@ -55,17 +37,8 @@
                     @if($treatment->is_promo)
                         <span class="badge bg-danger ms-1" style="font-size: 0.65rem;">PROMO</span>
                     @endif
-                    @if(Auth::check())
-                        @php
-                            $isColoring = $treatment->category && stripos($treatment->category->name, 'Coloring') !== false;
-                            $showLoyaltyBadge = false;
-                            if ($isColoring && Auth::user()->has_coloring_loyalty) {
-                                $showLoyaltyBadge = true;
-                            }
-                        @endphp
-                        @if($showLoyaltyBadge)
-                            <span class="badge bg-info ms-1 animate__animated animate__pulse animate__infinite" style="font-size: 0.65rem;">LOYALTY 35%</span>
-                        @endif
+                    @if(Auth::check() && Auth::user()->has_coloring_loyalty && $treatment->category && stripos($treatment->category->name, 'Coloring') !== false)
+                        <span class="badge bg-info ms-1 animate__animated animate__pulse animate__infinite" style="font-size: 0.65rem;">LOYALTY 35%</span>
                     @endif
                 </h5>
                 <p class="card-text text-muted mb-3">
@@ -73,67 +46,15 @@
                     <div class="small">
                         @foreach($treatment->details as $detail)
                             @php
-                                $originalPrice = $detail->price;
-                                $isPromo = $treatment->is_promo;
-                                $promoType = $treatment->promo_type;
-                                $promoValue = $treatment->promo_value;
-
-                                // Base Price Calculation
-                                if ($detail->has_stylist_price) {
-                                    $prices = array_filter([(int)$detail->price_senior, (int)$detail->price_junior]);
-                                    $minPrice = count($prices) > 0 ? min($prices) : (int)$detail->price;
-                                    $maxPrice = count($prices) > 0 ? max($prices) : (int)$detail->price;
-
-                                    if ($isPromo) {
-                                        $pType = strtolower($promoType);
-                                        if (in_array($pType, ['percentage', 'percent', 'persen'])) {
-                                            $minPrice -= ($minPrice * $promoValue / 100);
-                                            $maxPrice -= ($maxPrice * $promoValue / 100);
-                                        } else {
-                                            $minPrice = (float) $promoValue;
-                                            $maxPrice = (float) $promoValue;
-                                        }
-                                    }
-
-                                    // Apply ONLY Coloring Loyalty Preview (35%)
-                                    if (Auth::check()) {
-                                        $isColoring = $treatment->category && stripos($treatment->category->name, 'Coloring') !== false;
-                                        if ($isColoring && Auth::user()->has_coloring_loyalty) {
-                                            $minPrice -= ($minPrice * 35 / 100);
-                                            $maxPrice -= ($maxPrice * 35 / 100);
-                                        }
-                                    }
-                                } else {
-                                    $price = $originalPrice;
-                                    if ($isPromo) {
-                                        $pType = strtolower($promoType);
-                                        if (in_array($pType, ['percentage', 'percent', 'persen'])) {
-                                            $price -= ($price * $promoValue / 100);
-                                        } else {
-                                            $price = (float) $promoValue;
-                                        }
-                                    }
-
-                                    // Apply ONLY Coloring Loyalty Preview (35%)
-                                    if (Auth::check()) {
-                                        $isColoring = $treatment->category && stripos($treatment->category->name, 'Coloring') !== false;
-                                        if ($isColoring && Auth::user()->has_coloring_loyalty) {
-                                            $price -= ($price * 35 / 100);
-                                        }
-                                    }
-                                }
+                                $prices = $detail->getMinMaxCalculatedPrice();
                             @endphp
                             <div class="d-flex justify-content-between border-bottom py-1">
                                 <span>- {{ $detail->name }}</span>
                                 <span class="fw-bold text-primary">
-                                    @if($detail->has_stylist_price)
-                                        @if($minPrice != $maxPrice)
-                                            Rp {{ number_format(max(0, $minPrice), 0, ',', '.') }} - {{ number_format(max(0, $maxPrice), 0, ',', '.') }}
-                                        @else
-                                            Rp {{ number_format(max(0, $minPrice), 0, ',', '.') }}
-                                        @endif
+                                    @if($detail->has_stylist_price && $prices['min'] != $prices['max'])
+                                        Rp {{ number_format($prices['min'], 0, ',', '.') }} - {{ number_format($prices['max'], 0, ',', '.') }}
                                     @else
-                                        Rp {{ number_format(max(0, $price), 0, ',', '.') }}
+                                        Rp {{ number_format($prices['min'], 0, ',', '.') }}
                                     @endif
                                 </span>
                             </div>
@@ -145,9 +66,9 @@
                         <div class="mb-2 p-2 bg-light-danger rounded-3 text-center">
                             <small class="text-danger fw-bold d-block" style="font-size: 0.7rem;">
                                 <i class="ti ti-calendar-event me-1"></i>Valid: 
-                                {{ $treatment->promo_start_date ? \Carbon\Carbon::parse($treatment->promo_start_date)->format('d/m') : '' }}
+                                {{ $treatment->promo_start_date ? $treatment->promo_start_date->format('d/m') : '' }}
                                 - 
-                                {{ $treatment->promo_end_date ? \Carbon\Carbon::parse($treatment->promo_end_date)->format('d/m/y') : '' }}
+                                {{ $treatment->promo_end_date ? $treatment->promo_end_date->format('d/m/y') : '' }}
                             </small>
                         </div>
                     @endif

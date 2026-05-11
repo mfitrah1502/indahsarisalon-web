@@ -73,6 +73,14 @@ class TreatmentController extends Controller
             ->where('phone', '!=', '')
             ->get();
 
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'data' => $treatments,
+                'categories' => $categories
+            ]);
+        }
+
         return view('treatment.index', compact('treatments', 'categories', 'customers'));
     }
 

@@ -196,13 +196,17 @@
                                     <div class="form-section-title mb-2" style="font-size: 0.75rem;">
                                         <i class="ti ti-calendar-event"></i> Periode Promo (Opsional)
                                     </div>
+                                    <div class="form-check form-switch custom-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="is_promo" name="is_promo" value="1" {{ $treatment->is_promo ? 'checked' : '' }}>
+                                        <label class="form-check-label fw-bold extra-small" for="is_promo">Aktifkan Status Promo</label>
+                                    </div>
                                     <div class="mb-3">
                                         <label class="extra-small fw-bold mb-1">Mulai</label>
-                                        <input type="date" name="promo_start_date" class="form-control glass-input form-control-sm" value="{{ $treatment->promo_start_date }}">
+                                        <input type="date" name="promo_start_date" class="form-control glass-input form-control-sm" value="{{ $treatment->promo_start_date ? $treatment->promo_start_date->format('Y-m-d') : '' }}">
                                     </div>
                                     <div>
                                         <label class="extra-small fw-bold mb-1">Berakhir</label>
-                                        <input type="date" name="promo_end_date" class="form-control glass-input form-control-sm" value="{{ $treatment->promo_end_date }}">
+                                        <input type="date" name="promo_end_date" class="form-control glass-input form-control-sm" value="{{ $treatment->promo_end_date ? $treatment->promo_end_date->format('Y-m-d') : '' }}">
                                     </div>
                                     <small class="text-muted d-block mt-2" style="font-size: 0.65rem;">
                                         Kosongkan jika ingin promo berlaku selamanya (atau manual via switch di atas).

@@ -122,8 +122,8 @@ class TreatmentController extends Controller
     $treatment->promo_type = $request->promo_type;
     $treatment->promo_value = $request->promo_value;
     $treatment->is_active = $request->has('is_active') ? 1 : 0;
-    $treatment->promo_start_date = $request->promo_start_date;
-    $treatment->promo_end_date = $request->promo_end_date;
+    $treatment->promo_start_date = $request->promo_start_date ?: null;
+    $treatment->promo_end_date = $request->promo_end_date ?: null;
     $treatment->allow_multi_select = $request->has('allow_multi_select') ? 1 : 0;
     // Upload gambar ke Supabase
         if ($request->hasFile('image')) {
@@ -180,8 +180,8 @@ class TreatmentController extends Controller
         $treatment->promo_type = $request->promo_type;
         $treatment->promo_value = $request->promo_value;
         $treatment->is_active = $request->has('is_active') ? 1 : 0;
-        $treatment->promo_start_date = $request->promo_start_date;
-        $treatment->promo_end_date = $request->promo_end_date;
+        $treatment->promo_start_date = $request->promo_start_date ?: null;
+        $treatment->promo_end_date = $request->promo_end_date ?: null;
         $treatment->allow_multi_select = $request->has('allow_multi_select') ? 1 : 0;
          // Upload gambar baru
         if ($request->hasFile('image')) {
@@ -353,8 +353,8 @@ public function filter(Request $request)
         }
 
         foreach ($customers as $customer) {
-            $message = "Halo *{$customer->name}*, ada promo spesial di *Indah Sari Salon*!\n\n";
-            $message .= "Berikut treatment yang sedang promo hari ini:\n\n";
+            $message = "Halo *{$customer->name}*, ada promo menarik di *Indah Sari Salon*!\n\n";
+            $message .= "Promo menarik hari ini:\n\n";
             $message .= $promoDetails;
             $message .= "\nBooking sekarang sebelum kehabisan slot!\n\nSampai jumpa di salon!";
 

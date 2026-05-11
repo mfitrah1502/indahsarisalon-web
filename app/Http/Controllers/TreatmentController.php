@@ -250,9 +250,17 @@ class TreatmentController extends Controller
     }
 
     // Hapus treatment
-    public function destroy(Treatment $treatment)
+    public function destroy(Request $request, Treatment $treatment)
     {
         $treatment->delete();
+
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Treatment berhasil dihapus'
+            ]);
+        }
+
         return redirect()->route('treatment.index')->with('success','Treatment berhasil dihapus');
     }
     // app/Http/Controllers/TreatmentController.php

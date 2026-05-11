@@ -66,9 +66,9 @@ Route::prefix('karyawan')->group(function () {
 Route::prefix('treatment')->group(function () {
     Route::get('/', [TreatmentController::class, 'index']);
     Route::post('/', [TreatmentController::class, 'store']);
-    Route::get('/{id}', [TreatmentController::class, 'show']);
-    Route::put('/{id}', [TreatmentController::class, 'update']);
-    Route::delete('/{id}', [TreatmentController::class, 'destroy']);
+    Route::get('/{treatment}', [TreatmentController::class, 'show']);
+    Route::put('/{treatment}', [TreatmentController::class, 'update']);
+    Route::delete('/{treatment}', [TreatmentController::class, 'destroy']);
 
     Route::get('/filter', [TreatmentController::class, 'filter']);
 });

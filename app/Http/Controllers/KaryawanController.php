@@ -12,7 +12,7 @@ class KaryawanController extends Controller
     public function index(Request $request)
     {
 
-        $query = User::whereIn('role', ['owner', 'admin']); // ambil owner & admin
+        $query = User::whereIn('role', ['owner', 'admin', 'karyawan']); // ambil owner & admin
 
 
         // Jika ada pencarian

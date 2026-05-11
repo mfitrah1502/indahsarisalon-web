@@ -138,6 +138,10 @@ class AbsensiController extends Controller
 
     public function storeManual(Request $request)
     {
+        if (Auth::user()->role !== 'owner') {
+            return response()->json(['success' => false, 'message' => 'Hanya Owner yang dapat mengatur kehadiran manual.'], 403);
+        }
+
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'tanggal' => 'required|date',

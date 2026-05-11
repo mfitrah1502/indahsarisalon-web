@@ -67,9 +67,7 @@
                     <p class="text-muted mb-0">Kelola daftar layanan salon dan pengaturan harga.</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-success rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#broadcastModal">
-                        <i class="ti ti-brand-whatsapp me-1"></i> Siarkan Promo
-                    </button>
+                    
                     <button id="btnViewCategories" class="btn btn-light-primary rounded-pill px-4">
                         <i class="ti ti-category me-1"></i> Kelola Kategori
                     </button>
@@ -133,19 +131,30 @@
                             </thead>
                             <tbody>
                                 @forelse($treatments as $treatment)
+                                    @php
+                                        if (!$treatment->image) {
+                                            $imageUrl = asset('assets/images/no-image.jpg');
+                                        } elseif (strpos($treatment->image, 'http') === 0) {
+                                            $imageUrl = $treatment->image;
+                                        } else {
+                                            $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                                            $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
+                                        }
+                                    @endphp
                                     <tr class="treatment-row" 
+                                        data-id="{{ $treatment->id }}"
                                         data-name="{{ $treatment->name }}"
                                         data-category="{{ $treatment->category->name ?? '-' }}"
                                         data-details='@json($treatment->details)'
-                                        data-image="{{ $treatment->image }}">
+                                        data-image="{{ $imageUrl }}">
                                         <td class="px-3">
                                             <div class="d-flex align-items-center">
                                                 <div class="treatment-icon me-3">
                                                     @if($treatment->image)
-                                                        <img src="https://{{ env('SUPABASE_PROJECT_REF') }}.supabase.co/storage/v1/object/public/{{ env('SUPABASE_BUCKET') }}/{{ $treatment->image }}" 
+                                                        <img src="{{ $imageUrl }}" 
                                                              class="rounded-3 shadow-sm" width="50" height="50" style="object-fit:cover;">
                                                     @else
-                                                        <div class="bg-light rounded-3 d-flex align-items-center justify-content-center" width="50" height="50">
+                                                        <div class="bg-light rounded-3 d-flex align-items-center justify-content-center" style="width:50px; height:50px;">
                                                             <i class="ti ti-photo text-muted fs-4"></i>
                                                         </div>
                                                     @endif
@@ -345,12 +354,87 @@
                     </div>
                 </div>
                 <div class="modal-footer border-0 p-3 bg-light">
+                    <button type="button" class="btn btn-outline-success rounded-pill px-4 me-auto" id="btnSpreadPromo">
+                        <i class="ti ti-share me-1"></i> Sebarkan
+                    </button>
                     <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Modal Choice Spread -->
+    <div class="modal fade" id="spreadChoiceModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="fw-bold"><i class="ti ti-share me-2 text-primary"></i>Sebarkan Ke:</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="d-grid gap-3">
+                        <button class="btn btn-outline-primary py-3 rounded-4" id="btnToCustomer">
+                            <i class="ti ti-users fs-2 d-block mb-1"></i>
+                            Kirim ke Pelanggan
+                        </button>
+                        <button class="btn btn-outline-success py-3 rounded-4" id="btnToCommunity">
+                            <i class="ti ti-brand-whatsapp fs-2 d-block mb-1"></i>
+                            Kirim ke Komunitas
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Select Customer -->
+    <div class="modal fade" id="selectCustomerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header bg-primary text-white border-bottom-0 rounded-top-4">
+                    <h5 class="modal-title fw-bold"><i class="ti ti-users me-2"></i>Pilih Pelanggan</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="input-group mb-3 shadow-sm rounded-pill overflow-hidden border">
+                        <span class="input-group-text bg-white border-0"><i class="ti ti-search text-muted"></i></span>
+                        <input type="text" id="customerSearchInput" class="form-control border-0" placeholder="Cari nama atau nomor pelanggan...">
+                    </div>
+                    <div class="customer-list-scrollable" style="max-height: 400px; overflow-y: auto;">
+                        <div class="list-group list-group-flush" id="customerList">
+                            @foreach($customers as $customer)
+                                <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 p-3 border-0 border-bottom customer-item" data-search="{{ strtolower($customer->name) }} {{ $customer->phone }}">
+                                    <input class="form-check-input flex-shrink-0" type="radio" name="selectedCustomer" value="{{ $customer->phone }}" data-name="{{ $customer->name }}">
+                                    <div class="flex-grow-1">
+                                        <div class="fw-bold text-dark">{{ $customer->name }}</div>
+                                        <small class="text-muted"><i class="ti ti-brand-whatsapp me-1"></i>{{ $customer->phone }}</small>
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4" id="btnConfirmSendCustomer">
+                        <i class="ti ti-send me-1"></i> Kirim Ke WA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @push('styles')
+    <style>
+        .customer-item:hover {
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+        .customer-item input:checked + div {
+            font-weight: bold;
+        }
+    </style>
+    @endpush
                 </div>
             </div>
         </div>
@@ -392,8 +476,10 @@
             
             $('#popupName').text(row.data('name'));
             $('#popupCategory').text(row.data('category'));
+            $('#popupImage').attr('src', image);
             
             let isPromo = row.data('category') == 'Promo';
+
             let html = '';
             details.forEach(function (d) {
                 let currentPrice = d.price;
@@ -417,8 +503,167 @@
             });
 
             $('#popupDetails').html(html);
+            
+            // Store current treatment data for spreading
+            $('#btnSpreadPromo').data('treatment', {
+                id: row.data('id'),
+                name: row.data('name'),
+                category: row.data('category'),
+                image: image,
+                details: details
+            });
+
             detailModal.show();
         });
+
+        // Spread Promo Logic
+        const spreadChoiceModal = new bootstrap.Modal(document.getElementById('spreadChoiceModal'));
+        const selectCustomerModal = new bootstrap.Modal(document.getElementById('selectCustomerModal'));
+
+        $('#btnSpreadPromo').click(function() {
+            spreadChoiceModal.show();
+        });
+
+        $('#btnToCustomer').click(function() {
+            spreadChoiceModal.hide();
+            selectCustomerModal.show();
+        });
+
+        $('#btnToCommunity').click(function() {
+            const treatment = $('#btnSpreadPromo').data('treatment');
+            const communityLink = "https://chat.whatsapp.com/GisLhO7PqBwF9VfC6L9A9P"; // Default community link from history
+            
+            spreadPromo(null, treatment, communityLink);
+        });
+
+        $('#btnConfirmSendCustomer').click(function() {
+            const selected = $('input[name="selectedCustomer"]:checked');
+            if (selected.length === 0) {
+                alert('Pilih pelanggan terlebih dahulu');
+                return;
+            }
+
+            const treatment = $('#btnSpreadPromo').data('treatment');
+            const phone = selected.val();
+            const name = selected.data('name');
+
+            spreadPromo({ phone: phone, name: name }, treatment);
+        });
+
+        // Customer Search logic
+        $('#customerSearchInput').on('keyup', function() {
+            const val = $(this).val().toLowerCase();
+            $('.customer-item').each(function() {
+                const searchTxt = $(this).data('search');
+                if (searchTxt.indexOf(val) > -1) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+        });
+
+        async function spreadPromo(customer, treatment, groupLink = null) {
+            // 1. Construct Caption
+            let caption = `Halo${customer ? ' ' + customer.name : ''}, ada promo spesial nih di *Indah Sari Salon*!\n\n`;
+            caption += `*${treatment.name}*\n`;
+            
+            treatment.details.forEach(d => {
+                caption += `- ${d.name}: *Rp ${new Intl.NumberFormat('id-ID').format(d.price)}*\n`;
+            });
+
+            caption += `\nBooking sekarang ya! Klik link ini: ${window.location.origin}/booking/select/${treatment.id || ''}\n\nSampai jumpa di salon!`;
+
+            // 2. Copy Image to Clipboard
+            const btn = customer ? $('#btnConfirmSendCustomer') : $('#btnToCommunity');
+            const originalHtml = btn.html();
+            btn.html('<span class="spinner-border spinner-border-sm me-1"></span> Mengcopy Gambar...');
+            btn.prop('disabled', true);
+
+            try {
+                if (treatment.image && !treatment.image.includes('no-image.jpg')) {
+                    const copied = await copyImageToClipboard(treatment.image);
+                    if (copied) {
+                        alert('Gambar promo telah di-copy otomatis! Silakan PASTE (Ctrl+V) saat WhatsApp terbuka.');
+                    }
+                }
+            } catch (e) {
+                console.error('Gagal mengcopy gambar:', e);
+            }
+
+            // 3. Redirect to WhatsApp
+            let waUrl = '';
+            const encodedCaption = encodeURIComponent(caption);
+            
+            if (groupLink) {
+                waUrl = `https://wa.me/?text=${encodedCaption}`;
+            } else {
+                let formattedPhone = customer.phone.replace(/[^0-9]/g, '');
+                if (formattedPhone.startsWith('0')) {
+                    formattedPhone = '62' + formattedPhone.substring(1);
+                }
+                waUrl = `https://wa.me/${formattedPhone}?text=${encodedCaption}`;
+            }
+
+            btn.html(originalHtml);
+            btn.prop('disabled', false);
+            
+            if (customer) selectCustomerModal.hide();
+            spreadChoiceModal.hide();
+
+            // Use a slight timeout to ensure modals are closing and browser registers the intent
+            setTimeout(() => {
+                const waWindow = window.open(waUrl, '_blank');
+                if (!waWindow) {
+                    // Fallback: if blocked, use location.href or show a link
+                    if(confirm('Pop-up WhatsApp terblokir oleh browser. Klik OK untuk mencoba membuka di tab ini.')) {
+                        window.location.href = waUrl;
+                    }
+                }
+            }, 100);
+        }
+
+        async function copyImageToClipboard(imageUrl) {
+            try {
+                const response = await fetch(imageUrl);
+                const blob = await response.blob();
+                
+                // Clipboard API requires PNG for images in most browsers
+                // If it's not PNG, we might need to convert it.
+                // But let's try direct first.
+                
+                let blobToCopy = blob;
+                if (blob.type !== 'image/png') {
+                    // Convert to PNG using Canvas
+                    blobToCopy = await convertToPng(blob);
+                }
+
+                const data = [new ClipboardItem({ [blobToCopy.type]: blobToCopy })];
+                await navigator.clipboard.write(data);
+                return true;
+            } catch (err) {
+                console.error('Gagal menyalin gambar ke clipboard:', err);
+                return false;
+            }
+        }
+
+        function convertToPng(blob) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    canvas.toBlob((pngBlob) => {
+                        resolve(pngBlob);
+                    }, 'image/png');
+                };
+                img.onerror = reject;
+                img.src = URL.createObjectURL(blob);
+            });
+        }
 
         // Category Modal
         $('#btnViewCategories').click(() => categoryModal.show());

@@ -116,8 +116,18 @@
                                             <span class="fw-bold d-block">Ganti Gambar</span>
                                             <small class="text-muted">JPG or PNG (Max. 2MB)</small>
                                         </div>
+                                        @php
+                                            if (!$treatment->image) {
+                                                $imageUrl = '';
+                                            } elseif (strpos($treatment->image, 'http') === 0) {
+                                                $imageUrl = $treatment->image;
+                                            } else {
+                                                $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                                                $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
+                                            }
+                                        @endphp
                                         <img id="imagePreview"
-                                            src="{{ $treatment->image ? 'https://' . env('SUPABASE_PROJECT_REF') . '.supabase.co/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $treatment->image : '' }}"
+                                            src="{{ $imageUrl }}"
                                             class="img-fluid rounded-3"
                                             style="{{ $treatment->image ? '' : 'display:none' }}; max-height: 200px;">
                                         <input type="file" name="image" id="imageInput" accept="image/*" hidden>

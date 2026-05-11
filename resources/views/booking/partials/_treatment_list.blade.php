@@ -85,12 +85,13 @@
                                     $maxPrice = count($prices) > 0 ? max($prices) : (int)$detail->price;
 
                                     if ($isPromo) {
-                                        if ($promoType === 'percentage' || $promoType === 'percent') {
+                                        $pType = strtolower($promoType);
+                                        if (in_array($pType, ['percentage', 'percent', 'persen'])) {
                                             $minPrice -= ($minPrice * $promoValue / 100);
                                             $maxPrice -= ($maxPrice * $promoValue / 100);
                                         } else {
-                                            $minPrice -= $promoValue;
-                                            $maxPrice -= $promoValue;
+                                            $minPrice = (float) $promoValue;
+                                            $maxPrice = (float) $promoValue;
                                         }
                                     }
 
@@ -105,10 +106,11 @@
                                 } else {
                                     $price = $originalPrice;
                                     if ($isPromo) {
-                                        if ($promoType === 'percentage' || $promoType === 'percent') {
+                                        $pType = strtolower($promoType);
+                                        if (in_array($pType, ['percentage', 'percent', 'persen'])) {
                                             $price -= ($price * $promoValue / 100);
                                         } else {
-                                            $price -= $promoValue;
+                                            $price = (float) $promoValue;
                                         }
                                     }
 

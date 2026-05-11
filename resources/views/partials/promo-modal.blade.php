@@ -42,10 +42,11 @@
                                                 @php
                                                     $originalPrice = $detail->price;
                                                     $discountedPrice = $originalPrice;
-                                                    if ($promo->promo_type === 'percentage' || $promo->promo_type === 'percent') {
+                                                    $pType = strtolower($promo->promo_type);
+                                                    if (in_array($pType, ['percentage', 'percent', 'persen'])) {
                                                         $discountedPrice = $originalPrice - ($originalPrice * $promo->promo_value / 100);
-                                                    } elseif ($promo->promo_type === 'fixed') {
-                                                        $discountedPrice = $originalPrice - $promo->promo_value;
+                                                    } else {
+                                                        $discountedPrice = (float) $promo->promo_value;
                                                     }
                                                 @endphp
                                                 <div class="d-flex justify-content-between border-bottom py-2">

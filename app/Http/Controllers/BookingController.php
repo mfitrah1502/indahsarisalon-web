@@ -246,6 +246,7 @@ class BookingController extends Controller
 
             // 3. Terapkan Potongan Promo (Date-Aware)
             $parentTreatment = $detail->treatment;
+            $fixedPromoPrice = null;
             if ($parentTreatment && $parentTreatment->is_promo) {
                 $resDate = Carbon::parse($request->reservation_date)->toDateString();
                 $isWithinPromo = true;
@@ -258,11 +259,13 @@ class BookingController extends Controller
                 }
 
                 if ($isWithinPromo) {
-                    $promoVal = 0;
-                    if ($parentTreatment->promo_type === 'percentage' || $parentTreatment->promo_type === 'percent') {
+                    $pType = strtolower($parentTreatment->promo_type);
+                    if (in_array($pType, ['percentage', 'percent', 'persen'])) {
                         $promoVal = $parentTreatment->promo_value;
+                        if ($promoVal > $bestDiscount) $bestDiscount = $promoVal;
+                    } else {
+                        $fixedPromoPrice = (float) $parentTreatment->promo_value;
                     }
-                    if ($promoVal > $bestDiscount) $bestDiscount = $promoVal;
                 }
             }
 
@@ -270,6 +273,10 @@ class BookingController extends Controller
             if ($bestDiscount > 0) {
                 $discountAmount = ($price * $bestDiscount) / 100;
                 $price = $price - $discountAmount;
+            }
+
+            if ($fixedPromoPrice !== null && $fixedPromoPrice < $price) {
+                $price = $fixedPromoPrice;
             }
 
             // 4. Gunakan harga kustom jika disediakan oleh staff (timpa semua diskon)

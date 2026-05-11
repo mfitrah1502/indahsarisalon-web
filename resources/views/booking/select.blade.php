@@ -252,10 +252,11 @@
                                                                 $applyDiscounts = function ($p) use ($isPromo, $promoType, $promoValue, $isColoring, $hasLoyalty) {
                                                                     $final = $p;
                                                                     if ($isPromo) {
-                                                                        if ($promoType === 'percentage' || $promoType === 'percent')
+                                                                        $pType = strtolower($promoType);
+                                                                        if (in_array($pType, ['percentage', 'percent', 'persen']))
                                                                             $final = $p - ($p * $promoValue / 100);
                                                                         else
-                                                                            $final = $p - $promoValue;
+                                                                            $final = (float) $promoValue;
                                                                     }
                                                                     if ($isColoring && $hasLoyalty) {
                                                                         $final = $final - ($final * 35 / 100);
@@ -1263,10 +1264,11 @@
             
             // Apply Promo (Manual/Bundling)
             if (d.isPromo) {
-                if (d.promoType === 'percentage' || d.promoType === 'percent') {
+                const pType = (d.promoType || '').toLowerCase();
+                if (pType === 'percentage' || pType === 'percent' || pType === 'persen') {
                     finalPrice = finalPrice - (finalPrice * d.promoValue / 100);
-                } else if (d.promoType === 'fixed') {
-                    finalPrice = finalPrice - d.promoValue;
+                } else {
+                    finalPrice = d.promoValue;
                 }
             }
 

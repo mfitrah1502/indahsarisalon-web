@@ -30,7 +30,7 @@
         </div>
 
         <!-- ATTENDANCE WIDGET -->
-        <div class="col-md-5">
+        <div class="{{ Auth::user()->role === 'admin' ? 'col-md-5' : 'col-md-12' }}">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-white border-bottom py-3">
                     <h5 class="mb-0 text-dark"><i class="ti ti-clock me-2 text-primary"></i>Presensi Kehadiran</h5>
@@ -42,38 +42,39 @@
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-6">
-                            <button id="btn-absen-masuk"
-                                class="btn btn-primary w-100 d-flex flex-column align-items-center py-3 {{ $absensi && $absensi->jam_masuk ? 'disabled' : '' }}">
-                                <i class="ti ti-login fs-2 mb-2"></i>
-                                <span>Presensi Hadir</span>
-                            </button>
-                        </div>
-                        <div class="col-6">
-                            <button id="btn-absen-keluar"
-                                class="btn btn-danger w-100 d-flex flex-column align-items-center py-3 {{ !$absensi || $absensi->jam_keluar ? 'disabled' : '' }}">
-                                <i class="ti ti-logout fs-2 mb-2"></i>
-                                <span>Presensi Keluar</span>
-                            </button>
+                        <div class="col-12">
+                            @if($absensi && $absensi->status === 'Hadir')
+                                <button class="btn btn-secondary w-100 d-flex flex-column align-items-center py-3 disabled">
+                                    <i class="ti ti-check fs-2 mb-2"></i>
+                                    <span>Presenced</span>
+                                </button>
+                            @else
+                                <button id="btn-presence"
+                                    class="btn btn-primary w-100 d-flex flex-column align-items-center py-3">
+                                    <i class="ti ti-hand-finger fs-2 mb-2"></i>
+                                    <span>Presence</span>
+                                </button>
+                            @endif
                         </div>
                     </div>
 
                     <div class="mt-4 p-3 bg-light rounded-3 border border-dashed">
                         <div class="d-flex justify-content-between mb-2">
-                            <span class="text-muted small">Jam Masuk</span>
+                            <span class="text-muted small">Presensi di Jam : </span>
                             <span class="badge bg-light-success text-success"
                                 id="status-masuk">{{ $absensi && $absensi->jam_masuk ? \Carbon\Carbon::parse($absensi->jam_masuk)->format('H:i') : '--:--' }}</span>
                         </div>
-                        <div class="d-flex justify-content-between">
+                        {{-- <div class="d-flex justify-content-between">
                             <span class="text-muted small">Jam Keluar</span>
                             <span class="badge bg-light-danger text-danger"
                                 id="status-keluar">{{ $absensi && $absensi->jam_keluar ? \Carbon\Carbon::parse($absensi->jam_keluar)->format('H:i') : '--:--' }}</span>
-                        </div>
+                        </div> --}}
                     </div>
                 </div>
             </div>
         </div>
 
+        @if(Auth::user()->role === 'admin')
         <!-- BOOKING FOCUS WIDGET -->
         <div class="col-md-7">
             <div class="card border-0 shadow-sm h-100">
@@ -129,6 +130,7 @@
                 </div>
             </div>
         </div>
+        @endif
     </div>
 
     @push('scripts')
@@ -147,12 +149,8 @@
             updateClock();
 
             // Attendance Logic
-            document.getElementById('btn-absen-masuk')?.addEventListener('click', function () {
-                handleAttendance("{{ route('absensi.masuk') }}", 'masuk');
-            });
-
-            document.getElementById('btn-absen-keluar')?.addEventListener('click', function () {
-                handleAttendance("{{ route('absensi.keluar') }}", 'keluar');
+            document.getElementById('btn-presence')?.addEventListener('click', function () {
+                handleAttendance("{{ route('absensi.presence') }}", 'Presence');
             });
 
             function handleAttendance(url, type) {

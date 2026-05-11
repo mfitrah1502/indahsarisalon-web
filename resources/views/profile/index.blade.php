@@ -124,6 +124,10 @@
                             class="list-group-item list-group-item-action border-0 px-0 d-flex align-items-center">
                             <i class="ti ti-history fs-4 me-3 text-pink"></i> History Booking
                         </a>
+                        <a href="https://chat.whatsapp.com/Klzg8cq9767Iolv1Dl7d5T?mode=gi_t" target="_blank"
+                            class="list-group-item list-group-item-action border-0 px-0 d-flex align-items-center">
+                            <i class="ti ti-brand-whatsapp fs-4 me-3 text-success"></i> Gabung Grup Komunitas
+                        </a>
                         <a href="{{ route('dashboard') }}"
                             class="list-group-item list-group-item-action border-0 px-0 d-flex align-items-center">
                             <i class="ti ti-smart-home fs-4 me-3 text-pink"></i> Kembali ke Beranda

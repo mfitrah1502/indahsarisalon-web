@@ -30,7 +30,7 @@ class AuthController extends Controller
                 
                 $user = Auth::user();
 
-            if ($user->role == 'admin' || $user->role == 'karyawan') {
+            if ($user->role == 'owner' || $user->role == 'admin') {
                 return redirect()->intended(route('dashboard')); // Redirect ke tujuan awal atau dashboard
             } else {
                 return redirect()->route('dashboard.user'); // dashboard pelanggan tetap ke dashboard user
@@ -70,6 +70,8 @@ class AuthController extends Controller
         'email_verified_at' => now(),
         'remember_token' => Str::random(60),
     ]);
+
+    session()->put('show_welcome_wa', true);
 
     return redirect()->route('auth')->with('success', 'Akun berhasil dibuat. Silahkan login!');
 }

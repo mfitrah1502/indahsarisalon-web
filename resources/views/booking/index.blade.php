@@ -101,6 +101,8 @@
                     let category = $('#categoryFilter').val();
                     let search = $('#searchInput').val();
 
+                    console.log('Loading treatments...', { category, search });
+
                     // Show a subtle loading state
                     $('#treatmentList').css('opacity', '0.5');
 
@@ -110,26 +112,30 @@
                         data: {
                             category: category,
                             search: search,
-                            is_ajax: 1 // Helper for backend detection
+                            is_ajax: 1
                         },
                         success: function (html) {
+                            console.log('Treatments loaded successfully');
                             $('#treatmentList').html(html).css('opacity', '1');
                         },
                         error: function (err) {
                             console.error('AJAX Error:', err);
                             $('#treatmentList').css('opacity', '1');
-                            // Optional: trigger a small alert or toast
                         }
                     });
                 }
 
-                // Use debounce for search to reduce server requests (500ms)
-                $('#searchInput').on('keyup', function () {
+                // Use 'input' event instead of 'keyup' to catch all changes (paste, clear, etc.)
+                $('#searchInput').on('input', function () {
+                    console.log('Search input changed:', $(this).val());
                     clearTimeout(searchTimer);
                     searchTimer = setTimeout(loadTreatments, 500);
                 });
 
-                $('#categoryFilter').on('change', loadTreatments);
+                $('#categoryFilter').on('change', function() {
+                    console.log('Category filter changed:', $(this).val());
+                    loadTreatments();
+                });
             });
         </script>
     @endpush

@@ -27,9 +27,14 @@
                                  </span>
                              </div>
                              <p class="opacity-75 mb-4">Selamat datang kembali di Indah Sari Salon. Siap untuk tampil lebih menawan hari ini?</p>
-                            <a href="{{ route('booking.index') }}" class="btn btn-light text-primary fw-bold px-4 py-2">
-                                <i class="ti ti-calendar-plus me-2"></i>Buat Janji Temu
-                            </a>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="{{ route('booking.index') }}" class="btn btn-light text-primary fw-bold px-4 py-2">
+                                    <i class="ti ti-calendar-plus me-2"></i>Buat Janji Temu
+                                </a>
+                                <a href="https://chat.whatsapp.com/Klzg8cq9767Iolv1Dl7d5T?mode=gi_t" target="_blank" class="btn btn-success fw-bold px-4 py-2 shadow-sm">
+                                    <i class="ti ti-brand-whatsapp me-2"></i>Gabung Komunitas
+                                </a>
+                            </div>
                         </div>
                         <div class="col-md-5 text-end d-none d-md-block">
                             <img src="{{ Auth::user()->avatar_url }}" alt="User Profile"
@@ -147,9 +152,16 @@
                             <div class="card treatment-card border-0 shadow-sm h-100 overflow-hidden border-top border-danger border-4">
                                 <div class="position-relative">
                                     @php
-                                        $imageUrl = $promo->image
-                                            ? 'https://' . env('SUPABASE_PROJECT_REF') . '.supabase.co/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $promo->image
-                                            : asset('assets/images/no-image.jpg');
+                                        if (!$promo->image) {
+                                            $imageUrl = asset('assets/images/no-image.jpg');
+                                        } elseif (strpos($promo->image, 'http') === 0) {
+                                            $imageUrl = $promo->image;
+                                        } else {
+                                            $bucket = ($promo->is_promo && env('SUPABASE_PROMO_BUCKET')) 
+                                                ? env('SUPABASE_PROMO_BUCKET') 
+                                                : env('SUPABASE_BUCKET');
+                                            $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $promo->image;
+                                        }
                                     @endphp
                                     <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $promo->name }}"
                                         style="height: 180px; object-fit: cover;">
@@ -217,9 +229,16 @@
                                 <div class="card treatment-card border-0 shadow-sm h-100 overflow-hidden">
                                     <div class="position-relative">
                                         @php
-                                            $imageUrl = $treatment->image
-                                                ? 'https://' . env('SUPABASE_PROJECT_REF') . '.supabase.co/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $treatment->image
-                                                : asset('assets/images/no-image.jpg');
+                                            if (!$treatment->image) {
+                                                $imageUrl = asset('assets/images/no-image.jpg');
+                                            } elseif (strpos($treatment->image, 'http') === 0) {
+                                                $imageUrl = $treatment->image;
+                                            } else {
+                                                $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) 
+                                                    ? env('SUPABASE_PROMO_BUCKET') 
+                                                    : env('SUPABASE_BUCKET');
+                                                $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
+                                            }
                                         @endphp
                                         <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $treatment->name }}"
                                             style="height: 200px; object-fit: cover;">

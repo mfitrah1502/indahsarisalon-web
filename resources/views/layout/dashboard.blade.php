@@ -300,9 +300,9 @@
 
 <body>
     <!-- Sidebar -->
-    @if(Auth::user()->role === 'admin')
+    @if(Auth::user()->role === 'owner')
         @include('partials.sidebar')
-    @elseif(Auth::user()->role === 'karyawan')
+    @elseif(in_array(Auth::user()->role, ['admin', 'karyawan']))
         @include('partials.sidebar-karyawan')
     @else
         @include('partials.sidebar-pelanggan')

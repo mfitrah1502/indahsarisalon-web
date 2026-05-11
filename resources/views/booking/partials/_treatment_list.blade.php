@@ -2,9 +2,14 @@
     <div class="col-md-4 mb-4">
         <div class="card treatment-card h-100 border-0 shadow-sm">
             @php
-                $imageUrl = $treatment->image 
-                    ? env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $treatment->image 
-                    : asset('assets/images/no-image.jpg');
+                if (!$treatment->image) {
+                    $imageUrl = asset('assets/images/no-image.jpg');
+                } elseif (strpos($treatment->image, 'http') === 0) {
+                    $imageUrl = $treatment->image;
+                } else {
+                    $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                    $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
+                }
             @endphp
             <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $treatment->name }}">
             <div class="card-body">

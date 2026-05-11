@@ -16,6 +16,7 @@
                                  class="ti ti-dashboard"></i></span><span class="pc-mtext">Dashboard</span></a>
                 </li>
 
+                @if(Auth::user()->role === 'admin')
                 <li class="pc-item pc-caption">
                     <label>Booking Kasir</label>
                     <i class="ti ti-apps"></i>
@@ -38,6 +39,7 @@
                                 href="{{ route('booking.history') }}">Riwayat Pemesanan</a></li>
                     </ul>
                 </li>
+                @endif
 
                 <!-- MENU ABSENSI -->
                 <li class="pc-item pc-caption">

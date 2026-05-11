@@ -38,7 +38,7 @@
                             <h5 class="mb-0 text-dark fw-bold">{{ $user->name }}</h5>
                             <hr class="my-3 opacity-25">
                             <p class="text-muted mb-1 small uppercase fw-bold" style="letter-spacing: 1px;">Jenis Presensi Terdeteksi</p>
-                            <h3 class="mb-0 text-primary fw-bold">CHECK {{ strtoupper($type) }}</h3>
+                            <h3 class="mb-0 text-primary fw-bold">PRESENCE</h3>
                         </div>
                     </div>
 

@@ -571,9 +571,46 @@
                 registerAlert.innerHTML = `<div class="alert alert-danger border-0 small py-2 mb-3">Password konfirmasi tidak sesuai.</div>`;
             }
         });
+
+        @if(session('show_welcome_wa'))
+            window.addEventListener('load', function() {
+                // Tampilkan Modal
+                const welcomeModal = new bootstrap.Modal(document.getElementById('welcomeWAModal'));
+                welcomeModal.show();
+                
+                // Coba buka link WA secara otomatis
+                setTimeout(() => {
+                    window.open('https://chat.whatsapp.com/Klzg8cq9767Iolv1Dl7d5T?mode=gi_t', '_blank');
+                }, 1000);
+            });
+            @php session()->forget('show_welcome_wa'); @endphp
+        @endif
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Welcome Modal WhatsApp -->
+    <div class="modal fade" id="welcomeWAModal" tabindex="-1" aria-labelledby="welcomeWAModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                <div class="modal-body p-5 text-center">
+                    <div class="mb-4">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 rounded-circle mb-3" style="width: 80px; height: 80px;">
+                            <i class="ti ti-brand-whatsapp text-success fs-1"></i>
+                        </div>
+                        <h3 class="fw-bold mb-2">Selamat Datang! ✨</h3>
+                        <p class="text-muted">Akun Anda berhasil dibuat. Yuk, bergabung dengan Komunitas WhatsApp Indah Sari Salon untuk mendapatkan info promo terbaru dan tips kecantikan!</p>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="https://chat.whatsapp.com/Klzg8cq9767Iolv1Dl7d5T?mode=gi_t" target="_blank" class="btn btn-success btn-lg rounded-pill shadow-sm py-3 fw-bold">
+                            <i class="ti ti-users me-2"></i>Gabung Grup Sekarang
+                        </a>
+                        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Nanti Saja</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

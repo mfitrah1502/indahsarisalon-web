@@ -93,8 +93,8 @@
                             <label class="small fw-bold text-muted mb-2">Filter Role</label>
                             <select id="filterRole" class="form-select border-0 shadow-none">
                                 <option value="">Semua Role</option>
+                                <option value="owner">Owner</option>
                                 <option value="admin">Admin</option>
-                                <option value="karyawan">Karyawan</option>
                             </select>
                         </div>
                         <div class="col-md-3">

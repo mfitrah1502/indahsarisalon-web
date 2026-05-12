@@ -55,20 +55,22 @@ class TreatmentController extends Controller
         $treatments = $query->with('category', 'details')->paginate(10);
 
         // Jika kategori disimpan sebagai array di controller
-        $categories = Category::all(); // Ambil semua kategori untuk filter dropdown
+        $categories = Category::select('id', 'name')->get(); 
+        
         $treatments->transform(function($treatment) {
-    $treatment->details_for_modal = $treatment->details->map(function($d){
-        return [
-            'name' => $d->name,
-            'duration' => $d->duration,
-            'price' => $d->price,
-            'description' => $d->description
-        ];
-    });
-    return $treatment;
-});
+            $treatment->details_for_modal = $treatment->details->map(function($d){
+                return [
+                    'name' => $d->name,
+                    'duration' => $d->duration,
+                    'price' => $d->price,
+                    'description' => $d->description
+                ];
+            });
+            return $treatment;
+        });
 
-        $customers = \App\Models\User::where('role', 'pelanggan')
+        $customers = \App\Models\User::select('id', 'name', 'phone')
+            ->where('role', 'pelanggan')
             ->whereNotNull('phone')
             ->where('phone', '!=', '')
             ->get();

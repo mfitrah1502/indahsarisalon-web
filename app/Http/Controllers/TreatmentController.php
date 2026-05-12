@@ -15,7 +15,9 @@ class TreatmentController extends Controller
     // Menampilkan daftar treatment dengan filter, search, dan sort
     public function index(Request $request)
     {
-        $query = Treatment::with(['category', 'details.treatment.category']); // eager load detail, parent treatment, kategori, dan kategori di dalam detail
+        // Gunakan eager loading yang tepat: category dan details saja.
+        // Hapus circular reference details.treatment.category
+        $query = Treatment::with(['category', 'details']); 
 
         // Filter kategori
         if($request->category) {
@@ -52,7 +54,7 @@ class TreatmentController extends Controller
             }
         }
 
-        $treatments = $query->with(['category', 'details.treatment.category'])->paginate(10);
+        $treatments = $query->paginate(10);
 
         // Jika kategori disimpan sebagai array di controller
         $categories = Category::select('id', 'name')->get(); 
@@ -69,10 +71,12 @@ class TreatmentController extends Controller
             return $treatment;
         });
 
+        // Ambil data pelanggan hanya yang dibutuhkan saja (ID dan Nama) untuk memperingan load
         $customers = \App\Models\User::select('id', 'name', 'phone')
             ->where('role', 'pelanggan')
             ->whereNotNull('phone')
             ->where('phone', '!=', '')
+            ->limit(500) // Batasi agar tidak meledak jika user ribuan
             ->get();
 
         if ($request->expectsJson() || $request->is('api/*')) {
@@ -312,7 +316,7 @@ class TreatmentController extends Controller
 
 public function filter(Request $request)
 {
-    $query = Treatment::with(['category', 'details.treatment.category']); // <- tambahkan category di dalam treatment milik details
+    $query = Treatment::with(['category', 'details']); 
 
     if ($request->category) {
         $query->whereHas('category', function($q) use ($request) {

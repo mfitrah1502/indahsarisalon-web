@@ -18,7 +18,7 @@ class KeuanganController extends Controller
             $query->whereBetween('reservation_datetime', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
         }
 
-        $pemasukan = $query->orderBy('reservation_datetime', 'desc')->get();
+        $pemasukan = $query->with('treatment')->orderBy('reservation_datetime', 'desc')->get();
         $totalPemasukan = $pemasukan->sum('total_price');
 
         // --- DYNAMIC CHART DATA ---
@@ -158,7 +158,8 @@ class KeuanganController extends Controller
 
     public function exportProfitPdf()
     {
-        $bookings = Booking::where('payment_status', 'paid')
+        $bookings = Booking::with('treatment')
+                           ->where('payment_status', 'paid')
                            ->where('status', '!=', 'dibatalkan')
                            ->orderBy('reservation_datetime', 'asc')
                            ->get();

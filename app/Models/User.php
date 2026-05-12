@@ -99,10 +99,13 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getTotalSpendingAttribute()
     {
-        return $this->bookings()
-            ->where('status', 'berhasil')
-            ->where('payment_status', 'paid')
-            ->sum('total_price');
+        if (!isset($this->attributes['cached_total_spending'])) {
+            $this->attributes['cached_total_spending'] = $this->bookings()
+                ->where('status', 'berhasil')
+                ->where('payment_status', 'paid')
+                ->sum('total_price');
+        }
+        return $this->attributes['cached_total_spending'];
     }
 
     /**
@@ -132,19 +135,20 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getHasColoringLoyaltyAttribute()
     {
-        // Hitung pengeluaran khusus kategori 'Coloring'
-        $coloringSpend = \App\Models\BookingDetail::whereHas('booking', function($q) {
-                $q->where('user_id', $this->id)
-                  ->where('status', 'berhasil')
-                  ->where('payment_status', 'paid')
-                  ->where('reservation_datetime', '>=', now()->subYears(2));
-            })
-            ->whereHas('treatmentDetail.treatment.category', function($q) {
-                $q->where('name', 'like', '%Coloring%');
-            })
-            ->sum('price');
-
-        return $coloringSpend >= 1500000;
+        if (!isset($this->attributes['cached_coloring_loyalty'])) {
+            // Hitung pengeluaran khusus kategori 'Coloring'
+            $this->attributes['cached_coloring_loyalty'] = \App\Models\BookingDetail::whereHas('booking', function($q) {
+                    $q->where('user_id', $this->id)
+                      ->where('status', 'berhasil')
+                      ->where('payment_status', 'paid')
+                      ->where('reservation_datetime', '>=', now()->subYears(2));
+                })
+                ->whereHas('treatmentDetail.treatment.category', function($q) {
+                    $q->where('name', 'like', '%Coloring%');
+                })
+                ->sum('price') >= 1500000;
+        }
+        return $this->attributes['cached_coloring_loyalty'];
     }
 
     /**

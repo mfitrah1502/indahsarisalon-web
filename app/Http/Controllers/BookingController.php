@@ -171,12 +171,18 @@ class BookingController extends Controller
             }
         }
 
+        // Pre-fetch all needed data BEFORE any loops to avoid N+1 queries
+        $allDetailIds = collect($request->treatment_detail_ids)->filter()->unique()->toArray();
+        $allStylistIds = collect($request->stylist_ids)->filter()->unique()->toArray();
+        $preloadedDetails = \App\Models\TreatmentDetail::with(['treatment.category'])->whereIn('id', $allDetailIds)->get()->keyBy('id');
+        $preloadedStylists = \App\Models\User::whereIn('id', $allStylistIds)->get()->keyBy('id');
+
         $tempRequestedStart = $startCheckpoint->copy();
         foreach ($request->treatment_detail_ids as $index => $dId) {
             $sId = $request->stylist_ids[$index] ?? null;
             if (!$sId) continue;
 
-            $detail = \App\Models\TreatmentDetail::find($dId);
+            $detail = $preloadedDetails->get($dId);
             if (!$detail) continue;
 
             $dur = $detail->duration;
@@ -185,7 +191,7 @@ class BookingController extends Controller
             if (isset($stylistWindows[$sId])) {
                 foreach ($stylistWindows[$sId] as $win) {
                     if ($tempRequestedStart->lt($win['end']) && $tempRequestedEnd->gt($win['start'])) {
-                        $stylistName = \App\Models\User::find($sId)->name ?? 'Stylist';
+                        $stylistName = $preloadedStylists->get($sId)->name ?? 'Stylist';
                         $msg = "Mohon maaf, $stylistName sudah memiliki jadwal pada jam tersebut (layanan ke-" . ($index+1) . "). Silakan pilih stylist lain atau geser jam reservasi.";
                         if ($request->ajax()) return response()->json(['message' => $msg], 422);
                         return redirect()->back()->with('error', $msg);
@@ -220,10 +226,14 @@ class BookingController extends Controller
             $customer = $authUser;
         }
 
+
+        // Pre-fetch all needed data to avoid N+1 queries
         foreach ($detailIds as $index => $dId) {
-            $detail = TreatmentDetail::findOrFail($dId);
+            $detail = $preloadedDetails->get($dId);
+            if (!$detail) continue;
+            
             $sId = $stylistIds[$index] ?? null;
-            $stylist = $sId ? User::find($sId) : null;
+            $stylist = $sId ? $preloadedStylists->get($sId) : null;
             
             $price = $detail->price;
             
@@ -295,10 +305,10 @@ class BookingController extends Controller
             $booking_details_data[] = [
                 'treatment_detail_id' => $detail->id,
                 'stylist_id' => $sId,
-                'price' => max(0, $price),
+                'price' => (int)max(0, $price),
                 'parent_treatment_id' => $detail->treatment_id
             ];
-            $total_price += max(0, $price);
+            $total_price += (int)max(0, $price);
         }
 
         Log::info('Booking Attempt', [
@@ -337,7 +347,7 @@ class BookingController extends Controller
             'stylist_id' => $booking_details_data[0]['stylist_id'],
             'treatment_id' => $booking_details_data[0]['parent_treatment_id'],
             'reservation_datetime' => Carbon::parse($request->reservation_date.' '.$request->reservation_time),
-            'total_price' => $total_price,
+            'total_price' => (int)$total_price,
             'status' => 'pending',
             'payment_status' => $paymentStatus,
             'payment_method' => $request->payment_method

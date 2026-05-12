@@ -15,7 +15,7 @@ class TreatmentController extends Controller
     // Menampilkan daftar treatment dengan filter, search, dan sort
     public function index(Request $request)
     {
-        $query = Treatment::with(['details.treatment', 'category']); // eager load detail, parent treatment, dan kategori
+        $query = Treatment::with(['category', 'details.treatment.category']); // eager load detail, parent treatment, kategori, dan kategori di dalam detail
 
         // Filter kategori
         if($request->category) {
@@ -52,7 +52,7 @@ class TreatmentController extends Controller
             }
         }
 
-        $treatments = $query->with(['category', 'details.treatment'])->paginate(10);
+        $treatments = $query->with(['category', 'details.treatment.category'])->paginate(10);
 
         // Jika kategori disimpan sebagai array di controller
         $categories = Category::select('id', 'name')->get(); 
@@ -312,7 +312,7 @@ class TreatmentController extends Controller
 
 public function filter(Request $request)
 {
-    $query = Treatment::with(['details.treatment', 'category']); // <- tambahkan 'treatment' di dalam details
+    $query = Treatment::with(['category', 'details.treatment.category']); // <- tambahkan category di dalam treatment milik details
 
     if ($request->category) {
         $query->whereHas('category', function($q) use ($request) {
@@ -354,7 +354,7 @@ public function filter(Request $request)
 
     public function broadcastPromo(\Illuminate\Http\Request $request)
     {
-        $promoTreatments = Treatment::with(['details.treatment', 'category'])->whereHas('category', function($q) {
+        $promoTreatments = Treatment::with(['category', 'details.treatment.category'])->whereHas('category', function($q) {
             $q->where('name', 'Promo');
         })->where('is_active', 1)->get();
         if ($promoTreatments->isEmpty()) {

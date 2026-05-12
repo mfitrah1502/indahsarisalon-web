@@ -1,5 +1,5 @@
 <!-- resources/views/partials/promo-modal.blade.php -->
-@if(session('show_promo_modal') && isset($promoTreatments) && $promoTreatments->count() > 0)
+@if(session('show_promo_modal') && Auth::check() && strtolower(Auth::user()->role) === 'pelanggan' && isset($promoTreatments) && $promoTreatments->count() > 0)
 <div class="modal fade" id="promoModal" tabindex="-1" aria-labelledby="promoModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">

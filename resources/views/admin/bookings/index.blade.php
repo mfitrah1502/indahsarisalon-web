@@ -372,8 +372,11 @@
             
             // Show loading or just open? Let's fetch data.
             $.ajax({
-                url: `/admin/bookings/${id}`,
+                url: "{{ url('admin/bookings') }}/" + id,
                 type: 'GET',
+                beforeSend: function() {
+                    $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+                },
                 success: function(data) {
                     $('#mdl_id').text('#' + data.id);
                     $('#mdl_customer').text(data.customer_name);
@@ -429,6 +432,12 @@
                     }
 
                     detailModal.show();
+                },
+                error: function(xhr) {
+                    Swal.fire('Error!', 'Gagal mengambil data: ' + xhr.statusText, 'error');
+                },
+                complete: function() {
+                    $('.btn-view-detail[data-id="'+id+'"]').prop('disabled', false).html('<i class="ti ti-eye fs-5"></i>');
                 }
             });
         });
@@ -447,7 +456,7 @@
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: `/admin/bookings/${currentBookingId}/status`,
+                        url: "{{ url('admin/bookings') }}/" + currentBookingId + "/status",
                         type: 'PATCH',
                         data: {
                             _token: '{{ csrf_token() }}',

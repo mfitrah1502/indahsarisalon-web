@@ -81,7 +81,6 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         Route::get('/{pelanggan}', [PelangganController::class, 'show'])->name('show');
     });
 
-    Route::post('categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::resource('categories', CategoryController::class);
 
     // ------------------------------
@@ -131,7 +130,7 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
 
         // Pelanggan
         Route::get('pelanggan/filter', [PelangganController::class, 'filter'])->name('pelanggan.filter');
-        Route::resource('pelanggan', PelangganController::class);
+        // Pelanggan (Sudah didefinisikan di atas untuk semua user terautentikasi)
 
         // Hari Libur
         Route::resource('holidays', HolidayController::class)->only(['index', 'store', 'destroy']);

@@ -537,14 +537,13 @@
                 services.push($(this).text());
             });
             
-            const message = encodeURIComponent(
-                `*BOOKING BARU - INDAH SARI SALON*\n\n` +
-                String.fromCodePoint(0x1F4CC) + ` *Stylist:* ${stylist}\n` +
-                String.fromCodePoint(0x1F464) + ` *Customer:* ${customer}\n` +
-                String.fromCodePoint(0x1F4C5) + ` *Jadwal:* ${date} | ${time} WIB\n` +
-                String.fromCodePoint(0x1F487) + ` *Treatment:* ${services.join(', ')}\n\n` +
-                `_Mohon bersiap sebelum jam booking. Terima kasih!_`
-            );
+            // Using pre-encoded URL strings to completely bypass encoding issues
+            const message = `*BOOKING BARU - INDAH SARI SALON*%0A%0A` +
+                `%F0%9F%93%8C *Stylist:* ${encodeURIComponent(stylist)}%0A` +
+                `%F0%9F%91%A4 *Customer:* ${encodeURIComponent(customer)}%0A` +
+                `%F0%9F%93%85 *Jadwal:* ${encodeURIComponent(date)} | ${encodeURIComponent(time)} WIB%0A` +
+                `%F0%9F%92%87 *Treatment:* ${encodeURIComponent(services.join(', '))}%0A%0A` +
+                `_Mohon bersiap sebelum jam booking. Terima kasih!_`;
             
             window.open(`https://wa.me/?text=${message}`, '_blank');
         });

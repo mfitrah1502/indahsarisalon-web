@@ -538,17 +538,29 @@
             });
             
             // Debug: Check the console (F12) to see if the message is generated correctly
+            var pin = String.fromCodePoint(0x1F4CC);
+            var user = String.fromCodePoint(0x1F464);
+            var cal = String.fromCodePoint(0x1F4C5);
+            var hair = String.fromCodePoint(0x1F487);
+
             var msg = "*BOOKING BARU - INDAH SARI SALON*\n\n";
-            msg += "\uD83D\uDCCD *Stylist:* " + stylist + "\n";
-            msg += "\uD83D\uDC64 *Customer:* " + customer + "\n";
-            msg += "\uD83D\uDCC5 *Jadwal:* " + date + " | " + time + " WIB\n";
-            msg += "\uD83D\uDC87 *Treatment:* " + services.join(', ') + "\n\n";
+            msg += pin + " *Stylist:* " + stylist + "\n";
+            msg += user + " *Customer:* " + customer + "\n";
+            msg += cal + " *Jadwal:* " + date + " | " + time + " WIB\n";
+            msg += hair + " *Treatment:* " + services.join(', ') + "\n\n";
             msg += "_Mohon bersiap sebelum jam booking. Terima kasih!_";
             
-            console.log("Generated WA Message:", msg);
+            console.log("Final Message:", msg);
             
-            var url = "https://wa.me/?text=" + encodeURIComponent(msg);
-            window.open(url, '_blank');
+            var url = "https://api.whatsapp.com/send?text=" + encodeURIComponent(msg);
+            
+            // Create a temporary link to trigger the open
+            var link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         });
 
         $('#btn_show_reschedule').on('click', function() {

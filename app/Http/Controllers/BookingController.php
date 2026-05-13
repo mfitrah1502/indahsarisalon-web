@@ -555,10 +555,7 @@ class BookingController extends Controller
             'dibatalkan' => Booking::where('status', 'dibatalkan')->count(),
         ];
 
-        // Tentukan view berdasarkan role
-        $view = (strtolower(Auth::user()->role) === 'admin') ? 'karyawan.bookings.index' : 'admin.bookings.index';
-
-        return view($view, compact('bookings', 'status', 'stats'));
+        return view('admin.bookings.index', compact('bookings', 'status', 'stats'));
     }
 
     // ADMIN: Update status booking

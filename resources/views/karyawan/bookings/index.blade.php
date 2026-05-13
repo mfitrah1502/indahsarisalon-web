@@ -222,7 +222,7 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="d-flex flex-column">
-                                            <span class="text-dark fw-bold">{{ $booking->treatment->name }}</span>
+                                            <span class="text-dark fw-bold">{{ $booking->treatment->name ?? 'Layanan Tidak Diketahui' }}</span>
                                             <small class="text-muted">{{ $booking->details->count() }} Detail</small>
                                         </div>
                                     </td>
@@ -360,20 +360,21 @@
 
         $(document).on('click', '.btn-view-detail', function() {
             const id = $(this).data('id');
+            const btn = $(this);
             currentBookingId = id;
             
             $.ajax({
                 url: "{{ url('admin/bookings') }}/" + id,
                 type: 'GET',
                 beforeSend: function() {
-                    $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+                    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
                 },
                 success: function(data) {
                     $('#mdl_id').text('#' + data.id);
                     $('#mdl_customer').text(data.customer_name);
                     $('#mdl_customer_email').html('<i class="ti ti-mail me-1"></i>' + (data.customer_email || '-'));
                     $('#mdl_customer_phone').html('<i class="ti ti-brand-whatsapp me-1"></i>' + (data.customer_phone || '-'));
-                    $('#mdl_role_badge').text(data.user ? 'Pelanggan Online' : 'Pelanggan Offline');
+                    $('#mdl_role_badge').text(data.user_id ? 'Pelanggan Terdaftar' : 'Pelanggan Guest/Offline');
                     
                     const statusMap = {
                         'pending': { label: '⏳ Pending', class: 'bg-warning text-dark' },
@@ -397,13 +398,14 @@
 
                     let servicesHtml = '';
                     data.details.forEach(detail => {
+                        const detailName = detail.treatment_detail ? detail.treatment_detail.name : 'Layanan Tidak Diketahui';
                         servicesHtml += `
                             <div class="list-group-item p-3 border-0 border-bottom">
                                 <div class="d-flex justify-content-between mb-1">
-                                    <span class="fw-bold text-dark">${detail.treatment_detail.name}</span>
+                                    <span class="fw-bold text-dark">${detailName}</span>
                                     <span class="fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(detail.price)}</span>
                                 </div>
-                                <small class="text-muted">Stylist: ${detail.stylist ? detail.stylist.name : 'None'}</small>
+                                <small class="text-muted">Stylist: ${detail.stylist ? detail.stylist.name : 'Tanpa Stylist'}</small>
                             </div>
                         `;
                     });
@@ -423,7 +425,7 @@
                     Swal.fire('Error!', 'Gagal mengambil data: ' + xhr.statusText, 'error');
                 },
                 complete: function() {
-                    $('.btn-view-detail[data-id="'+id+'"]').prop('disabled', false).html('<i class="ti ti-eye fs-5"></i>');
+                    btn.prop('disabled', false).html('<i class="ti ti-eye fs-5"></i>');
                 }
             });
         });

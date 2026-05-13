@@ -88,7 +88,6 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         
         // Booking Management
         Route::get('/admin/bookings', [BookingController::class, 'adminIndex'])->name('admin.bookings.index');
-        Route::get('/karyawan/bookings', [BookingController::class, 'adminIndex'])->name('karyawan.bookings.index');
         Route::get('/admin/bookings/{id}', [BookingController::class, 'show'])->name('admin.bookings.show');
         Route::patch('/admin/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('admin.bookings.updateStatus');
 

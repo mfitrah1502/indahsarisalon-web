@@ -11,8 +11,7 @@ class KaryawanController extends Controller
 {
     public function index(Request $request)
     {
-
-        $query = User::whereIn('role', ['owner', 'admin', 'karyawan']); // ambil owner & admin
+        $query = User::whereIn('role', ['admin', 'karyawan']);
 
 
         // Jika ada pencarian
@@ -148,8 +147,7 @@ class KaryawanController extends Controller
     }
 
     public function filter(Request $request)
-    {
-        $query = User::whereIn('role', ['owner', 'admin']);
+    {        $query = User::whereIn('role', ['admin', 'karyawan']);
 
         if ($request->search) {
             $query->where(function($q) use ($request) {

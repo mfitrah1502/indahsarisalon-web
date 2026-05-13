@@ -369,7 +369,7 @@
                                 @endphp
 
                                 {{-- Stylist selection will now be inside the treatment list --}}
-                                <div class="col-md-12 mb-4" id="globalStylistSection" style="{{ $hasStylistPrice ? '' : 'display: none;' }}">
+                                <div class="col-md-12 mb-4" id="globalStylistSection">
                                     <div class="p-4 bg-white border rounded shadow-sm">
                                         <div class="d-flex flex-column mb-3">
                                             <label class="form-label fw-bold mb-2"><i class="ti ti-heart-handshake me-1"></i>Pilih Stylist untuk Semua Layanan</label>
@@ -384,7 +384,7 @@
                                                 <span class="stylist-name">Reset</span>
                                                 <span class="stylist-cat">Default</span>
                                             </div>
-                                            @foreach($stylists as $stylist)
+                                            @forelse($stylists as $stylist)
                                                 <div class="stylist-card-modern stylist-global-item-{{ $stylist->id }}" 
                                                      data-stylist-id="{{ $stylist->id }}" 
                                                      data-kategori="{{ strtolower($stylist->kategori) }}"
@@ -396,15 +396,25 @@
                                                     <span class="stylist-name">{{ explode(' ', $stylist->name)[0] }}</span>
                                                     <span class="stylist-cat">{{ $stylist->kategori }}</span>
                                                 </div>
-                                            @endforeach
+                                            @empty
+                                                <div class="col-12">
+                                                    <p class="text-danger small"><i class="ti ti-alert-circle me-1"></i>Tidak ada data stylist ditemukan (Admin/Karyawan).</p>
+                                                </div>
+                                            @endforelse
                                         </div>
                                     </div>
                                 </div>
+                                @php
+                                    $now = \Carbon\Carbon::now();
+                                    $cutoff = \Carbon\Carbon::today()->setHour(10)->setMinute(30);
+                                    // Jika sudah lewat jam 10:30, minimal booking adalah besok
+                                    $initialDate = $now->greaterThan($cutoff) ? \Carbon\Carbon::tomorrow()->toDateString() : \Carbon\Carbon::today()->toDateString();
+                                @endphp
                                 <!-- TANGGAL -->
                                 <div class="col-md-3 mb-3">
                                     <label class="form-label">📅 Tanggal</label>
                                     <input type="date" name="reservation_date" id="reservation_date" class="form-control"
-                                        required>
+                                        min="{{ $initialDate }}" value="{{ $initialDate }}" required>
                                 </div>
 
                                 <!-- JAM -->
@@ -1005,7 +1015,42 @@
 
         // MULTIPLE TREATMENTS LOGIC (V3: Choice-based Primary)
         let selectedDetails = [
-            @if($treatment->details->count() === 1)
+            @foreach($preSelectedDetails as $d)
+                {
+                    id: {{ $d->id }},
+                    parentId: {{ $d->treatment_id }},
+                    name: {!! json_encode($d->name) !!},
+                    parentName: {!! json_encode($d->treatment->name) !!},
+                    price: {{ (int) $d->price }},
+                    priceSenior: {{ (int) ($d->price_senior ?: $d->price) }},
+                    priceJunior: {{ (int) ($d->price_junior ?: $d->price) }},
+                    hasStylistPrice: {{ $d->has_stylist_price ? 'true' : 'false' }},
+                    duration: {{ (int) $d->duration }},
+                    isPrimary: {{ $d->treatment_id == $treatment->id ? 'true' : 'false' }},
+                    isPromo: {{ $d->treatment->is_promo ? 'true' : 'false' }},
+                    promoType: {!! json_encode($d->treatment->promo_type) !!},
+                    promoValue: {{ (int) $d->treatment->promo_value }},
+                    isColoring: {{ (stripos($d->treatment->category->name ?? '', 'Coloring') !== false) ? 'true' : 'false' }},
+                    @php
+                        $initImg = asset('assets/images/no-image.jpg');
+                        $hasInitImg = false;
+                        if ($d->treatment->image) {
+                            if (strpos($d->treatment->image, 'http') === 0) { $initImg = $d->treatment->image; $hasInitImg = true; }
+                            else { 
+                                $bucket = ($d->treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                                $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $d->treatment->image; 
+                                $hasInitImg = true;
+                            }
+                        }
+                        if (!$hasInitImg && $d->image_url) {
+                            if (strpos($d->image_url, 'http') === 0) { $initImg = $d->image_url; }
+                            else { $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $d->image_url; }
+                        }
+                    @endphp
+                    image: {!! json_encode($initImg) !!}
+                },
+            @endforeach
+            @if($preSelectedDetails->isEmpty() && $treatment->details->count() === 1)
                 @foreach($treatment->details as $d)
                     {
                         id: {{ $d->id }},
@@ -1033,11 +1078,9 @@
                                     $hasInitImg = true;
                                 }
                             }
-                            if (!$hasInitImg) {
-                                if ($d->image_url) {
-                                    if (strpos($d->image_url, 'http') === 0) { $initImg = $d->image_url; }
-                                    else { $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $d->image_url; }
-                                }
+                            if (!$hasInitImg && $d->image_url) {
+                                if (strpos($d->image_url, 'http') === 0) { $initImg = $d->image_url; }
+                                else { $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $d->image_url; }
                             }
                         @endphp
                         image: {!! json_encode($initImg) !!}
@@ -1045,6 +1088,24 @@
                 @endforeach
             @endif
         ];
+
+        // Mark pre-selected items as checked in the variant list
+        document.addEventListener('DOMContentLoaded', function() {
+            selectedDetails.forEach(d => {
+                const checkbox = document.getElementById(`detail_${d.id}`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    // Trigger label update if any
+                    const label = checkbox.nextElementSibling;
+                    if (label && label.tagName === 'LABEL') {
+                        label.classList.add('bg-light-primary', 'border-primary', 'shadow-sm');
+                        const icon = label.querySelector('.check-icon');
+                        if (icon) icon.style.display = 'block';
+                    }
+                }
+            });
+            renderSelectedTreatments();
+        });
 
         window.togglePrimaryDetail = function (checkbox) {
             const isMulti = {{ $treatment->allow_multi_select ? 'true' : 'false' }};
@@ -1143,36 +1204,10 @@
                                     @endif
                                 </div>
                                 <div>
-                                    ${d.isPrimary ? '<span class="badge bg-light-primary text-primary rounded-pill">Utama</span>' : `<button type="button" class="btn btn-icon btn-link-danger btn-sm" onclick="removeDetail(${d.id})"><i class="ti ti-trash"></i></button>`}
+                                    <button type="button" class="btn btn-icon btn-link-danger btn-sm" onclick="removeDetail(${d.id})"><i class="ti ti-trash"></i></button>
                                 </div>
                             </div>
-                            ${d.hasStylistPrice ? `
-                            <div class="mt-3">
-                                <label class="extra-small text-muted mb-2"><i class="ti ti-hand-click me-1"></i>Pilih Stylist:</label>
-                                <div class="stylist-grid" data-detail-id="${d.id}">
-                                    ${allStylists.map(s => {
-                                        const isSelected = d.stylistId == s.id;
-                                        return `
-                                            <div class="stylist-card-modern ${isSelected ? 'active' : ''} stylist-item-${s.id}" 
-                                                 data-stylist-id="${s.id}" 
-                                                 data-kategori="${s.kategori ? s.kategori.toLowerCase() : ''}"
-                                                 onclick="updateItemStylistCards(${d.id}, ${s.id}, this)">
-                                                <div class="check-mark"><i class="ti ti-check"></i></div>
-                                                <div class="avatar-container">
-                                                    <img src="${s.avatar_url}" alt="${s.name}">
-                                                </div>
-                                                <span class="stylist-name">${s.name ? s.name.split(' ')[0] : ''}</span>
-                                                <span class="stylist-cat">${s.kategori || ''}</span>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
-                            ` : `
-                            <div class="mt-3">
-                                <div class="extra-small text-muted mt-1"><i class="ti ti-info-circle me-1"></i>Harga tetap untuk layanan ini.</div>
-                            </div>
-                            `}
+                            ${d.hasStylistPrice ? '' : ''}
                         </div>
                     `;
                 container.insertAdjacentHTML('beforeend', itemHtml);
@@ -1183,11 +1218,10 @@
             document.getElementById('totalPriceDisplay2').innerText = formattedTotal;
             document.getElementById('paymentTreatmentInputs').innerHTML = hiddenInputs;
 
-            // Show or hide the global stylist section based on selection
-            const showGlobal = selectedDetails.some(d => d.hasStylistPrice);
+            // The global stylist section is now always visible
             const globalSection = document.getElementById('globalStylistSection');
             if (globalSection) {
-                globalSection.style.display = showGlobal ? '' : 'none';
+                globalSection.style.display = '';
             }
 
             // Apply busy states if we have them
@@ -1227,50 +1261,46 @@
         };
 
         function applyBusyStylists() {
-            selectedDetails.forEach((d, index) => {
-                const busyIds = busyStylistsMap[index] || [];
-                const container = document.querySelector(`.stylist-grid[data-detail-id="${d.id}"]`);
-                if (!container) return;
+            const globalGrid = document.getElementById('global_stylist_grid');
+            if (!globalGrid) return;
 
-                const cards = container.querySelectorAll('.stylist-card-modern');
-                cards.forEach(card => {
-                    const sid = parseInt(card.getAttribute('data-stylist-id'));
-                    const isOff = offWorkStylists.includes(sid);
-                    const isBusy = busyIds.includes(sid);
-
-                    // Reset special classes first
-                    card.classList.remove('busy', 'disabled');
-                    card.style.display = '';
-
-                    if (isOff) {
-                        card.style.display = 'none'; // Completely hide if off work
-                    } else if (isBusy) {
-                        card.classList.add('busy', 'disabled');
-                    } else {
-                        // Normal state
-                    }
-
-                    // If selected stylist becomes unavailable, reset
-                    if (d.stylistId == sid && (isOff || isBusy)) {
-                        card.classList.remove('active');
-                        d.stylistId = null;
-                        d.stylistKategori = null;
-                        renderSelectedTreatments(); // Refresh to show price reset
-                    }
-                });
+            // Collect all busy IDs across all selected treatments
+            const allBusyIds = new Set();
+            Object.values(busyStylistsMap).forEach(busyIds => {
+                busyIds.forEach(id => allBusyIds.add(id));
             });
 
-            // Also update the global stylist grid
-            const globalGrid = document.getElementById('global_stylist_grid');
-            if (globalGrid) {
-                const globalCards = globalGrid.querySelectorAll('.stylist-card-modern');
-                globalCards.forEach(card => {
-                    const sid = card.getAttribute('data-stylist-id');
-                    if (!sid) return; // Skip reset card
-                    const isOff = offWorkStylists.includes(parseInt(sid));
-                    card.style.display = isOff ? 'none' : '';
-                });
-            }
+            const cards = globalGrid.querySelectorAll('.stylist-card-modern');
+            cards.forEach(card => {
+                const sid = parseInt(card.getAttribute('data-stylist-id'));
+                if (!sid) return; // Skip "Reset" card
+
+                const isOff = offWorkStylists.includes(sid);
+                const isBusy = allBusyIds.has(sid);
+
+                card.classList.remove('busy', 'disabled');
+                card.style.display = isOff ? 'none' : '';
+                
+                if (!isOff && isBusy) {
+                    card.classList.add('busy', 'disabled');
+                }
+
+                // If currently selected stylist becomes unavailable, reset global selection
+                const currentStylistId = selectedDetails.length > 0 ? selectedDetails[0].stylistId : null;
+                if (currentStylistId == sid && (isOff || isBusy)) {
+                    const resetCard = globalGrid.querySelector('[data-stylist-id=""]');
+                    if (resetCard) {
+                        // Manually trigger reset state
+                        globalGrid.querySelectorAll('.stylist-card-modern').forEach(c => c.classList.remove('active'));
+                        resetCard.classList.add('active');
+                        selectedDetails.forEach(d => {
+                            d.stylistId = null;
+                            d.stylistKategori = null;
+                        });
+                        renderSelectedTreatments();
+                    }
+                }
+            });
         }
 
         window.updateItemStylistCards = function (detailId, stylistId, element) {
@@ -1348,11 +1378,8 @@
             element.classList.add('active');
 
             selectedDetails.forEach(d => {
-                // We only apply this to details that have stylist selection enabled
-                if (d.hasStylistPrice) {
-                    d.stylistId = stylistId;
-                    d.stylistKategori = kat;
-                }
+                d.stylistId = stylistId;
+                d.stylistKategori = kat;
             });
             renderSelectedTreatments();
         };
@@ -1368,6 +1395,19 @@
 
         window.removeDetail = function (id) {
             selectedDetails = selectedDetails.filter(d => d.id !== id);
+            
+            // Also uncheck the checkbox if it exists in the UI (catalog)
+            const checkbox = document.getElementById(`detail_${id}`);
+            if (checkbox) {
+                checkbox.checked = false;
+                const label = checkbox.nextElementSibling;
+                if (label) {
+                    label.classList.remove('bg-white', 'border-primary', 'shadow-sm', 'bg-light-primary');
+                    const icon = label.querySelector('.check-icon');
+                    if (icon) icon.style.display = 'none';
+                }
+            }
+            
             renderSelectedTreatments();
             checkStylistAvailability();
         };
@@ -1384,10 +1424,15 @@
                     return;
                 }
 
-                // New logic: Check if another variant of the same treatment is already added
-                if (selectedDetails.some(d => d.parentId === parentId)) {
-                    alert(`Layanan dari kategori "${parentName}" sudah ditambahkan. \n\nMohon maaf, Anda hanya dapat memilih satu jenis layanan untuk setiap kategori treatment yang sama demi keamanan perawatan.`);
-                    return;
+                // If another variant of the same treatment is already added, ask to replace it
+                const existingIndex = selectedDetails.findIndex(d => d.parentId === parentId);
+                if (existingIndex !== -1) {
+                    if (confirm(`Kategori "${parentName}" sudah ada di daftar. Ganti dengan varian ini?`)) {
+                        // Remove the old one
+                        selectedDetails.splice(existingIndex, 1);
+                    } else {
+                        return;
+                    }
                 }
 
                 selectedDetails.push({
@@ -1405,7 +1450,9 @@
                     promoType: this.getAttribute('data-promo-type'),
                     promoValue: parseInt(this.getAttribute('data-promo-value') || 0),
                     isColoring: this.getAttribute('data-is-coloring') === '1',
-                    image: this.getAttribute('data-image')
+                    image: this.getAttribute('data-image'),
+                    stylistId: selectedDetails.length > 0 ? selectedDetails[0].stylistId : null,
+                    stylistKategori: selectedDetails.length > 0 ? selectedDetails[0].stylistKategori : null
                 });
 
                 renderSelectedTreatments();
@@ -1500,14 +1547,6 @@
                     const currentPrice = detail.customPrice !== undefined ? detail.customPrice : basePrice;
 
                     let sNameText = '';
-                    if (detail.hasStylistPrice) {
-                        let sName = 'Belum dipilih';
-                        if (detail.stylistId) {
-                            const foundStylist = allStylists.find(s => s.id == detail.stylistId);
-                            if (foundStylist) sName = foundStylist.name;
-                        }
-                        sNameText = `<div class="extra-small text-muted">Stylist: ${sName}</div>`;
-                    }
 
                     let discountBadge = '';
                     if (hasColoringLoyalty && detail.isColoring) {
@@ -1530,7 +1569,14 @@
                 summaryHtml += '</div>';
                 document.getElementById('summaryTreatments').innerHTML = summaryHtml;
 
-                document.getElementById('summaryStylist').innerText = '(Per Layanan)';
+                // Update global summary stylist
+                const activeGlobalCard = document.querySelector('#global_stylist_grid .stylist-card-modern.active');
+                let globalStylistName = 'Default';
+                if (activeGlobalCard) {
+                    const nameText = activeGlobalCard.querySelector('.stylist-name').innerText;
+                    globalStylistName = (nameText === 'Reset' ? 'Default' : nameText);
+                }
+                document.getElementById('summaryStylist').innerText = globalStylistName;
                 document.getElementById('summaryDatetime').innerText = dateInput.value + ' ' + timeInput.value;
 
                 const customName = document.getElementById('customer_name_input');

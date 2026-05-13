@@ -216,7 +216,7 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="d-flex flex-column">
-                                            <span class="text-dark fw-bold">{{ $booking->treatment->name }}</span>
+                                            <span class="text-dark fw-bold">{{ $booking->treatment->name ?? 'Layanan Tidak Diketahui' }}</span>
                                             <small class="text-muted">{{ $booking->details->count() }} Sub-Layanan</small>
                                         </div>
                                     </td>
@@ -368,6 +368,7 @@
         // View Detail Handler
         $(document).on('click', '.btn-view-detail', function() {
             const id = $(this).data('id');
+            const btn = $(this);
             currentBookingId = id;
             
             // Show loading or just open? Let's fetch data.
@@ -375,14 +376,14 @@
                 url: "{{ url('admin/bookings') }}/" + id,
                 type: 'GET',
                 beforeSend: function() {
-                    $(this).prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+                    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
                 },
                 success: function(data) {
                     $('#mdl_id').text('#' + data.id);
                     $('#mdl_customer').text(data.customer_name);
                     $('#mdl_customer_email').html('<i class="ti ti-mail me-1"></i>' + (data.customer_email || '-'));
                     $('#mdl_customer_phone').html('<i class="ti ti-brand-whatsapp me-1"></i>' + (data.customer_phone || '-'));
-                    $('#mdl_role_badge').text(data.user ? 'Pelanggan Online' : 'Pelanggan Offline');
+                    $('#mdl_role_badge').text(data.user_id ? 'Pelanggan Terdaftar' : 'Pelanggan Guest/Offline');
                     
                     // Status Badge Mapping
                     const statusMap = {
@@ -402,7 +403,7 @@
                     const ps = payMap[data.payment_status] || { label: data.payment_status, class: 'bg-secondary' };
                     $('#mdl_payment_status').text(ps.label).removeClass().addClass('badge-status ' + ps.class);
                     
-                    $('#mdl_payment_method').text(data.payment_method.toUpperCase());
+                    $('#mdl_payment_method').text((data.payment_method || '-').toUpperCase());
                     $('#mdl_time').text(data.reservation_datetime);
                     $('#mdl_cashier').text(data.cashier ? data.cashier.name : '-');
                     $('#mdl_total').text('Rp ' + new Intl.NumberFormat('id-ID').format(data.total_price));
@@ -410,10 +411,11 @@
                     // Services List
                     let servicesHtml = '';
                     data.details.forEach(detail => {
+                        const detailName = detail.treatment_detail ? detail.treatment_detail.name : 'Layanan Tidak Diketahui';
                         servicesHtml += `
                             <div class="list-group-item p-3 border-0 border-bottom">
                                 <div class="d-flex justify-content-between mb-1">
-                                    <span class="fw-bold text-dark">${detail.treatment_detail.name}</span>
+                                    <span class="fw-bold text-dark">${detailName}</span>
                                     <span class="fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(detail.price)}</span>
                                 </div>
                                 <small class="text-muted"><i class="ti ti-user me-1"></i>Stylist: ${detail.stylist ? detail.stylist.name : 'Tanpa Stylist'}</small>
@@ -437,7 +439,7 @@
                     Swal.fire('Error!', 'Gagal mengambil data: ' + xhr.statusText, 'error');
                 },
                 complete: function() {
-                    $('.btn-view-detail[data-id="'+id+'"]').prop('disabled', false).html('<i class="ti ti-eye fs-5"></i>');
+                    btn.prop('disabled', false).html('<i class="ti ti-eye fs-5"></i>');
                 }
             });
         });

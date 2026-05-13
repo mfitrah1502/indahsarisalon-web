@@ -61,7 +61,7 @@
                         @endforeach
                     </div>
                 </p>
-                <div class="mt-auto">
+                <div class="mt-auto pt-3 border-top">
                     @if($treatment->is_promo && ($treatment->promo_start_date || $treatment->promo_end_date))
                         <div class="mb-2 p-2 bg-light-danger rounded-3 text-center">
                             <small class="text-danger fw-bold d-block" style="font-size: 0.7rem;">
@@ -72,9 +72,46 @@
                             </small>
                         </div>
                     @endif
-                    <a href="{{ route('booking.select', $treatment->id) }}" class="btn btn-primary w-100 rounded-pill">
-                        Pilih Treatment <i class="ti ti-chevron-right ms-1"></i>
-                    </a>
+                    
+                    @if($treatment->details->count() > 1)
+                        <button type="button" class="btn btn-outline-primary w-100 rounded-pill mb-2 btn-sm" data-bs-toggle="collapse" data-bs-target="#details-{{ $treatment->id }}">
+                            Lihat Varian <i class="ti ti-chevron-down ms-1"></i>
+                        </button>
+                        <div class="collapse" id="details-{{ $treatment->id }}">
+                            <div class="list-group list-group-flush mb-2">
+                                @foreach($treatment->details as $detail)
+                                    <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+                                        <div class="small">
+                                            <div class="fw-bold">{{ $detail->name }}</div>
+                                            <div class="extra-small text-muted">{{ $detail->duration }} menit</div>
+                                        </div>
+                                        <button type="button" 
+                                            class="btn btn-primary btn-xs btn-add-cart rounded-pill px-3"
+                                            data-id="{{ $detail->id }}"
+                                            data-treatment-id="{{ $treatment->id }}"
+                                            data-name="{{ $detail->name }}"
+                                            data-treatment-name="{{ $treatment->name }}"
+                                            data-allow-multi="{{ $treatment->allow_multi_select ? '1' : '0' }}">
+                                            Pilih
+                                        </button>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @else
+                        @php $d = $treatment->details->first(); @endphp
+                        @if($d)
+                            <button type="button" 
+                                class="btn btn-primary w-100 rounded-pill btn-add-cart"
+                                data-id="{{ $d->id }}"
+                                data-treatment-id="{{ $treatment->id }}"
+                                data-name="{{ $d->name }}"
+                                data-treatment-name="{{ $treatment->name }}"
+                                data-allow-multi="{{ $treatment->allow_multi_select ? '1' : '0' }}">
+                                Pilih Treatment <i class="ti ti-chevron-right ms-1"></i>
+                            </button>
+                        @endif
+                    @endif
                 </div>
             </div>
         </div>

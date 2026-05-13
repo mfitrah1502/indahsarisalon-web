@@ -76,15 +76,24 @@ class BookingController extends Controller
     }
 
     // STEP 1: Pilih stylist & waktu
-    public function select($treatmentId)
+    public function select(Request $request, $treatmentId)
     {
         $treatment = Treatment::with('details')->findOrFail($treatmentId);
-        $stylists = User::where('role', 'admin')->get();
+        $stylists = User::whereIn('role', ['admin', 'karyawan'])->get();
         $allTreatments = Treatment::with(['details', 'category'])->get();
         $categories = Category::all();
+
+        // Handle pre-selected details from query param ?details=1,2,3
+        $preSelectedDetails = [];
+        if ($request->filled('details')) {
+            $ids = explode(',', $request->details);
+            $preSelectedDetails = TreatmentDetail::with('treatment.category')
+                ->whereIn('id', $ids)
+                ->get();
+        }
         
         // Ambil data staff untuk UI (Hanya Admin dan Karyawan)
-        $isStaff = in_array(strtolower(Auth::user()->role ?? ''), ['owner', 'admin']);
+        $isStaff = in_array(strtolower(Auth::user()->role ?? ''), ['owner', 'admin', 'karyawan']);
         $customers = [];
         if ($isStaff) {
             $customers = User::where('role', 'pelanggan')
@@ -98,7 +107,7 @@ class BookingController extends Controller
         // Ambil tanggal libur
         $holidays = \App\Models\Holiday::pluck('date')->toArray();
 
-        return view('booking.select', compact('treatment', 'stylists', 'allTreatments', 'categories', 'holidays', 'customers', 'isStaff'));
+        return view('booking.select', compact('treatment', 'stylists', 'allTreatments', 'categories', 'holidays', 'customers', 'isStaff', 'preSelectedDetails'));
     }
     // STEP 2: Simpan booking
     public function store(Request $request)

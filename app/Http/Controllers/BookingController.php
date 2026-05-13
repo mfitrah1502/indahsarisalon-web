@@ -133,15 +133,18 @@ class BookingController extends Controller
             return redirect()->back()->with('error', $msg);
         }
 
-        // Validasi Jam Operasional (09:00 - 18:00)
+        // Validasi Jam Operasional (09:00 - 10:30 sesuai permintaan client)
         $dateTime = Carbon::parse($request->reservation_date.' '.$request->reservation_time);
         $hour = $dateTime->hour;
+        $minute = $dateTime->minute;
         
-        if ($hour < 9 || $hour >= 18) {
+        // Cek apakah lebih dari jam 10:30
+        if ($hour < 9 || $hour > 10 || ($hour === 10 && $minute > 30)) {
+            $errorMsg = 'Mohon maaf, jam reservasi maksimal adalah pukul 10:30.';
             if ($request->ajax()) {
-                return response()->json(['message' => 'Mohon maaf, jam reservasi harus di antara 09:00 - 18:00.'], 400);
+                return response()->json(['message' => $errorMsg], 400);
             }
-            return redirect()->back()->with('error', 'Mohon maaf, jam reservasi harus di antara 09:00 - 18:00.');
+            return redirect()->back()->with('error', $errorMsg);
         }
 
         
@@ -161,8 +164,8 @@ class BookingController extends Controller
             $currStart = \Carbon\Carbon::parse($b->reservation_datetime);
             foreach ($b->details as $d) {
                 if ($d->treatmentDetail) {
-                    $dur = $d->treatmentDetail->duration;
-                    $currEnd = $currStart->copy()->addMinutes($dur);
+                    // Sistem otomatis memblokir 7 jam dari jam terpilih (permintaan client)
+                    $currEnd = $currStart->copy()->addHours(7);
                     if ($d->stylist_id) {
                         $stylistWindows[$d->stylist_id][] = ['start' => $currStart->copy(), 'end' => $currEnd->copy()];
                     }
@@ -185,8 +188,8 @@ class BookingController extends Controller
             $detail = $preloadedDetails->get($dId);
             if (!$detail) continue;
 
-            $dur = $detail->duration;
-            $tempRequestedEnd = $tempRequestedStart->copy()->addMinutes($dur);
+            // Blokir 7 jam untuk pengecekan ketersediaan (permintaan client)
+            $tempRequestedEnd = $tempRequestedStart->copy()->addHours(7);
 
             if (isset($stylistWindows[$sId])) {
                 foreach ($stylistWindows[$sId] as $win) {
@@ -638,6 +641,17 @@ class BookingController extends Controller
 
         try {
             $startTime = Carbon::parse($date . ' ' . $time);
+            $hour = $startTime->hour;
+            $minute = $startTime->minute;
+
+            // Validasi 10:30 di AJAX juga
+            if ($hour < 9 || $hour > 10 || ($hour === 10 && $minute > 30)) {
+                return response()->json([
+                    'conflicts' => [], 
+                    'off_work_ids' => [],
+                    'message' => 'Maksimal booking jam 10:30'
+                ]);
+            }
             
             // 0. Check if it's a holiday
             $isHoliday = \App\Models\Holiday::where('date', $date)->exists();
@@ -675,8 +689,8 @@ class BookingController extends Controller
                     // Details are sequential
                     foreach ($b->details as $d) {
                         if ($d->treatmentDetail) {
-                            $duration = $d->treatmentDetail->duration;
-                            $currentEnd = $currentStart->copy()->addMinutes($duration);
+                            // Blokir 7 jam (permintaan client)
+                            $currentEnd = $currentStart->copy()->addHours(7);
                             
                             if ($d->stylist_id) {
                                 $stylistWindows[$d->stylist_id][] = [
@@ -703,8 +717,8 @@ class BookingController extends Controller
                         continue;
                     }
 
-                    $duration = $detail->duration;
-                    $currentRequestedEnd = $currentRequestedStart->copy()->addMinutes($duration);
+                    // Blokir 7 jam (permintaan client)
+                    $currentRequestedEnd = $currentRequestedStart->copy()->addHours(7);
 
                     $busyIds = [];
                     foreach ($stylistWindows as $stylistId => $windows) {

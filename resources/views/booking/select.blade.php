@@ -229,7 +229,9 @@
                                                     data-promo-type="{{ $treatment->promo_type }}"
                                                     data-promo-value="{{ $treatment->promo_value }}"
                                                     data-is-coloring="{{ (stripos($treatment->category->name ?? '', 'Coloring') !== false) ? '1' : '0' }}"
-                                                    data-duration="{{ $d->duration }}" onchange="togglePrimaryDetail(this)">
+                                                    data-duration="{{ $d->duration }}"
+                                                    data-image="{{ $d->image_url ? (strpos($d->image_url, 'http') === 0 ? $d->image_url : env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $d->image_url) : ( $treatment->image ? (strpos($treatment->image, 'http') === 0 ? $treatment->image : env('SUPABASE_URL') . '/storage/v1/object/public/' . (($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET')) . '/' . $treatment->image) : asset('assets/images/no-image.jpg') ) }}"
+                                                    onchange="togglePrimaryDetail(this)">
                                                 <label class="form-check-label p-2 w-100 border rounded cursor-pointer h-100"
                                                     for="detail_{{ $d->id }}">
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
@@ -411,7 +413,7 @@
                                     <select name="reservation_time" id="reservation_time" class="form-select" required>
                                         <option value="">-- Pilih Jam --</option>
                                     </select>
-                                    <small class="text-muted extra-small">Jam buka: 09:00 - 18:00</small>
+                                    <small class="text-muted extra-small">Batas reservasi: 09:00 - 10:30</small>
                                 </div>
 
                             </div>
@@ -526,13 +528,32 @@
                     <div class="row g-4" id="treatmentList">
                         @foreach($allTreatments as $item)
                             @php
-                                if (!$item->image) {
-                                    $imageUrl = asset('assets/images/no-image.jpg');
-                                } elseif (strpos($item->image, 'http') === 0) {
-                                    $imageUrl = $item->image;
-                                } else {
-                                    $bucket = ($item->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
-                                    $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $item->image;
+                                $imageUrl = asset('assets/images/no-image.jpg');
+                                $hasImage = false;
+
+                                // 1. Cek gambar utama treatment
+                                if ($item->image) {
+                                    if (strpos($item->image, 'http') === 0) {
+                                        $imageUrl = $item->image;
+                                        $hasImage = true;
+                                    } else {
+                                        $bucket = ($item->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                                        $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $item->image;
+                                        $hasImage = true;
+                                    }
+                                }
+
+                                // 2. Jika gambar utama kosong, coba cari dari detail/variasi
+                                if (!$hasImage) {
+                                    $firstDetail = $item->details->first();
+                                    if ($firstDetail && $firstDetail->image_url) {
+                                        if (strpos($firstDetail->image_url, 'http') === 0) {
+                                            $imageUrl = $firstDetail->image_url;
+                                        } else {
+                                            $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $firstDetail->image_url;
+                                        }
+                                        $hasImage = true;
+                                    }
                                 }
                             @endphp
                             <div class="col-md-4 col-lg-3 treatment-item-container" data-category="{{ $item->category_id }}"
@@ -607,7 +628,8 @@
                                                             data-promo-type="{{ $item->promo_type }}"
                                                             data-promo-value="{{ $item->promo_value }}"
                                                             data-is-coloring="{{ (stripos($item->category->name ?? '', 'Coloring') !== false) ? '1' : '0' }}"
-                                                            data-duration="{{ $d->duration }}">
+                                                            data-duration="{{ $d->duration }}"
+                                                            data-image="{{ $imageUrl }}">
                                                             Pilih
                                                         </button>
                                                     </div>
@@ -945,10 +967,10 @@
 
                 timeSelect.innerHTML = '<option value="">-- Pilih Jam --</option>';
 
-                for (let h = 9; h <= 18; h++) {
+                for (let h = 9; h <= 10; h++) {
                     for (let m = 0; m < 60; m += 15) {
-                        // Max jam operasional adalah 18:00
-                        if (h === 18 && m > 0) break;
+                        // Batasi jam booking maksimal jam 10:30 (Permintaan Client)
+                        if (h === 10 && m > 30) break;
 
                         const timeVal = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 
@@ -999,7 +1021,26 @@
                         isPromo: {{ $treatment->is_promo ? 'true' : 'false' }},
                         promoType: {!! json_encode($treatment->promo_type) !!},
                         promoValue: {{ (int) $treatment->promo_value }},
-                        isColoring: {{ (stripos($treatment->category->name ?? '', 'Coloring') !== false) ? 'true' : 'false' }}
+                        isColoring: {{ (stripos($treatment->category->name ?? '', 'Coloring') !== false) ? 'true' : 'false' }},
+                        @php
+                            $initImg = asset('assets/images/no-image.jpg');
+                            $hasInitImg = false;
+                            if ($treatment->image) {
+                                if (strpos($treatment->image, 'http') === 0) { $initImg = $treatment->image; $hasInitImg = true; }
+                                else { 
+                                    $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                                    $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image; 
+                                    $hasInitImg = true;
+                                }
+                            }
+                            if (!$hasInitImg) {
+                                if ($d->image_url) {
+                                    if (strpos($d->image_url, 'http') === 0) { $initImg = $d->image_url; }
+                                    else { $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $d->image_url; }
+                                }
+                            }
+                        @endphp
+                        image: {!! json_encode($initImg) !!}
                     },
                 @endforeach
             @endif
@@ -1043,7 +1084,8 @@
                         isPromo: checkbox.getAttribute('data-is-promo') === '1',
                         promoType: checkbox.getAttribute('data-promo-type'),
                         promoValue: parseInt(checkbox.getAttribute('data-promo-value') || 0),
-                        isColoring: checkbox.getAttribute('data-is-coloring') === '1'
+                        isColoring: checkbox.getAttribute('data-is-coloring') === '1',
+                        image: checkbox.getAttribute('data-image')
                     });
                 }
             } else {
@@ -1076,9 +1118,15 @@
                 const itemHtml = `
                         <div class="p-3 mb-3 rounded border-start border-3 border-primary bg-white shadow-sm">
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">${d.parentName}</div>
-                                    <div class="fw-bold text-dark">${d.name} <small class="text-muted fw-normal">(${d.duration} mnt)</small></div>
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3 position-relative" style="width: 60px; height: 60px;">
+                                        <img src="${d.image || '{{ asset('assets/images/no-image.jpg') }}'}" 
+                                             class="rounded shadow-sm w-100 h-100 object-fit-cover border" 
+                                             alt="${d.name}">
+                                    </div>
+                                    <div>
+                                        <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">${d.parentName}</div>
+                                        <div class="fw-bold text-dark">${d.name} <small class="text-muted fw-normal">(${d.duration} mnt)</small></div>
                                     @if($isStaff)
                                         <div class="input-group input-group-sm mt-1" style="max-width: 150px;" onclick="event.stopPropagation()">
                                             <span class="input-group-text bg-light">Rp</span>
@@ -1356,7 +1404,8 @@
                     isPromo: this.getAttribute('data-is-promo') === '1',
                     promoType: this.getAttribute('data-promo-type'),
                     promoValue: parseInt(this.getAttribute('data-promo-value') || 0),
-                    isColoring: this.getAttribute('data-is-coloring') === '1'
+                    isColoring: this.getAttribute('data-is-coloring') === '1',
+                    image: this.getAttribute('data-image')
                 });
 
                 renderSelectedTreatments();

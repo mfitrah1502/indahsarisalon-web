@@ -16,7 +16,8 @@ class TreatmentController extends Controller
     public function index(Request $request)
     {
         // 1. Inisialisasi Query dengan Join Kategori dulu agar select tidak tertimpa
-        $query = Treatment::leftJoin('categories', 'treatments.category_id', '=', 'categories.id')
+        $query = Treatment::with('details')
+            ->leftJoin('categories', 'treatments.category_id', '=', 'categories.id')
             ->select('treatments.*', 'categories.name as category_name');
 
         // 2. Tambahkan perhitungan agregat (Min, Max, Count)
@@ -73,11 +74,22 @@ class TreatmentController extends Controller
     // Mendapatkan detail treatment untuk modal (AJAX) - Pastikan fungsi ini di luar index
     public function getDetails($id)
     {
-        $treatment = Treatment::with('details')->findOrFail($id);
-        return response()->json([
-            'success' => true,
-            'data' => $treatment->details
-        ]);
+        try {
+            // Gunakan query mentah (DB::table) untuk menghindari error model/appends
+            $details = DB::table('treatment_details')
+                ->where('treatment_id', $id)
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $details
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data mentah: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     // Menampilkan form tambah treatment

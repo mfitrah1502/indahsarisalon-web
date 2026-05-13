@@ -69,8 +69,8 @@ class TreatmentDetail extends Model
         // Apply Loyalty (Coloring 35%)
         $currentUser = $user ?? auth()->user();
         if ($currentUser) {
-            $isColoring = $treatment->category && stripos($treatment->category->name, 'Coloring') !== false;
-            if ($isColoring && $currentUser->has_coloring_loyalty) {
+            $isColoring = $treatment->category && $treatment->category->name && stripos($treatment->category->name, 'Coloring') !== false;
+            if ($isColoring && isset($currentUser->has_coloring_loyalty) && $currentUser->has_coloring_loyalty) {
                 $finalPrice -= ($finalPrice * 35 / 100);
             }
         }
@@ -109,8 +109,8 @@ class TreatmentDetail extends Model
                 }
             }
             if ($currentUser) {
-                $isColoring = $treatment->category && stripos($treatment->category->name, 'Coloring') !== false;
-                if ($isColoring && $currentUser->has_coloring_loyalty) {
+                $isColoring = $treatment->category && $treatment->category->name && stripos($treatment->category->name, 'Coloring') !== false;
+                if ($isColoring && isset($currentUser->has_coloring_loyalty) && $currentUser->has_coloring_loyalty) {
                     $val -= ($val * 35 / 100);
                 }
             }

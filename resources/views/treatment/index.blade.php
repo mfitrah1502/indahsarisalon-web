@@ -146,9 +146,18 @@
                                             }
                                         } 
                                         
-                                        // 2. Jika gambar utama kosong, coba cari dari detail/variasi (Hanya jika belum ada image)
-                                        // Note: Karena kita pakai AJAX untuk detail, kita tidak bisa cek detail di sini tanpa eager load.
-                                        // Jadi kita asumsikan jika ada image, pakai image. Jika tidak, tampilkan placeholder.
+                                        // 2. Jika gambar utama kosong, coba cari dari detail/variasi
+                                        if (!$hasImage) {
+                                            $firstDetail = $treatment->details->first();
+                                            if ($firstDetail && $firstDetail->image_url) {
+                                                if (strpos($firstDetail->image_url, 'http') === 0) {
+                                                    $imageUrl = $firstDetail->image_url;
+                                                } else {
+                                                    $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $firstDetail->image_url;
+                                                }
+                                                $hasImage = true;
+                                            }
+                                        }
                                     @endphp
                                     <tr class="treatment-row" 
                                         data-id="{{ $treatment->id }}"
@@ -498,8 +507,19 @@
         $(document).on('click', '.view-detail', function () {
             let row = $(this).closest('tr');
             let id = row.data('id');
-            // Ambil src langsung dari gambar yang ada di tabel agar pasti sinkron
-            let image = row.find('img').attr('src');
+            
+            // Debugging: Cek ID di console (F12)
+            console.log('Memuat detail untuk ID:', id);
+
+            // Ambil gambar langsung dari atribut data-image yang sudah kita siapkan di HTML
+            let image = row.data('image') || "{{ asset('assets/images/no-image.jpg') }}";
+            console.log('Gambar Baris Ini:', image);
+            
+            // Reset modal state (penting agar tidak muncul gambar lama saat loading)
+            $('#popupImage').attr('src', image).show();
+            $('#popupImageCarousel').hide();
+            $('#popupImageCarouselInner').empty();
+            $('#popupPromoWrapper').hide();
             
             $('#popupName').text(row.data('name'));
             $('#popupCategory').text(row.data('category'));
@@ -508,7 +528,7 @@
             detailModal.show();
 
             $.ajax({
-                url: `/treatment/${id}/details`,
+                url: `/admin/treatment/details/${id}?t=` + new Date().getTime(),
                 type: "GET",
                 success: function (res) {
                     if (res.success) {
@@ -584,8 +604,13 @@
                         });
                     }
                 },
-                error: function() {
-                    $('#popupDetails').html('<div class="p-3 text-center text-danger">Gagal memuat data. Silakan coba lagi.</div>');
+                error: function(xhr) {
+                    console.error('Detail Error:', xhr.responseJSON);
+                    let errorMsg = 'Gagal memuat data (Error ' + xhr.status + ')';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg += ': <br><small class="fw-normal text-dark">' + xhr.responseJSON.message + '</small>';
+                    }
+                    $('#popupDetails').html('<div class="p-3 text-center text-danger fw-bold">' + errorMsg + '.</div>');
                 }
             });
         });

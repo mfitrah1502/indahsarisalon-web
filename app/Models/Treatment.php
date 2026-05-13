@@ -63,10 +63,18 @@ class Treatment extends Model
     {
         $images = [];
 
-        // Collect from details
-        foreach ($this->details as $detail) {
-            if ($detail->image_url && !in_array($detail->image_url, $images)) {
-                $images[] = $detail->image_url;
+        // Use direct query to avoid loading models and causing infinite recursion
+        // when TreatmentDetails are serialized and try to access parent Treatment
+        $detailImages = \Illuminate\Support\Facades\DB::table('treatment_details')
+            ->where('treatment_id', $this->id)
+            ->whereNotNull('image_url')
+            ->where('image_url', '!=', '')
+            ->pluck('image_url')
+            ->toArray();
+
+        foreach ($detailImages as $url) {
+            if (!in_array($url, $images)) {
+                $images[] = $url;
             }
         }
 

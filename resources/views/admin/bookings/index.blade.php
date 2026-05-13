@@ -539,10 +539,10 @@
             
             const message = encodeURIComponent(
                 `*BOOKING BARU - INDAH SARI SALON*\n\n` +
-                `\uD83D\uDCCD *Stylist:* ${stylist}\n` +
-                `\uD83D\uDC64 *Customer:* ${customer}\n` +
-                `\uD83D\uDCC5 *Jadwal:* ${date} | ${time} WIB\n` +
-                `\uD83D\uDC87 *Treatment:* ${services.join(', ')}\n\n` +
+                String.fromCodePoint(0x1F4CC) + ` *Stylist:* ${stylist}\n` +
+                String.fromCodePoint(0x1F464) + ` *Customer:* ${customer}\n` +
+                String.fromCodePoint(0x1F4C5) + ` *Jadwal:* ${date} | ${time} WIB\n` +
+                String.fromCodePoint(0x1F487) + ` *Treatment:* ${services.join(', ')}\n\n` +
                 `_Mohon bersiap sebelum jam booking. Terima kasih!_`
             );
             

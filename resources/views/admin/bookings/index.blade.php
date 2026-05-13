@@ -524,13 +524,28 @@
         });
 
         $('#btn_wa_broadcast').on('click', function() {
-            const id = $('#bookingDetailModal').data('id');
+            const customer = $('#mdl_customer').text();
+            const date = $('#mdl_date').text();
             const time = $('#mdl_time').text();
             
-            // Using the same message format as personal reminder
-            const message = encodeURIComponent(`Halo Kak, kami dari Indah Sari Salon ingin mengingatkan jadwal booking Kakak (#BOOK-${id}) pada jam ${time}. Apakah ada perubahan jadwal? Sampaikan kepada kami.`);
+            // Get Stylist from the first service item (as per typical needs)
+            const stylist = $('#mdl_services_list small').first().text().replace('Stylist: ', '').trim() || 'Tidak Ditentukan';
             
-            // Open WhatsApp share screen (User will then pick the group)
+            // Collect services text
+            let services = [];
+            $('#mdl_services_list .fw-bold.text-dark').each(function() {
+                services.push($(this).text());
+            });
+            
+            const message = encodeURIComponent(
+                `*BOOKING BARU - INDAH SARI SALON*\n\n` +
+                `📍 *Stylist:* ${stylist}\n` +
+                `👤 *Customer:* ${customer}\n` +
+                `📅 *Jadwal:* ${date} | ${time} WIB\n` +
+                `💇 *Treatment:* ${services.join(', ')}\n\n` +
+                `_Mohon bersiap sebelum jam booking. Terima kasih!_`
+            );
+            
             window.open(`https://wa.me/?text=${message}`, '_blank');
         });
 

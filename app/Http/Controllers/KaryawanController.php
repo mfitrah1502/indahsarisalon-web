@@ -43,6 +43,18 @@ class KaryawanController extends Controller
         'password' => 'required|string|min:6',
         'role' => 'required|in:owner,admin', 
         'kategori' => 'required_if:role,admin|in:senior,junior',
+        'nickname' => 'nullable|string|max:255',
+        'birth_place' => 'nullable|string|max:255',
+        'birth_date' => 'nullable|date',
+        'gender' => 'nullable|string|max:50',
+        'position' => 'nullable|string|max:255',
+        'division' => 'nullable|string|max:255',
+        'join_date' => 'nullable|date',
+        'employment_status' => 'nullable|string|max:100',
+        'emergency_contact' => 'nullable|string|max:50',
+        'bank_account_name' => 'nullable|string|max:255',
+        'bank_account_number' => 'nullable|string|max:50',
+        'last_education' => 'nullable|string|max:255',
     ]);
 
     User::create([
@@ -53,8 +65,20 @@ class KaryawanController extends Controller
         'password' => Hash::make($request->password),
         'role' => $request->role,       // simpan role dari form
         'type' => 'karyawan',
-         'kategori' => $request->role === 'admin' ? $request->kategori : null,
+        'kategori' => $request->role === 'admin' ? $request->kategori : null,
         'status' => $request->status ?? 'aktif',
+        'nickname' => $request->nickname,
+        'birth_place' => $request->birth_place,
+        'birth_date' => $request->birth_date,
+        'gender' => $request->gender,
+        'position' => $request->position,
+        'division' => $request->division,
+        'join_date' => $request->join_date,
+        'employment_status' => $request->employment_status,
+        'emergency_contact' => $request->emergency_contact,
+        'bank_account_name' => $request->bank_account_name,
+        'bank_account_number' => $request->bank_account_number,
+        'last_education' => $request->last_education,
     ]);
 
     return redirect()->route('karyawan.index')->with('success','Karyawan berhasil ditambahkan');
@@ -74,6 +98,18 @@ class KaryawanController extends Controller
         'phone' => 'required|string|max:15',
         'role' => 'required|in:owner,admin', // validasi role
         'kategori' => 'required_if:role,admin|in:senior,junior',
+        'nickname' => 'nullable|string|max:255',
+        'birth_place' => 'nullable|string|max:255',
+        'birth_date' => 'nullable|date',
+        'gender' => 'nullable|string|max:50',
+        'position' => 'nullable|string|max:255',
+        'division' => 'nullable|string|max:255',
+        'join_date' => 'nullable|date',
+        'employment_status' => 'nullable|string|max:100',
+        'emergency_contact' => 'nullable|string|max:50',
+        'bank_account_name' => 'nullable|string|max:255',
+        'bank_account_number' => 'nullable|string|max:50',
+        'last_education' => 'nullable|string|max:255',
     ]);
 
     $karyawan->update([
@@ -85,6 +121,18 @@ class KaryawanController extends Controller
         'kategori' => $request->role === 'admin' ? $request->kategori : null,
         'type' => 'karyawan',    // update role
         'status' => $request->status ?? 'aktif',
+        'nickname' => $request->nickname,
+        'birth_place' => $request->birth_place,
+        'birth_date' => $request->birth_date,
+        'gender' => $request->gender,
+        'position' => $request->position,
+        'division' => $request->division,
+        'join_date' => $request->join_date,
+        'employment_status' => $request->employment_status,
+        'emergency_contact' => $request->emergency_contact,
+        'bank_account_name' => $request->bank_account_name,
+        'bank_account_number' => $request->bank_account_number,
+        'last_education' => $request->last_education,
     ]);
 
     return redirect()->route('karyawan.index')->with('success','Karyawan berhasil diupdate');

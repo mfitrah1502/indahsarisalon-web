@@ -38,6 +38,29 @@
         </td>
         <td class="text-end px-3">
             <div class="d-flex justify-content-end gap-2">
+                <button class="btn btn-light action-btn view-detail text-primary" 
+                        data-name="{{ $karyawan->name }}"
+                        data-username="{{ $karyawan->username }}"
+                        data-email="{{ $karyawan->email }}"
+                        data-phone="{{ $karyawan->phone ?? '-' }}"
+                        data-role="{{ ucfirst($karyawan->role) }}"
+                        data-kategori="{{ ucfirst($karyawan->kategori ?? '-') }}"
+                        data-status="{{ ucfirst($karyawan->status) }}"
+                        data-nickname="{{ $karyawan->nickname ?? '-' }}"
+                        data-gender="{{ $karyawan->gender ?? '-' }}"
+                        data-birthplace="{{ $karyawan->birth_place ?? '-' }}"
+                        data-birthdate="{{ $karyawan->birth_date ? date('d M Y', strtotime($karyawan->birth_date)) : '-' }}"
+                        data-education="{{ $karyawan->last_education ?? '-' }}"
+                        data-emergency="{{ $karyawan->emergency_contact ?? '-' }}"
+                        data-position="{{ $karyawan->position ?? '-' }}"
+                        data-division="{{ $karyawan->division ?? '-' }}"
+                        data-joindate="{{ $karyawan->join_date ? date('d M Y', strtotime($karyawan->join_date)) : '-' }}"
+                        data-employmentstatus="{{ $karyawan->employment_status ?? '-' }}"
+                        data-bankname="{{ $karyawan->bank_account_name ?? '-' }}"
+                        data-banknumber="{{ $karyawan->bank_account_number ?? '-' }}"
+                        title="Lihat Detail">
+                    <i class="ti ti-eye fs-5"></i>
+                </button>
                 <button class="btn btn-light action-btn lihat-absensi text-info" data-id="{{ $karyawan->id }}" title="Riwayat Presensi">
                     <i class="ti ti-calendar-event fs-5"></i>
                 </button>

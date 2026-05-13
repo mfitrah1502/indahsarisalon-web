@@ -125,7 +125,8 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         // Treatment
         Route::get('treatment/filter', [TreatmentController::class, 'filter'])->name('treatment.filter');
         Route::get('/treatment/filter-debug', [TreatmentController::class, 'filter'])->name('treatment.filter.debug');
-        Route::post('/treatment/broadcast-promo', [TreatmentController::class, 'broadcastPromo'])->name('treatment.broadcast');
+        Route::get('/treatment/broadcast-promo', [TreatmentController::class, 'broadcastPromo'])->name('treatment.broadcast');
+        Route::get('/treatment/{id}/details', [TreatmentController::class, 'getDetails'])->name('treatment.get-details');
         Route::resource('treatment', TreatmentController::class);
 
         // Pelanggan

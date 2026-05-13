@@ -132,20 +132,14 @@
                             <tbody>
                                 @forelse($treatments as $treatment)
                                     @php
-                                        $detailImage = $treatment->details->whereNotNull('image_url')->first();
                                         $hasImage = false;
-                                        
-                                        if ($detailImage && $detailImage->image_url) {
-                                            $imageUrl = $detailImage->image_url;
-                                            $hasImage = true;
-                                        } elseif (!$treatment->image) {
+                                        if (!$treatment->image) {
                                             $imageUrl = asset('assets/images/no-image.jpg');
                                         } elseif (strpos($treatment->image, 'http') === 0) {
                                             $imageUrl = $treatment->image;
                                             $hasImage = true;
                                         } else {
-                                            $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
-                                            $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
+                                            $imageUrl = config('app.supabase_url') . '/storage/v1/object/public/' . config('app.supabase_bucket') . '/' . $treatment->image;
                                             $hasImage = true;
                                         }
                                     @endphp
@@ -154,7 +148,6 @@
                                         data-name="{{ $treatment->name }}"
                                         data-category="{{ $treatment->category->name ?? '-' }}"
                                         data-promo-end="{{ $treatment->promo_end_date ? \Carbon\Carbon::parse($treatment->promo_end_date)->format('d F Y') : '' }}"
-                                        data-details='@json($treatment->details)'
                                         data-image="{{ $imageUrl }}">
                                         <td class="px-3">
                                             <div class="d-flex align-items-center">
@@ -170,7 +163,7 @@
                                                 </div>
                                                 <div>
                                                     <h6 class="mb-0 fw-bold">{{ $treatment->name }}</h6>
-                                                    <small class="text-muted">{{ $treatment->details->count() }} Variasi</small>
+                                                    <small class="text-muted">{{ $treatment->details_count }} Variasi</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -207,8 +200,8 @@
                                         <td>
                                             <span class="fw-bold text-dark">
                                                 @php
-                                                    $minPrice = $treatment->details->min('price') ?? 0;
-                                                    $maxPrice = $treatment->details->max('price') ?? 0;
+                                                    $minPrice = $treatment->details_min_price ?? 0;
+                                                    $maxPrice = $treatment->details_max_price ?? 0;
                                                 @endphp
                                                 @if($minPrice != $maxPrice)
                                                     Rp {{ number_format($minPrice, 0, ',', '.') }} - Rp {{ number_format($maxPrice, 0, ',', '.') }}
@@ -428,7 +421,7 @@
                     </div>
                     <div class="customer-list-scrollable" style="max-height: 400px; overflow-y: auto;">
                         <div class="list-group list-group-flush" id="customerList">
-                            @foreach($customers as $customer)
+                            @foreach($customers->take(50) as $customer)
                                 <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 p-3 border-0 border-bottom customer-item" data-search="{{ strtolower($customer->name) }} {{ $customer->phone }}">
                                     <input class="form-check-input flex-shrink-0" type="radio" name="selectedCustomer" value="{{ $customer->phone }}" data-name="{{ $customer->name }}">
                                     <div class="flex-grow-1">
@@ -494,86 +487,85 @@
             if (e.keyCode === 13) applyFilterSortSearch();
         });
 
-        // View Detail Modal
+        // View Detail Modal with AJAX
         $(document).on('click', '.view-detail', function () {
             let row = $(this).closest('tr');
-            let details = row.data('details');
+            let id = row.data('id');
             let image = row.data('image');
             
             $('#popupName').text(row.data('name'));
             $('#popupCategory').text(row.data('category'));
+            $('#popupDetails').html('<div class="p-4 text-center"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">Memuat variasi...</p></div>');
             
-            // Image Carousel Logic
-            let carouselImages = [];
-            if (image) {
-                carouselImages.push(image);
-            }
-            if (details && details.length > 0) {
-                details.forEach(function(d) {
-                    if (d.image_url) {
-                        carouselImages.push(d.image_url);
-                    }
-                });
-            }
-
-            if (carouselImages.length > 1) {
-                $('#popupImage').hide();
-                let innerHtml = '';
-                carouselImages.forEach(function(img, idx) {
-                    let active = idx === 0 ? 'active' : '';
-                    innerHtml += `
-                        <div class="carousel-item ${active}">
-                            <img src="${img}" class="d-block w-100" style="max-height: 300px; object-fit: cover;">
-                        </div>
-                    `;
-                });
-                $('#popupImageCarouselInner').html(innerHtml);
-                $('#popupImageCarousel').show();
-            } else if (carouselImages.length === 1) {
-                $('#popupImageCarousel').hide();
-                $('#popupImage').attr('src', carouselImages[0]).show();
-            } else {
-                $('#popupImageCarousel').hide();
-                $('#popupImage').attr('src', '').hide();
-            }
-            
-            let isPromo = row.data('category') == 'Promo';
-
-            let html = '';
-            details.forEach(function (d) {
-                let currentPrice = d.price;
-                let priceHtml = `<span class="fw-bold text-primary">Rp ${new Intl.NumberFormat('id-ID').format(currentPrice)}</span>`;
-
-                if (isPromo) {
-                    $('#popupPromoWrapper').show();
-                }
-
-                html += `
-                    <div class="list-group-item p-3 border-0 border-bottom">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold">${d.name}</span>
-                            ${priceHtml}
-                        </div>
-                        <div class="d-flex gap-3 small text-muted">
-                            <span><i class="ti ti-clock me-1"></i>${d.duration} mnt</span>
-                            ${d.description ? `<span><i class="ti ti-info-circle me-1"></i>${d.description}</span>` : ''}
-                        </div>
-                    </div>`;
-            });
-
-            $('#popupDetails').html(html);
-            
-            // Store current treatment data for spreading
-            $('#btnSpreadPromo').data('treatment', {
-                id: row.data('id'),
-                name: row.data('name'),
-                category: row.data('category'),
-                promoEnd: row.data('promo-end'),
-                image: image,
-                details: details
-            });
-
             detailModal.show();
+
+            $.ajax({
+                url: `/treatment/${id}/details`,
+                type: "GET",
+                success: function (res) {
+                    if (res.success) {
+                        let details = res.data;
+                        
+                        // Image Carousel Logic
+                        let carouselImages = [];
+                        if (image) carouselImages.push(image);
+                        
+                        details.forEach(function(d) {
+                            if (d.image_url) carouselImages.push(d.image_url);
+                        });
+
+                        if (carouselImages.length > 1) {
+                            $('#popupImage').hide();
+                            let innerHtml = '';
+                            carouselImages.forEach(function(img, idx) {
+                                let active = idx === 0 ? 'active' : '';
+                                innerHtml += `
+                                    <div class="carousel-item ${active}">
+                                        <img src="${img}" class="d-block w-100" style="max-height: 300px; object-fit: cover;">
+                                    </div>`;
+                            });
+                            $('#popupImageCarouselInner').html(innerHtml);
+                            $('#popupImageCarousel').show();
+                        } else if (carouselImages.length === 1) {
+                            $('#popupImageCarousel').hide();
+                            $('#popupImage').attr('src', carouselImages[0]).show();
+                        } else {
+                            $('#popupImageCarousel').hide();
+                            $('#popupImage').attr('src', '').hide();
+                        }
+                        
+                        let isPromo = row.data('category') == 'Promo';
+                        let html = '';
+                        details.forEach(function (d) {
+                            let priceHtml = `<span class="fw-bold text-primary">Rp ${new Intl.NumberFormat('id-ID').format(d.price)}</span>`;
+                            if (isPromo) $('#popupPromoWrapper').show();
+
+                            html += `
+                                <div class="list-group-item p-3 border-0 border-bottom">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="fw-bold">${d.name}</span>
+                                        ${priceHtml}
+                                    </div>
+                                    <div class="d-flex gap-3 small text-muted">
+                                        <span><i class="ti ti-clock me-1"></i>${d.duration} mnt</span>
+                                        ${d.description ? `<span><i class="ti ti-info-circle me-1"></i>${d.description}</span>` : ''}
+                                    </div>
+                                </div>`;
+                        });
+                        $('#popupDetails').html(html);
+
+                        // Store for spreading
+                        $('#btnSpreadPromo').data('treatment', {
+                            id: id,
+                            name: row.data('name'),
+                            category: row.data('category'),
+                            promoEnd: row.data('promo-end'),
+                            image: image,
+                            details: details
+                        });
+                    }
+                }
+            });
         });
 
         // Spread Promo Logic

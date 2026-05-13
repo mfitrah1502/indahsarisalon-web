@@ -585,6 +585,27 @@ class BookingController extends Controller
         return redirect()->back()->with('success', 'Status booking berhasil diperbarui.');
     }
 
+    public function reschedule(Request $request, Booking $booking)
+    {
+        $request->validate([
+            'reservation_datetime' => 'required|date'
+        ]);
+
+        $booking->update([
+            'reservation_datetime' => $request->reservation_datetime
+        ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Jadwal booking berhasil diperbarui.',
+                'new_datetime' => $booking->reservation_datetime
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Jadwal booking berhasil diperbarui.');
+    }
+
     // ADMIN: View detail booking (JSON)
     public function show($id)
     {

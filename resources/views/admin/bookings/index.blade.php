@@ -296,6 +296,15 @@
                                 <div id="mdl_customer_phone"></div>
                             </div>
                             <span id="mdl_role_badge" class="badge bg-light-pink text-pink rounded-pill px-3"></span>
+
+                            <div class="d-flex flex-column gap-2 mt-4">
+                                <button class="btn btn-success w-100 rounded-3 shadow-sm" id="btn_wa_reminder">
+                                    <i class="ti ti-brand-whatsapp me-2"></i>Reminder WA
+                                </button>
+                                <button class="btn btn-outline-success w-100 rounded-3" id="btn_wa_broadcast">
+                                    <i class="ti ti-users me-2"></i>Broadcast ke Grup
+                                </button>
+                            </div>
                         </div>
                         
                         <div class="mt-4">
@@ -313,11 +322,22 @@
                                 <span id="mdl_payment_method" class="fw-bold"></span>
                             </div>
                             <hr>
-                            <div class="d-flex justify-content-between mb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
                                 <span class="text-muted">Waktu:</span>
                                 <span id="mdl_time" class="fw-bold"></span>
                             </div>
-                            <div class="d-flex justify-content-between mb-2">
+                            <div id="reschedule_section" style="display:none;" class="mt-2 p-2 bg-white rounded border border-pink shadow-sm">
+                                <label class="small fw-bold text-pink mb-1">Ganti Jadwal:</label>
+                                <input type="datetime-local" id="reschedule_datetime" class="form-control form-control-sm mb-2 border-pink">
+                                <div class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-pink flex-grow-1" id="btn_save_reschedule">Simpan</button>
+                                    <button class="btn btn-sm btn-light flex-grow-1" id="btn_cancel_reschedule">Batal</button>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-pink w-100 mt-2" id="btn_show_reschedule">
+                                <i class="ti ti-calendar-event me-1"></i>Reschedule
+                            </button>
+                            <div class="d-flex justify-content-between mt-3 mb-2">
                                 <span class="text-muted">Petugas/Kasir:</span>
                                 <span id="mdl_cashier" class="fw-bold"></span>
                             </div>
@@ -424,6 +444,15 @@
                     });
                     $('#mdl_services_list').html(servicesHtml);
 
+                    // Store Phone for WA
+                    const customerPhone = data.customer_phone || (data.user ? data.user.phone : '');
+                    $('#bookingDetailModal').data('phone', customerPhone);
+                    $('#bookingDetailModal').data('id', data.id);
+                    
+                    // Reset reschedule section
+                    $('#reschedule_section').hide();
+                    $('#reschedule_datetime').val('');
+
                     // Action buttons visibility
                     if(data.status === 'pending') {
                         $('#mdl_actions').removeClass('d-none').addClass('d-flex');
@@ -479,6 +508,59 @@
 
         $('#btnMarkFinished').click(() => updateBookingStatus('berhasil'));
         $('#btnCancelBooking').click(() => updateBookingStatus('dibatalkan'));
+
+        // WhatsApp & Reschedule Handlers
+        $('#btn_wa_reminder').on('click', function() {
+            const id = $('#bookingDetailModal').data('id');
+            const phone = $('#bookingDetailModal').data('phone');
+            if (!phone) return Swal.fire('Error', 'Nomor telepon tidak tersedia', 'error');
+            
+            let cleanPhone = phone.replace(/\D/g, '');
+            if (cleanPhone.startsWith('0')) {
+                cleanPhone = '62' + cleanPhone.slice(1);
+            }
+            const message = encodeURIComponent(`Halo Kak, kami dari Indah Sari Salon ingin mengingatkan jadwal booking Kakak (#BOOK-${id}) pada jam ${$('#mdl_time').text()}. Sampai jumpa! ✨`);
+            window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
+        });
+
+        $('#btn_wa_broadcast').on('click', function() {
+            window.open('https://chat.whatsapp.com/Klzg8cq9767Iolv1Dl7d5T', '_blank');
+        });
+
+        $('#btn_show_reschedule').on('click', function() {
+            $('#reschedule_section').slideToggle();
+        });
+
+        $('#btn_cancel_reschedule').on('click', function() {
+            $('#reschedule_section').slideUp();
+        });
+
+        $('#btn_save_reschedule').on('click', function() {
+            const newDateTime = $('#reschedule_datetime').val();
+            if (!newDateTime) return Swal.fire('Peringatan', 'Pilih tanggal dan waktu baru terlebih dahulu.', 'warning');
+
+            const id = $('#bookingDetailModal').data('id');
+            const btn = $(this);
+            btn.prop('disabled', true).text('Menyimpan...');
+
+            $.ajax({
+                url: `/admin/bookings/${id}/reschedule`,
+                type: 'PATCH',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    reservation_datetime: newDateTime
+                },
+                success: function(res) {
+                    Swal.fire('Berhasil!', res.message, 'success').then(() => {
+                        location.reload();
+                    });
+                },
+                error: function() {
+                    Swal.fire('Error!', 'Gagal mengubah jadwal.', 'error');
+                    btn.prop('disabled', false).text('Simpan');
+                }
+            });
+        });
 
         // Tab Filter Logic (Already covered by direct links, but keep standard)
         if (typeof layout_change === 'function') {

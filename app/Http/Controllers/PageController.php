@@ -139,9 +139,9 @@ class PageController extends Controller
                                 ->latest()
                                 ->first();
 
-        $categories = \App\Models\Category::where('name', '!=', 'Promo')->with(['treatments.details.treatment.category' => function($q) {
+        $categories = \App\Models\Category::where('name', '!=', 'Promo')->with(['treatments' => function($q) {
             $q->where('is_active', true);
-        }])->get();
+        }, 'treatments.details'])->get();
 
         return view('dashboard.homepage-user', compact('latestBooking', 'categories', 'promoTreatments'));
     }

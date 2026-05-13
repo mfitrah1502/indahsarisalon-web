@@ -592,14 +592,25 @@ class BookingController extends Controller
             $booking = Booking::with([
                 'user', 
                 'stylist', 
-                'treatment.category', 
+                'treatment', 
                 'cashier', 
-                'details.treatmentDetail.treatment.category', 
+                'details.treatmentDetail', 
                 'details.stylist'
             ])->findOrFail($id);
             
+            // Disable appends to prevent expensive calculations and infinite recursion during serialization
+            $booking->setAppends([]);
+            if ($booking->treatment) $booking->treatment->setAppends([]);
+            
+            $booking->details->each(function($detail) {
+                $detail->setAppends([]);
+                if ($detail->treatmentDetail) {
+                    $detail->treatmentDetail->setAppends([]);
+                }
+            });
+
             return response()->json($booking);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) { // Use Throwable to catch both Exception and Error
             \Log::error("Error showing booking detail: " . $e->getMessage());
             return response()->json([
                 'message' => 'Gagal mengambil data: ' . $e->getMessage()

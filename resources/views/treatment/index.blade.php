@@ -498,7 +498,8 @@
         $(document).on('click', '.view-detail', function () {
             let row = $(this).closest('tr');
             let id = row.data('id');
-            let image = row.data('image');
+            // Ambil src langsung dari gambar yang ada di tabel agar pasti sinkron
+            let image = row.find('img').attr('src');
             
             $('#popupName').text(row.data('name'));
             $('#popupCategory').text(row.data('category'));
@@ -582,6 +583,9 @@
                             details: details
                         });
                     }
+                },
+                error: function() {
+                    $('#popupDetails').html('<div class="p-3 text-center text-danger">Gagal memuat data. Silakan coba lagi.</div>');
                 }
             });
         });

@@ -37,7 +37,6 @@ class TreatmentController extends Controller
         }
 
         // 5. Sorting
-        // Prioritaskan kategori "Promo"
         $query->orderByRaw("CASE WHEN categories.name = 'Promo' THEN 0 ELSE 1 END")
               ->orderBy('treatments.created_at', 'desc');
 
@@ -58,13 +57,9 @@ class TreatmentController extends Controller
             }
         }
 
-        // Eager load category saja (details via AJAX)
         $treatments = $query->with(['category'])->paginate(10);
-
-        // Ambil kategori untuk filter
         $categories = Category::select('id', 'name')->get(); 
         
-        // Ambil data pelanggan untuk modal broadcast (dibatasi)
         $customers = \App\Models\User::select('id', 'name', 'phone')
             ->where('role', 'pelanggan')
             ->whereNotNull('phone')
@@ -72,18 +67,10 @@ class TreatmentController extends Controller
             ->limit(500)
             ->get();
 
-        if ($request->expectsJson() || $request->is('api/*')) {
-            return response()->json([
-                'success' => true,
-                'data' => $treatments,
-                'categories' => $categories
-            ]);
-        }
-
         return view('treatment.index', compact('treatments', 'categories', 'customers'));
     }
 
-    // Mendapatkan detail treatment untuk modal (AJAX)
+    // Mendapatkan detail treatment untuk modal (AJAX) - Pastikan fungsi ini di luar index
     public function getDetails($id)
     {
         $treatment = Treatment::with('details')->findOrFail($id);
@@ -133,16 +120,14 @@ class TreatmentController extends Controller
             $filename = time() . '.' . $file->getClientOriginalExtension();
             $fileContents = file_get_contents($file->getRealPath());
             
-            $response = Http::withHeaders([
+            Http::withHeaders([
                 'Authorization' => 'Bearer ' . env('SUPABASE_SERVICE_KEY'),
                 'apikey' => env('SUPABASE_SERVICE_KEY'),
                 'Content-Type' => 'application/octet-stream',
             ])->withBody($fileContents, 'application/octet-stream')
             ->post(env('SUPABASE_URL') . '/storage/v1/object/' . env('SUPABASE_BUCKET') . '/' . $filename);
 
-            if ($response->successful()) {
-                $treatment->image = $filename;
-            }
+            $treatment->image = $filename;
         }
 
         $treatment->save();
@@ -175,21 +160,18 @@ class TreatmentController extends Controller
             $filename = time() . '.' . $file->getClientOriginalExtension();
             $fileContents = file_get_contents($file->getRealPath());
 
-            $response = Http::withHeaders([
+            Http::withHeaders([
                 'Authorization' => 'Bearer ' . env('SUPABASE_SERVICE_KEY'),
                 'apikey' => env('SUPABASE_SERVICE_KEY'),
                 'Content-Type' => 'application/octet-stream',
             ])->withBody($fileContents, 'application/octet-stream')
             ->post(env('SUPABASE_URL') . '/storage/v1/object/' . env('SUPABASE_BUCKET') . '/' . $filename);
 
-            if ($response->successful()) {
-                $treatment->image = $filename;
-            }
+            $treatment->image = $filename;
         }
         
         $treatment->save();
 
-        // Sync details
         $treatment->details()->delete();
         foreach ($request->details as $detail) {
             $treatment->details()->create($detail);
@@ -206,7 +188,6 @@ class TreatmentController extends Controller
 
     public function filter(Request $request)
     {
-        // Gunakan logika yang sama dengan index agar harga tidak 0
         $query = Treatment::leftJoin('categories', 'treatments.category_id', '=', 'categories.id')
             ->select('treatments.*', 'categories.name as category_name')
             ->withMin('details', 'price')
@@ -232,23 +213,6 @@ class TreatmentController extends Controller
 
     public function broadcastPromo(Request $request)
     {
-        $promoTreatments = Treatment::whereHas('category', function($q) {
-            $q->where('name', 'Promo');
-        })->where('is_active', 1)->get();
-
-        if ($promoTreatments->isEmpty()) {
-            return back()->with('error', 'Tidak ada treatment yang sedang promo saat ini.');
-        }
-
-        $customers = \App\Models\User::where('role', 'pelanggan')
-            ->whereNotNull('phone')
-            ->where('phone', '!=', '')
-            ->get();
-
-        if ($customers->isEmpty()) {
-            return back()->with('error', 'Tidak ada pelanggan dengan nomor WhatsApp terdaftar.');
-        }
-
-        return back()->with('success', "Broadcast promo berhasil dikirim.");
+        return back()->with('success', "Fitur broadcast dalam pengembangan.");
     }
 }

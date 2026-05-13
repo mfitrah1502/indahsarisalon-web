@@ -41,6 +41,9 @@ class PelangganController extends Controller
             'phone'    => 'required|string|max:15',
             'password' => 'required|string|min:6|confirmed',
             'status'   => 'required|in:aktif,tidak',
+            'membership_tier' => 'nullable|string|max:50',
+            'total_spend' => 'nullable|numeric',
+            'last_transaction_at' => 'nullable|date',
         ]);
 
         User::create([
@@ -52,6 +55,9 @@ class PelangganController extends Controller
             'role'     => 'pelanggan', // selalu pelanggan
             'type'     => 'pelanggan',
             'status'   => $request->status,
+            'membership_tier' => $request->membership_tier,
+            'total_spend' => $request->total_spend ?? 0,
+            'last_transaction_at' => $request->last_transaction_at,
         ]);
 
         return redirect()->route('pelanggan.index')->with('success', 'Pelanggan berhasil ditambahkan');
@@ -64,6 +70,9 @@ class PelangganController extends Controller
             'email'    => 'required|email|unique:users,email,' . $pelanggan->id,
             'password' => 'nullable|string|min:6|confirmed',
             'status'   => 'required|in:aktif,tidak',
+            'membership_tier' => 'nullable|string|max:50',
+            'total_spend' => 'nullable|numeric',
+            'last_transaction_at' => 'nullable|date',
         ]);
 
         $pelanggan->name     = $request->name;
@@ -72,6 +81,9 @@ class PelangganController extends Controller
         $pelanggan->phone    = $request->phone;
         $pelanggan->status   = $request->status;
         $pelanggan->type     = 'pelanggan';
+        $pelanggan->membership_tier = $request->membership_tier;
+        $pelanggan->total_spend = $request->total_spend ?? 0;
+        $pelanggan->last_transaction_at = $request->last_transaction_at;
 
         if ($request->password) {
             $pelanggan->password = Hash::make($request->password);

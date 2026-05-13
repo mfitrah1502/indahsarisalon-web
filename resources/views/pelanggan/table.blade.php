@@ -53,8 +53,9 @@
                         data-email="{{ $pelanggan->email }}"
                         data-phone="{{ $pelanggan->phone }}"
                         data-status="{{ $pelanggan->status }}"
-                        data-tier="{{ $pelanggan->tier }}"
-                        data-spending="{{ $pelanggan->total_spending }}"
+                        data-tier="{{ $pelanggan->membership_tier ?? '-' }}"
+                        data-spending="{{ $pelanggan->total_spend ?? 0 }}"
+                        data-lasttrx="{{ $pelanggan->last_transaction_at ? date('d M Y H:i', strtotime($pelanggan->last_transaction_at)) : '-' }}"
                         title="Lihat Detail">
                     <i class="ti ti-eye fs-5"></i>
                 </button>

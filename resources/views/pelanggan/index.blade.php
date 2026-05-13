@@ -146,6 +146,10 @@
                             <span id="popupTotalSpending" class="fw-bold text-dark"></span>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <span class="text-muted small"><i class="ti ti-calendar me-2"></i>Transaksi Terakhir</span>
+                            <span id="popupLastTrx" class="fw-medium"></span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3">
                             <span class="text-muted small"><i class="ti ti-activity me-2"></i>Status</span>
                             <span id="popupStatus" class="badge rounded-pill px-3"></span>
                         </div>
@@ -187,11 +191,12 @@
             $('#popupUsername').text('@' + btn.data('username'));
             $('#popupEmail').text(btn.data('email')); 
             $('#popupPhone').text(btn.data('phone') || '-');
-            $('#popupTotalSpending').text('Rp ' + btn.data('spending').toLocaleString('id-ID'));
+            $('#popupTotalSpending').text('Rp ' + parseInt(btn.data('spending') || 0).toLocaleString('id-ID'));
+            $('#popupLastTrx').text(btn.data('lasttrx') || '-');
             
             let tier = btn.data('tier');
             let tierBadge = $('#popupTier');
-            tierBadge.text(tier);
+            tierBadge.text(tier || '-');
             let tierClass = tier === 'Platinum' ? 'bg-info text-white' : (tier === 'Gold' ? 'bg-warning text-dark' : (tier === 'Silver' ? 'bg-secondary text-white' : 'bg-light text-muted'));
             tierBadge.removeClass().addClass('badge rounded-pill px-3 ' + tierClass);
 

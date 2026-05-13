@@ -539,7 +539,7 @@
             
             // Debug: Check the console (F12) to see if the message is generated correctly
             var msg = "*BOOKING BARU - INDAH SARI SALON*\n\n";
-            msg += "\uD83D\uDCCD *❤️Stylist:* " + stylist + "\n";
+            msg += "\uD83D\uDCCD *Stylist:* " + stylist + "\n";
             msg += "\uD83D\uDC64 *Customer:* " + customer + "\n";
             msg += "\uD83D\uDCC5 *Jadwal:* " + date + " | " + time + " WIB\n";
             msg += "\uD83D\uDC87 *Treatment:* " + services.join(', ') + "\n\n";

@@ -519,7 +519,7 @@
             if (cleanPhone.startsWith('0')) {
                 cleanPhone = '62' + cleanPhone.slice(1);
             }
-            const message = encodeURIComponent(`Halo Kak, kami dari Indah Sari Salon ingin mengingatkan jadwal booking Kakak (#BOOK-${id}) pada jam ${$('#mdl_time').text()}. Sampai jumpa! ✨`);
+            const message = encodeURIComponent(`Halo Kak, kami dari Indah Sari Salon ingin mengingatkan jadwal booking Kakak (#BOOK-${id}) pada jam ${$('#mdl_time').text()}. Apakah ada perubahan jadwal? Sampaikan kepada kami.`);
             window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
         });
 

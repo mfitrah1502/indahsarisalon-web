@@ -15,28 +15,30 @@ class TreatmentController extends Controller
     // Menampilkan daftar treatment dengan filter, search, dan sort
     public function index(Request $request)
     {
-        // Gunakan withMin dan withMax agar perhitungan dilakukan di database (SANGAT CEPAT)
-        $query = Treatment::with(['category'])
-            ->withMin('details', 'price')
-            ->withMax('details', 'price')
-            ->withCount('details'); 
+        // 1. Inisialisasi Query dengan Join Kategori dulu agar select tidak tertimpa
+        $query = Treatment::leftJoin('categories', 'treatments.category_id', '=', 'categories.id')
+            ->select('treatments.*', 'categories.name as category_name');
 
-        // Filter kategori
+        // 2. Tambahkan perhitungan agregat (Min, Max, Count)
+        $query->withMin('details', 'price')
+              ->withMax('details', 'price')
+              ->withCount('details');
+
+        // 3. Filter kategori
         if($request->category) {
             $query->whereHas('category', function($q) use ($request) {
                 $q->where('name', $request->category);
             });
         }
 
-        // Search nama
+        // 4. Search nama
         if($request->search) {
-            $query->where('name', 'like', "%{$request->search}%");
+            $query->where('treatments.name', 'like', "%{$request->search}%");
         }
 
-        // Sort & Prioritize "Promo" category
-        $query->leftJoin('categories', 'treatments.category_id', '=', 'categories.id')
-              ->select('treatments.*', 'categories.name as category_name')
-              ->orderByRaw("CASE WHEN categories.name = 'Promo' THEN 0 ELSE 1 END")
+        // 5. Sorting
+        // Prioritaskan kategori "Promo"
+        $query->orderByRaw("CASE WHEN categories.name = 'Promo' THEN 0 ELSE 1 END")
               ->orderBy('treatments.created_at', 'desc');
 
         if($request->sort) {
@@ -48,20 +50,21 @@ class TreatmentController extends Controller
                     $query->orderBy('treatments.name', 'desc');
                     break;
                 case 'price_asc':
-                    $query->withMin('details', 'price')->orderBy('details_min_price', 'asc');
+                    $query->orderBy('details_min_price', 'asc');
                     break;
                 case 'price_desc':
-                    $query->withMin('details', 'price')->orderBy('details_min_price', 'desc');
+                    $query->orderBy('details_min_price', 'desc');
                     break;
             }
         }
 
-        $treatments = $query->paginate(10);
+        // Eager load category saja (details via AJAX)
+        $treatments = $query->with(['category'])->paginate(10);
 
         // Ambil kategori untuk filter
         $categories = Category::select('id', 'name')->get(); 
         
-        // Ambil data pelanggan untuk modal broadcast (dibatasi agar tidak lambat)
+        // Ambil data pelanggan untuk modal broadcast (dibatasi)
         $customers = \App\Models\User::select('id', 'name', 'phone')
             ->where('role', 'pelanggan')
             ->whereNotNull('phone')
@@ -103,7 +106,6 @@ class TreatmentController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'category_id' => 'nullable|exists:categories,id',
-            'category' => 'nullable|string',
             'details.*.name' => 'required|string',
             'details.*.duration' => 'required|integer',
             'details.*.price' => 'required|numeric',
@@ -187,7 +189,7 @@ class TreatmentController extends Controller
         
         $treatment->save();
 
-        // Sync details (Sederhana: hapus semua dan buat baru, atau sync by ID)
+        // Sync details
         $treatment->details()->delete();
         foreach ($request->details as $detail) {
             $treatment->details()->create($detail);
@@ -204,10 +206,12 @@ class TreatmentController extends Controller
 
     public function filter(Request $request)
     {
-        $query = Treatment::with(['category'])
-                ->withMin('details', 'price')
-                ->withMax('details', 'price')
-                ->withCount('details');
+        // Gunakan logika yang sama dengan index agar harga tidak 0
+        $query = Treatment::leftJoin('categories', 'treatments.category_id', '=', 'categories.id')
+            ->select('treatments.*', 'categories.name as category_name')
+            ->withMin('details', 'price')
+            ->withMax('details', 'price')
+            ->withCount('details');
 
         if ($request->category) {
             $query->whereHas('category', function($q) use ($request) {
@@ -216,12 +220,10 @@ class TreatmentController extends Controller
         }
 
         if ($request->search) {
-            $query->where('name', 'like', "%{$request->search}%");
+            $query->where('treatments.name', 'like', "%{$request->search}%");
         }
 
-        $query->leftJoin('categories', 'treatments.category_id', '=', 'categories.id')
-              ->select('treatments.*', 'categories.name as category_name')
-              ->orderByRaw("CASE WHEN categories.name = 'Promo' THEN 0 ELSE 1 END")
+        $query->orderByRaw("CASE WHEN categories.name = 'Promo' THEN 0 ELSE 1 END")
               ->orderBy('treatments.created_at', 'desc');
 
         $treatments = $query->get();
@@ -247,7 +249,6 @@ class TreatmentController extends Controller
             return back()->with('error', 'Tidak ada pelanggan dengan nomor WhatsApp terdaftar.');
         }
 
-        // Logika broadcast...
         return back()->with('success', "Broadcast promo berhasil dikirim.");
     }
 }

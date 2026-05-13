@@ -133,15 +133,22 @@
                                 @forelse($treatments as $treatment)
                                     @php
                                         $hasImage = false;
-                                        if (!$treatment->image) {
-                                            $imageUrl = asset('assets/images/no-image.jpg');
-                                        } elseif (strpos($treatment->image, 'http') === 0) {
-                                            $imageUrl = $treatment->image;
-                                            $hasImage = true;
-                                        } else {
-                                            $imageUrl = config('app.supabase_url') . '/storage/v1/object/public/' . config('app.supabase_bucket') . '/' . $treatment->image;
-                                            $hasImage = true;
-                                        }
+                                        $imageUrl = asset('assets/images/no-image.jpg');
+
+                                        // 1. Cek gambar utama treatment
+                                        if ($treatment->image) {
+                                            if (strpos($treatment->image, 'http') === 0) {
+                                                $imageUrl = $treatment->image;
+                                                $hasImage = true;
+                                            } else {
+                                                $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $treatment->image;
+                                                $hasImage = true;
+                                            }
+                                        } 
+                                        
+                                        // 2. Jika gambar utama kosong, coba cari dari detail/variasi (Hanya jika belum ada image)
+                                        // Note: Karena kita pakai AJAX untuk detail, kita tidak bisa cek detail di sini tanpa eager load.
+                                        // Jadi kita asumsikan jika ada image, pakai image. Jika tidak, tampilkan placeholder.
                                     @endphp
                                     <tr class="treatment-row" 
                                         data-id="{{ $treatment->id }}"
@@ -508,10 +515,17 @@
                         
                         // Image Carousel Logic
                         let carouselImages = [];
-                        if (image) carouselImages.push(image);
                         
+                        // Prioritaskan gambar dari baris tabel (gambar utama)
+                        if (image && !image.includes('no-image.jpg')) {
+                            carouselImages.push(image);
+                        }
+                        
+                        // Tambahkan gambar-gambar dari variasi detail
                         details.forEach(function(d) {
-                            if (d.image_url) carouselImages.push(d.image_url);
+                            if (d.image_url && !carouselImages.includes(d.image_url)) {
+                                carouselImages.push(d.image_url);
+                            }
                         });
 
                         if (carouselImages.length > 1) {
@@ -521,7 +535,7 @@
                                 let active = idx === 0 ? 'active' : '';
                                 innerHtml += `
                                     <div class="carousel-item ${active}">
-                                        <img src="${img}" class="d-block w-100" style="max-height: 300px; object-fit: cover;">
+                                        <img src="${img}" class="d-block w-100" style="max-height: 300px; object-fit: cover; border-radius: 12px;">
                                     </div>`;
                             });
                             $('#popupImageCarouselInner').html(innerHtml);
@@ -531,19 +545,23 @@
                             $('#popupImage').attr('src', carouselImages[0]).show();
                         } else {
                             $('#popupImageCarousel').hide();
-                            $('#popupImage').attr('src', '').hide();
+                            $('#popupImage').attr('src', "{{ asset('assets/images/no-image.jpg') }}").show();
                         }
                         
                         let isPromo = row.data('category') == 'Promo';
                         let html = '';
                         details.forEach(function (d) {
-                            let priceHtml = `<span class="fw-bold text-primary">Rp ${new Intl.NumberFormat('id-ID').format(d.price)}</span>`;
+                            let price = parseFloat(d.price) || 0;
+                            let priceHtml = `<span class="fw-bold text-primary">Rp ${new Intl.NumberFormat('id-ID').format(price)}</span>`;
                             if (isPromo) $('#popupPromoWrapper').show();
 
                             html += `
                                 <div class="list-group-item p-3 border-0 border-bottom">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <span class="fw-bold">${d.name}</span>
+                                        <div class="d-flex align-items-center">
+                                            ${d.image_url ? `<img src="${d.image_url}" class="rounded me-2" width="30" height="30" style="object-fit:cover;">` : ''}
+                                            <span class="fw-bold">${d.name}</span>
+                                        </div>
                                         ${priceHtml}
                                     </div>
                                     <div class="d-flex gap-3 small text-muted">
@@ -552,7 +570,7 @@
                                     </div>
                                 </div>`;
                         });
-                        $('#popupDetails').html(html);
+                        $('#popupDetails').html(html || '<div class="p-3 text-center text-muted">Tidak ada variasi</div>');
 
                         // Store for spreading
                         $('#btnSpreadPromo').data('treatment', {

@@ -588,8 +588,23 @@ class BookingController extends Controller
     // ADMIN: View detail booking (JSON)
     public function show($id)
     {
-        $booking = Booking::with(['user', 'stylist', 'treatment', 'cashier', 'details.treatmentDetail', 'details.stylist'])->findOrFail($id);
-        return response()->json($booking);
+        try {
+            $booking = Booking::with([
+                'user', 
+                'stylist', 
+                'treatment.category', 
+                'cashier', 
+                'details.treatmentDetail.treatment.category', 
+                'details.stylist'
+            ])->findOrFail($id);
+            
+            return response()->json($booking);
+        } catch (\Exception $e) {
+            \Log::error("Error showing booking detail: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Gagal mengambil data: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     // Update metode pembayaran (untuk fitur ganti mind/cancel midtrans)

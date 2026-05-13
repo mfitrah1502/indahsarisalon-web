@@ -436,7 +436,7 @@
                     detailModal.show();
                 },
                 error: function(xhr) {
-                    Swal.fire('Error!', 'Gagal mengambil data: ' + xhr.statusText, 'error');
+                    Swal.fire('Error!', 'Gagal mengambil data: ' + (xhr.responseJSON ? xhr.responseJSON.message : xhr.statusText), 'error');
                 },
                 complete: function() {
                     btn.prop('disabled', false).html('<i class="ti ti-eye fs-5"></i>');

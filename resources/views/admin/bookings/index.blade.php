@@ -537,15 +537,18 @@
                 services.push($(this).text());
             });
             
-            // Using pre-encoded URL strings to completely bypass encoding issues
-            const message = `*BOOKING BARU - INDAH SARI SALON*%0A%0A` +
-                `%F0%9F%93%8C *Stylist:* ${encodeURIComponent(stylist)}%0A` +
-                `%F0%9F%91%A4 *Customer:* ${encodeURIComponent(customer)}%0A` +
-                `%F0%9F%93%85 *Jadwal:* ${encodeURIComponent(date)} | ${encodeURIComponent(time)} WIB%0A` +
-                `%F0%9F%92%87 *Treatment:* ${encodeURIComponent(services.join(', '))}%0A%0A` +
-                `_Mohon bersiap sebelum jam booking. Terima kasih!_`;
+            // Debug: Check the console (F12) to see if the message is generated correctly
+            var msg = "*BOOKING BARU - INDAH SARI SALON*\n\n";
+            msg += "\uD83D\uDCCD *Stylist:* " + stylist + "\n";
+            msg += "\uD83D\uDC64 *Customer:* " + customer + "\n";
+            msg += "\uD83D\uDCC5 *Jadwal:* " + date + " | " + time + " WIB\n";
+            msg += "\uD83D\uDC87 *Treatment:* " + services.join(', ') + "\n\n";
+            msg += "_Mohon bersiap sebelum jam booking. Terima kasih!_";
             
-            window.open(`https://wa.me/?text=${message}`, '_blank');
+            console.log("Generated WA Message:", msg);
+            
+            var url = "https://wa.me/?text=" + encodeURIComponent(msg);
+            window.open(url, '_blank');
         });
 
         $('#btn_show_reschedule').on('click', function() {

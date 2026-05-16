@@ -120,7 +120,7 @@ class BookingController extends Controller
             'stylist_ids.*' => 'nullable|exists:users,id',
             'reservation_date' => 'required|date',
             'reservation_time' => 'required',
-            'payment_method' => 'required|in:Tunai,Transfer'
+            'payment_method' => 'required|in:Tunai,Transfer,QRIS'
         ]);
 
         // Server-side validation: Ensure one variant per treatment
@@ -376,7 +376,7 @@ class BookingController extends Controller
 
         // Midtrans Logic
         $snapToken = null;
-        if ($request->payment_method === 'Transfer') {
+        if ($request->payment_method === 'Transfer' || $request->payment_method === 'QRIS') {
             $params = [
                 'transaction_details' => [
                     'order_id' => 'BOOK-' . $booking->id . '-' . time(),
@@ -387,6 +387,10 @@ class BookingController extends Controller
                     'email' => (strtolower($authUser->role) === 'pelanggan' && $authUser->type !== 'karyawan') ? $authUser->email : 'info@indahsarisalon.com', // Fallback email for staff bookings
                 ],
             ];
+
+            if ($request->payment_method === 'QRIS') {
+                $params['enabled_payments'] = ['gopay', 'shopeepay', 'qris'];
+            }
 
             try {
                 $snapToken = Snap::getSnapToken($params);
@@ -644,7 +648,7 @@ class BookingController extends Controller
     public function updatePaymentMethod(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
-        $request->validate(['payment_method' => 'required|in:Tunai,Transfer']);
+        $request->validate(['payment_method' => 'required|in:Tunai,Transfer,QRIS']);
 
         $authId = Auth::id();
         $authUser = $authId ? \App\Models\User::find($authId) : null;

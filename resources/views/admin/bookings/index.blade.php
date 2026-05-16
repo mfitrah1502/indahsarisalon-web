@@ -242,7 +242,7 @@
                                                 {{ strtoupper($booking->payment_status) }}
                                             </span>
                                             <small class="text-muted" style="font-size: 0.65rem;">
-                                                <i class="ti ti-{{ $booking->payment_method == 'Transfer' ? 'credit-card' : 'wallet' }} me-1"></i>{{ ucfirst($booking->payment_method) }}
+                                                <i class="ti ti-{{ strtolower($booking->payment_method) == 'transfer' ? 'credit-card' : (strtolower($booking->payment_method) == 'qris' ? 'qrcode' : 'wallet') }} me-1"></i>{{ ucfirst($booking->payment_method) }}
                                             </small>
                                         </div>
                                     </td>

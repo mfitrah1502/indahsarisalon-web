@@ -480,6 +480,7 @@
                                             <option value="Tunai">Tunai</option>
                                         @endif
                                         <option value="Transfer">Transfer Bank (Midtrans)</option>
+                                        <option value="QRIS">QRIS / E-Wallet (Midtrans)</option>
                                     </select>
                                 </div>
 
@@ -1615,7 +1616,7 @@
             const method = this.payment_method.value;
             if (!method) { alert('Pilih metode pembayaran.'); return; }
 
-            document.getElementById('confirmPaymentMethod').innerText = (method === 'Tunai' ? 'Bayar Tunai' : 'Transfer Bank (Midtrans)');
+            document.getElementById('confirmPaymentMethod').innerText = (method === 'Tunai' ? 'Bayar Tunai' : (method === 'QRIS' ? 'QRIS / E-Wallet' : 'Transfer Bank (Midtrans)'));
             document.getElementById('confirmTotal').innerText = document.getElementById('totalPriceDisplay1').innerText;
 
             modalConfirm.show();
@@ -1637,7 +1638,7 @@
                 method: 'POST',
                 data: form.serialize(),
                 success: function (response) {
-                    if (response.payment_method === 'transfer' && response.snap_token) {
+                    if ((response.payment_method === 'Transfer' || response.payment_method === 'QRIS' || response.payment_method === 'transfer') && response.snap_token) {
                         handleMidtrans(response.snap_token, response.booking_id);
                     } else {
                         showSuccessFinal(response.payment_method);

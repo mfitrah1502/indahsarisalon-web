@@ -52,7 +52,7 @@
                     <p>Rp {{ number_format($total_price, 0) }}</p>
 
                     <div class="mt-4">
-                        @if ($booking->payment_status == 'unpaid' && $booking->payment_method == 'Transfer' && $booking->snap_token)
+                        @if ($booking->payment_status == 'unpaid' && in_array(strtolower($booking->payment_method), ['transfer', 'qris']) && $booking->snap_token)
                             <button class="btn btn-primary" id="pay-button">Bayar Sekarang (Midtrans)</button>
                         @elseif($booking->payment_status == 'unpaid' && strtolower($booking->payment_method) == 'Tunai')
                             <div class="alert alert-info">

@@ -23,16 +23,16 @@
                             {{ $detail->treatmentDetail->treatment->name }}@if(!$loop->last), @endif
                         @endforeach
                     </td>
-                    <td>
+                    <td class="small">
                         @php
-                            $statusClass = match($booking->status) {
+                            $statusClass = match(strtolower($booking->status)) {
                                 'berhasil' => 'bg-light-success text-success',
                                 'pending' => 'bg-light-warning text-warning',
                                 'dibatalkan' => 'bg-light-danger text-danger',
                                 default => 'bg-light-secondary text-secondary',
                             };
                         @endphp
-                        <span class="badge {{ $statusClass }} rounded-pill" style="font-size: 0.7rem;">{{ ucfirst($booking->status) }}</span>
+                        <span class="badge {{ $statusClass }} rounded-pill" style="font-size: 0.7rem;">Selesai</span>
                     </td>
                     <td class="small fw-bold text-end">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</td>
                 </tr>
@@ -40,8 +40,8 @@
             </tbody>
             <tfoot>
                 <tr class="border-top">
-                    <td colspan="3" class="text-end fw-bold pt-3 small">Total Keseluruhan (Berhasil):</td>
-                    <td class="text-end fw-bold text-primary pt-3 small">Rp {{ number_format($bookings->where('status', 'berhasil')->sum('total_price'), 0, ',', '.') }}</td>
+                    <td colspan="3" class="text-end fw-bold pt-3 small">Total Keseluruhan:</td>
+                    <td class="text-end fw-bold text-primary pt-3 small">Rp {{ number_format($bookings->sum('total_price'), 0, ',', '.') }}</td>
                 </tr>
             </tfoot>
         </table>

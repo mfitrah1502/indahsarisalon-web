@@ -103,6 +103,9 @@ class PelangganController extends Controller
 
     public function destroy(User $pelanggan)
     {
+        // Unlink bookings to prevent foreign key violation and keep transaction history
+        \App\Models\Booking::where('user_id', $pelanggan->id)->update(['user_id' => null]);
+
         $pelanggan->delete();
 
         return redirect()->route('pelanggan.index')

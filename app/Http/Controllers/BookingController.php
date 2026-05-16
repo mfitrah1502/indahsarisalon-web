@@ -120,7 +120,7 @@ class BookingController extends Controller
             'stylist_ids.*' => 'nullable|exists:users,id',
             'reservation_date' => 'required|date',
             'reservation_time' => 'required',
-            'payment_method' => 'required|in:tunai,transfer'
+            'payment_method' => 'required|in:Tunai,Transfer'
         ]);
 
         // Server-side validation: Ensure one variant per treatment
@@ -376,7 +376,7 @@ class BookingController extends Controller
 
         // Midtrans Logic
         $snapToken = null;
-        if ($request->payment_method === 'transfer') {
+        if ($request->payment_method === 'Transfer') {
             $params = [
                 'transaction_details' => [
                     'order_id' => 'BOOK-' . $booking->id . '-' . time(),
@@ -644,7 +644,7 @@ class BookingController extends Controller
     public function updatePaymentMethod(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
-        $request->validate(['payment_method' => 'required|in:cash,transfer']);
+        $request->validate(['payment_method' => 'required|in:Tunai,Transfer']);
 
         $authId = Auth::id();
         $authUser = $authId ? \App\Models\User::find($authId) : null;

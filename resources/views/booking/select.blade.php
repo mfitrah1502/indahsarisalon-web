@@ -479,7 +479,7 @@
                                         @if(in_array(strtolower(Auth::user()->role), ['owner', 'admin', 'karyawan']))
                                             <option value="Tunai">Tunai</option>
                                         @endif
-                                        <option value="transfer">Transfer Bank (Midtrans)</option>
+                                        <option value="Transfer">Transfer Bank (Midtrans)</option>
                                     </select>
                                 </div>
 
@@ -1615,7 +1615,7 @@
             const method = this.payment_method.value;
             if (!method) { alert('Pilih metode pembayaran.'); return; }
 
-            document.getElementById('confirmPaymentMethod').innerText = (method === 'tunai' ? 'Bayar Tunai' : 'Transfer Bank (Midtrans)');
+            document.getElementById('confirmPaymentMethod').innerText = (method === 'Tunai' ? 'Bayar Tunai' : 'Transfer Bank (Midtrans)');
             document.getElementById('confirmTotal').innerText = document.getElementById('totalPriceDisplay1').innerText;
 
             modalConfirm.show();

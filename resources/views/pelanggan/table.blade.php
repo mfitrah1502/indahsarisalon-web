@@ -48,13 +48,14 @@
         <td class="text-end px-3">
             <div class="d-flex justify-content-end gap-2">
                 <button class="btn btn-light action-btn view-detail text-info" 
+                        data-id="{{ $pelanggan->id }}"
                         data-name="{{ $pelanggan->name }}"
                         data-username="{{ $pelanggan->username }}"
                         data-email="{{ $pelanggan->email }}"
                         data-phone="{{ $pelanggan->phone }}"
                         data-status="{{ $pelanggan->status }}"
-                        data-tier="{{ $pelanggan->membership_tier ?? '-' }}"
-                        data-spending="{{ $pelanggan->total_spend ?? 0 }}"
+                        data-tier="{{ $pelanggan->tier ?? '-' }}"
+                        data-spending="{{ $pelanggan->total_spending ?? 0 }}"
                         data-lasttrx="{{ $pelanggan->last_transaction_at ? date('d M Y H:i', strtotime($pelanggan->last_transaction_at)) : '-' }}"
                         title="Lihat Detail">
                     <i class="ti ti-eye fs-5"></i>

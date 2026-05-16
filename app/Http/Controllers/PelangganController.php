@@ -130,4 +130,10 @@ class PelangganController extends Controller
 
         return view('pelanggan.table', compact('pelanggans'));
     }
+
+    public function history(User $pelanggan)
+    {
+        $bookings = $pelanggan->bookings()->orderBy('reservation_datetime', 'asc')->get();
+        return view('pelanggan.history_table', compact('bookings'));
+    }
 }

@@ -74,6 +74,7 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         Route::put('/{pelanggan}', [PelangganController::class, 'update'])->name('update');
         Route::delete('/{pelanggan}', [PelangganController::class, 'destroy'])->name('destroy');
         Route::get('/{pelanggan}', [PelangganController::class, 'show'])->name('show');
+        Route::get('/{pelanggan}/history', [PelangganController::class, 'history'])->name('history');
     });
 
     Route::resource('categories', CategoryController::class);

@@ -154,6 +154,19 @@
                             <span id="popupStatus" class="badge rounded-pill px-3"></span>
                         </div>
                     </div>
+
+                    <!-- Riwayat Booking Section -->
+                    <div class="mt-4">
+                        <h6 class="fw-bold mb-3"><i class="ti ti-history me-2 text-primary"></i>Riwayat Transaksi</h6>
+                        <div id="popupHistoryContainer" class="border rounded-3 p-3 bg-light">
+                            <div class="text-center py-3">
+                                <div class="spinner-border text-primary spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span class="ms-2 small text-muted">Memuat riwayat...</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer border-0 p-3">
                     <button type="button" class="btn btn-secondary rounded-pill px-4 w-100" data-bs-dismiss="modal">Tutup</button>
@@ -207,6 +220,28 @@
 
             var modal = new bootstrap.Modal(document.getElementById('customerDetailModal'));
             modal.show();
+
+            // Fetch History
+            let id = btn.data('id');
+            $('#popupHistoryContainer').html(`
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary spinner-border-sm" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="ms-2 small text-muted">Memuat riwayat...</span>
+                </div>
+            `);
+            
+            $.ajax({
+                url: "/pelanggan/" + id + "/history",
+                type: "GET",
+                success: function (response) {
+                    $('#popupHistoryContainer').html(response).removeClass('p-3 bg-light');
+                },
+                error: function() {
+                    $('#popupHistoryContainer').html('<div class="text-center py-3 text-danger small">Gagal memuat riwayat.</div>');
+                }
+            });
         });
     </script>
 @endpush

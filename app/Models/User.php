@@ -150,6 +150,21 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get Last Transaction Date
+     */
+    public function getLastTransactionAtAttribute()
+    {
+        if (!isset($this->attributes['cached_last_transaction_at'])) {
+            $latestBooking = $this->bookings()
+                ->where('status', 'berhasil')
+                ->latest('reservation_datetime')
+                ->first();
+            $this->attributes['cached_last_transaction_at'] = $latestBooking ? $latestBooking->reservation_datetime : null;
+        }
+        return $this->attributes['cached_last_transaction_at'];
+    }
+
+    /**
      * Check for Coloring Loyalty (Spend > 1.5M on Coloring in last 2 years)
      */
     public function getHasColoringLoyaltyAttribute()

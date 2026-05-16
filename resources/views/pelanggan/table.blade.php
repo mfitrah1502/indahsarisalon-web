@@ -60,7 +60,7 @@
                         data-status="{{ $pelanggan->status }}"
                         data-tier="{{ $pelanggan->tier ?? '-' }}"
                         data-spending="{{ $pelanggan->total_spending ?? 0 }}"
-                        data-lasttrx="{{ $pelanggan->last_transaction_at ? date('d M Y H:i', strtotime($pelanggan->last_transaction_at)) : '-' }}"
+                        data-lasttrx="{{ $pelanggan->last_transaction_at ? date('d M Y, H:i', strtotime($pelanggan->last_transaction_at)) : '-' }}"
                         title="Lihat Detail">
                     <i class="ti ti-eye fs-5"></i>
                 </button>

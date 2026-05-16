@@ -440,7 +440,6 @@
                         <div class="col-md-6">
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item px-0"><span class="text-muted small d-block">Role</span> <strong id="detailRole"></strong></li>
-                                <li class="list-group-item px-0"><span class="text-muted small d-block">Kategori</span> <strong id="detailKategori"></strong></li>
                                 <li class="list-group-item px-0"><span class="text-muted small d-block">Posisi / Jabatan</span> <strong id="detailPosition"></strong></li>
                                 <li class="list-group-item px-0"><span class="text-muted small d-block">Divisi</span> <strong id="detailDivision"></strong></li>
                                 <li class="list-group-item px-0"><span class="text-muted small d-block">Status Karyawan</span> <strong id="detailEmpStatus"></strong></li>

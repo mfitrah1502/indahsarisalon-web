@@ -84,7 +84,7 @@ class BookingController extends Controller
         $categories = Category::all();
 
         // Handle pre-selected details from query param ?details=1,2,3
-        $preSelectedDetails = [];
+        $preSelectedDetails = collect();
         if ($request->filled('details')) {
             $ids = explode(',', $request->details);
             $preSelectedDetails = TreatmentDetail::with('treatment.category')

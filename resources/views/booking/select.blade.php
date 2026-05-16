@@ -477,7 +477,7 @@
                                     <select name="payment_method" class="form-select" required>
                                         <option value="">-- Pilih Metode --</option>
                                         @if(in_array(strtolower(Auth::user()->role), ['owner', 'admin', 'karyawan']))
-                                            <option value="cash">Cash</option>
+                                            <option value="tunai">Tunai</option>
                                         @endif
                                         <option value="transfer">Transfer Bank (Midtrans)</option>
                                     </select>
@@ -1615,7 +1615,7 @@
             const method = this.payment_method.value;
             if (!method) { alert('Pilih metode pembayaran.'); return; }
 
-            document.getElementById('confirmPaymentMethod').innerText = (method === 'cash' ? 'Bayar Tunai (Cash)' : 'Transfer Bank (Midtrans)');
+            document.getElementById('confirmPaymentMethod').innerText = (method === 'tunai' ? 'Bayar Tunai' : 'Transfer Bank (Midtrans)');
             document.getElementById('confirmTotal').innerText = document.getElementById('totalPriceDisplay1').innerText;
 
             modalConfirm.show();
@@ -1683,13 +1683,13 @@
         function showSuccessFinal(method) {
             const isStaff = {{ ($isStaff || strtolower(Auth::user()->role) === 'karyawan') ? 'true' : 'false' }};
 
-            if (method === 'cash') {
+            if (method === 'tunai') {
                 if (isStaff) {
                     $('#modalStatusTitle').text('Pembayaran Berhasil! ✅');
                     $('#modalStatusDesc').text('Booking telah berhasil dicatat dan status pembayaran ditandai sebagai LUNAS.');
                 } else {
                     $('#modalStatusTitle').text('Booking Berhasil! 📅');
-                    $('#modalStatusDesc').text('Booking Anda telah masuk ke sistem. Silakan lakukan pembayaran di lokasi (Cash).');
+                    $('#modalStatusDesc').text('Booking Anda telah masuk ke sistem. Silakan lakukan pembayaran di lokasi (Tunai).');
                 }
             } else {
                 $('#modalStatusTitle').text('Booking Menunggu Pembayaran ⏳');
@@ -1710,13 +1710,13 @@
             $('#modalStatusAction').html(`
                     <div class="d-grid gap-2">
                         <button class="btn btn-outline-secondary" onclick="window.location.href='{{ route('booking.history') }}'">Nanti Saja</button>
-                        <button class="btn btn-success" onclick="switchPaymentToCash(${bookingId})">Ganti ke Bayar Tunai (Cash)</button>
+                        <button class="btn btn-success" onclick="switchPaymentToTunai(${bookingId})">Ganti ke Bayar Tunai</button>
                     </div>
                 `);
             $('#modalProses').modal('show');
         }
 
-        window.switchPaymentToCash = function (id) {
+        window.switchPaymentToTunai = function (id) {
             const btn = event.target;
             $(btn).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Memproses...');
 
@@ -1725,14 +1725,14 @@
                 method: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
-                    payment_method: 'cash'
+                    payment_method: 'tunai'
                 },
                 success: function (response) {
-                    showSuccessFinal('cash');
+                    showSuccessFinal('tunai');
                 },
                 error: function (xhr) {
                     alert('Gagal mengubah metode: ' + (xhr.responseJSON?.message || 'Error'));
-                    $(btn).prop('disabled', false).text('Ganti ke Bayar Tunai (Cash)');
+                    $(btn).prop('disabled', false).text('Ganti ke Bayar Tunai');
                 }
             });
         };

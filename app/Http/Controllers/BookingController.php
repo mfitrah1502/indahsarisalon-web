@@ -120,7 +120,7 @@ class BookingController extends Controller
             'stylist_ids.*' => 'nullable|exists:users,id',
             'reservation_date' => 'required|date',
             'reservation_time' => 'required',
-            'payment_method' => 'required|in:cash,transfer'
+            'payment_method' => 'required|in:tunai,transfer'
         ]);
 
         // Server-side validation: Ensure one variant per treatment
@@ -334,7 +334,7 @@ class BookingController extends Controller
         ]);
         
         $paymentMethod = strtolower($request->payment_method);
-        $paymentStatus = ($isStaff && $paymentMethod === 'cash') ? 'paid' : 'unpaid';
+        $paymentStatus = ($isStaff && $paymentMethod === 'tunai') ? 'paid' : 'unpaid';
 
         // Log Debug untuk investigasi masalah 'unpaid'
         try {
@@ -362,7 +362,7 @@ class BookingController extends Controller
             'total_price' => (int)$total_price,
             'status' => 'pending',
             'payment_status' => $paymentStatus,
-            'payment_method' => $request->payment_method
+            'payment_method' => strtolower($request->payment_method) === 'tunai' ? 'Tunai' : $request->payment_method
         ]);
 
         foreach ($booking_details_data as $item) {
@@ -665,10 +665,10 @@ class BookingController extends Controller
             'new_method' => $request->payment_method
         ]);
 
-        $paymentStatus = ($isStaff && strtolower($request->payment_method) === 'cash') ? 'paid' : 'unpaid';
+        $paymentStatus = ($isStaff && strtolower($request->payment_method) === 'tunai') ? 'paid' : 'unpaid';
 
         $booking->update([
-            'payment_method' => $request->payment_method,
+            'payment_method' => strtolower($request->payment_method) === 'tunai' ? 'Tunai' : $request->payment_method,
             'payment_status' => $paymentStatus
         ]);
 

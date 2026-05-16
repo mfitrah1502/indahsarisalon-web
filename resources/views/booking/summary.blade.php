@@ -54,7 +54,7 @@
                     <div class="mt-4">
                         @if ($booking->payment_status == 'unpaid' && $booking->payment_method == 'transfer' && $booking->snap_token)
                             <button class="btn btn-primary" id="pay-button">Bayar Sekarang (Midtrans)</button>
-                        @elseif($booking->payment_status == 'unpaid' && strtolower($booking->payment_method) == 'tunai')
+                        @elseif($booking->payment_status == 'unpaid' && strtolower($booking->payment_method) == 'Tunai')
                             <div class="alert alert-info">
                                 Silakan lakukan pembayaran tunai di kasir.
                             </div>

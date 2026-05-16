@@ -477,7 +477,7 @@
                                     <select name="payment_method" class="form-select" required>
                                         <option value="">-- Pilih Metode --</option>
                                         @if(in_array(strtolower(Auth::user()->role), ['owner', 'admin', 'karyawan']))
-                                            <option value="tunai">Tunai</option>
+                                            <option value="Tunai">Tunai</option>
                                         @endif
                                         <option value="transfer">Transfer Bank (Midtrans)</option>
                                     </select>
@@ -1683,7 +1683,7 @@
         function showSuccessFinal(method) {
             const isStaff = {{ ($isStaff || strtolower(Auth::user()->role) === 'karyawan') ? 'true' : 'false' }};
 
-            if (method === 'tunai') {
+            if (method === 'Tunai') {
                 if (isStaff) {
                     $('#modalStatusTitle').text('Pembayaran Berhasil! ✅');
                     $('#modalStatusDesc').text('Booking telah berhasil dicatat dan status pembayaran ditandai sebagai LUNAS.');

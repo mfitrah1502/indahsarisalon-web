@@ -438,7 +438,7 @@
                                     <span class="fw-bold text-dark">${detailName}</span>
                                     <span class="fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(detail.price)}</span>
                                 </div>
-                                <small class="text-muted"><i class="ti ti-user me-1"></i>Stylist: ${detail.stylist ? detail.stylist.name : 'Tanpa Stylist'}</small>
+                                <small class="text-muted"><i class="ti ti-user me-1"></i>Stylist: ${detail.stylist ? detail.stylist.name : (data.stylist ? data.stylist.name : 'Tanpa Stylist')}</small>
                             </div>
                         `;
                     });

@@ -41,8 +41,8 @@ class KaryawanController extends Controller
         'email' => 'required|email|unique:users',
         'phone' => 'required|string|max:15',
         'password' => 'required|string|min:6',
-        'role' => 'required|in:owner,admin', 
-        'kategori' => 'required_if:role,admin|in:senior,junior',
+        'role' => 'required|in:owner,admin,karyawan', 
+
         'nickname' => 'nullable|string|max:255',
         'birth_place' => 'nullable|string|max:255',
         'birth_date' => 'nullable|date',
@@ -65,7 +65,7 @@ class KaryawanController extends Controller
         'password' => Hash::make($request->password),
         'role' => $request->role,       // simpan role dari form
         'type' => 'karyawan',
-        'kategori' => $request->role === 'admin' ? $request->kategori : null,
+        'kategori' => null,
         'status' => $request->status ?? 'aktif',
         'nickname' => $request->nickname,
         'birth_place' => $request->birth_place,
@@ -96,8 +96,8 @@ class KaryawanController extends Controller
         'username' => 'required|string|unique:users,username,'.$karyawan->id,
         'email' => 'required|email|unique:users,email,'.$karyawan->id,
         'phone' => 'required|string|max:15',
-        'role' => 'required|in:owner,admin', // validasi role
-        'kategori' => 'required_if:role,admin|in:senior,junior',
+        'role' => 'required|in:owner,admin,karyawan', // validasi role
+
         'nickname' => 'nullable|string|max:255',
         'birth_place' => 'nullable|string|max:255',
         'birth_date' => 'nullable|date',
@@ -118,7 +118,7 @@ class KaryawanController extends Controller
         'email' => $request->email,
         'phone' => $request->phone,
         'role' => $request->role,   
-        'kategori' => $request->role === 'admin' ? $request->kategori : null,
+        'kategori' => null,
         'type' => 'karyawan',    // update role
         'status' => $request->status ?? 'aktif',
         'nickname' => $request->nickname,

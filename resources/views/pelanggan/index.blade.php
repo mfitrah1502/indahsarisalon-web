@@ -96,7 +96,7 @@
                                 <tr class="bg-transparent shadow-none">
                                     <th class="text-muted small fw-bold px-3 py-2">PELANGGAN</th>
                                     <th class="text-muted small fw-bold py-2">KONTAK</th>
-                                    <th class="text-muted small fw-bold py-2">TIER / LOYALTY</th>
+                                    <th class="text-muted small fw-bold py-2">LIFETIME SPEND</th>
                                     <th class="text-muted small fw-bold py-2">STATUS</th>
                                     <th class="text-muted small fw-bold py-2 text-end px-3">AKSI</th>
                                 </tr>

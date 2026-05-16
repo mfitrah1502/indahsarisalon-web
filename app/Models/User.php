@@ -128,11 +128,15 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getTierAttribute()
     {
+        if ($this->is_colour_circle && (!$this->colour_circle_expired_at || $this->colour_circle_expired_at > now())) {
+            return 'Colour Circle';
+        }
+
         $total = $this->total_spending;
 
-        if ($total > 3000000) return 'Platinum';
-        if ($total > 2000000) return 'Gold';
-        if ($total > 1000000) return 'Silver';
+        if ($total >= 3000000) return 'Platinum';
+        if ($total >= 2000000) return 'Gold';
+        if ($total >= 1000000) return 'Silver';
         
         return 'Regular';
     }

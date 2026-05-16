@@ -20,7 +20,47 @@ class PelangganController extends Controller
             });
         }
 
-        $pelanggans = $query->get();
+        $registeredPelanggans = $query->get();
+
+        // Get guest customers from bookings
+        $guestBookingsQuery = \App\Models\Booking::whereNull('user_id')
+            ->selectRaw('MAX(id) as id, customer_name, customer_email, customer_phone, MAX(created_at) as last_transaction_at, SUM(total_price) as total_spending')
+            ->groupBy('customer_name', 'customer_email', 'customer_phone');
+
+        if($request->has('search') && $request->search != ''){
+            $search = $request->search;
+            $guestBookingsQuery->where(function($q) use ($search){
+                $q->where('customer_name', 'like', "%{$search}%")
+                  ->orWhere('customer_email', 'like', "%{$search}%")
+                  ->orWhere('customer_phone', 'like', "%{$search}%");
+            });
+        }
+
+        $guestBookings = $guestBookingsQuery->get();
+
+        // Filter out guests that actually belong to registered users (matched by email/phone)
+        $registeredEmails = User::where('role', 'pelanggan')->whereNotNull('email')->pluck('email')->toArray();
+        $registeredPhones = User::where('role', 'pelanggan')->whereNotNull('phone')->pluck('phone')->toArray();
+
+        $guestPelanggans = $guestBookings->filter(function($booking) use ($registeredEmails, $registeredPhones) {
+            if ($booking->customer_email && in_array($booking->customer_email, $registeredEmails)) return false;
+            if ($booking->customer_phone && in_array($booking->customer_phone, $registeredPhones)) return false;
+            return true;
+        })->map(function($booking) {
+            $user = new User();
+            $user->id = 'guest-' . $booking->id;
+            $user->name = $booking->customer_name;
+            $user->username = 'Guest';
+            $user->email = $booking->customer_email ?? '-';
+            $user->phone = $booking->customer_phone ?? '-';
+            $user->role = 'pelanggan';
+            $user->status = 'guest';
+            $user->setAttribute('cached_total_spending', $booking->total_spending);
+            $user->setAttribute('last_transaction_at', $booking->last_transaction_at);
+            return $user;
+        });
+
+        $pelanggans = $registeredPelanggans->merge($guestPelanggans)->sortByDesc('created_at')->values();
 
         return view('pelanggan.index', compact('pelanggans'));
     }

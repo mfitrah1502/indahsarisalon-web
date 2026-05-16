@@ -449,12 +449,13 @@ class BookingController extends Controller
 
         if (strtolower($user->role) === 'pelanggan' && $user->type !== 'karyawan') {
             $query->where('user_id', $user->id);
-        } elseif (in_array(strtolower($user->role), ['owner', 'admin']) || $user->type === 'karyawan') {
+        } elseif ($user->type === 'karyawan' && !in_array(strtolower($user->role), ['owner', 'admin'])) {
             $query->where(function ($q) use ($user) {
                 $q->where('cashier_id', $user->id)
                     ->orWhere('stylist_id', $user->id);
             });
         }
+        // Owner and Admin will bypass the where clauses to see ALL bookings.
 
         $allBookings = $query->orderBy('reservation_datetime', 'desc')->get();
 

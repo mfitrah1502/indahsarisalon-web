@@ -133,7 +133,7 @@ class PelangganController extends Controller
 
     public function history(User $pelanggan)
     {
-        $bookings = $pelanggan->bookings()
+        $bookings = $pelanggan->getAllBookingsQuery()
             ->where('status', 'berhasil')
             ->orderBy('reservation_datetime', 'desc')
             ->get();

@@ -110,12 +110,28 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get all bookings matching user ID, email, or phone (to handle disconnected bookings)
+     */
+    public function getAllBookingsQuery()
+    {
+        return \App\Models\Booking::where(function ($q) {
+            $q->where('user_id', $this->id);
+            if (!empty($this->email)) {
+                $q->orWhere('customer_email', $this->email);
+            }
+            if (!empty($this->phone)) {
+                $q->orWhere('customer_phone', $this->phone);
+            }
+        });
+    }
+
+    /**
      * Get total successful spending
      */
     public function getTotalSpendingAttribute()
     {
         if (!isset($this->attributes['cached_total_spending'])) {
-            $this->attributes['cached_total_spending'] = $this->bookings()
+            $this->attributes['cached_total_spending'] = $this->getAllBookingsQuery()
                 ->where('status', 'berhasil')
                 ->where('payment_status', 'paid')
                 ->sum('total_price');
@@ -155,7 +171,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function getLastTransactionAtAttribute()
     {
         if (!isset($this->attributes['cached_last_transaction_at'])) {
-            $latestBooking = $this->bookings()
+            $latestBooking = $this->getAllBookingsQuery()
                 ->where('status', 'berhasil')
                 ->latest('reservation_datetime')
                 ->first();
@@ -172,7 +188,11 @@ class User extends Authenticatable implements MustVerifyEmail
         if (!isset($this->attributes['cached_coloring_loyalty'])) {
             // Hitung pengeluaran khusus kategori 'Coloring'
             $this->attributes['cached_coloring_loyalty'] = \App\Models\BookingDetail::whereHas('booking', function($q) {
-                    $q->where('user_id', $this->id)
+                    $q->where(function($subQ) {
+                        $subQ->where('user_id', $this->id);
+                        if (!empty($this->email)) $subQ->orWhere('customer_email', $this->email);
+                        if (!empty($this->phone)) $subQ->orWhere('customer_phone', $this->phone);
+                    })
                       ->where('status', 'berhasil')
                       ->where('payment_status', 'paid')
                       ->where('reservation_datetime', '>=', now()->subYears(2));

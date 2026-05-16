@@ -100,14 +100,7 @@
                                     <option value="karyawan">Karyawan</option>
                                 </select>
                             </div>
-                            <div class="col-md-6 mb-3" id="kategoriDiv" style="display:none;">
-                                <label>Kategori Karyawan</label>
-                                <select name="kategori" class="form-select" id="kategoriSelect">
-                                    <option value="">-- Pilih --</option>
-                                    <option value="senior" {{ old('kategori') == 'senior' ? 'selected' : '' }}>Senior</option>
-                                    <option value="junior" {{ old('kategori') == 'junior' ? 'selected' : '' }}>Junior</option>
-                                </select>
-                            </div>
+
                             <div class="col-md-6 mb-3">
                                 <label>Posisi / Jabatan</label>
                                 <input type="text" name="position" class="form-control" value="{{ old('position') }}" placeholder="Contoh: Hairstylist">
@@ -176,22 +169,6 @@
         layout_rtl_change('false');
         preset_change('preset-1');
 
-        function toggleKategoriField() {
-            let role = document.getElementById('roleSelect').value;
-            let kategoriDiv = document.getElementById('kategoriDiv');
-            let kategoriSelect = document.getElementById('kategoriSelect');
 
-            if (role === 'admin') {
-                kategoriDiv.style.display = 'block';
-                kategoriSelect.setAttribute('required', 'required');
-            } else {
-                kategoriDiv.style.display = 'none';
-                kategoriSelect.removeAttribute('required');
-                kategoriSelect.value = ''; // kosongkan value
-            }
-        }
-
-        document.getElementById('roleSelect').addEventListener('change', toggleKategoriField);
-        toggleKategoriField(); // jalankan saat halaman load
     </script>
 @endsection

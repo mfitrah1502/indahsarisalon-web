@@ -22,9 +22,8 @@ class PelangganController extends Controller
 
         $registeredPelanggans = $query->get();
 
-        // Get guest customers from bookings
-        $guestBookingsQuery = \App\Models\Booking::whereNull('user_id')
-            ->selectRaw('MAX(id) as id, customer_name, customer_email, customer_phone, MAX(created_at) as last_transaction_at, SUM(total_price) as total_spending')
+        // Get guest customers from bookings (including those mistakenly assigned to staff IDs)
+        $guestBookingsQuery = \App\Models\Booking::selectRaw('MAX(id) as id, customer_name, customer_email, customer_phone, MAX(created_at) as last_transaction_at, SUM(total_price) as total_spending')
             ->groupBy('customer_name', 'customer_email', 'customer_phone');
 
         if($request->has('search') && $request->search != ''){
@@ -38,13 +37,15 @@ class PelangganController extends Controller
 
         $guestBookings = $guestBookingsQuery->get();
 
-        // Filter out guests that actually belong to registered users (matched by email/phone)
+        // Filter out guests that actually belong to registered users (matched by email/phone/name)
         $registeredEmails = User::where('role', 'pelanggan')->whereNotNull('email')->pluck('email')->toArray();
         $registeredPhones = User::where('role', 'pelanggan')->whereNotNull('phone')->pluck('phone')->toArray();
+        $registeredNames = User::where('role', 'pelanggan')->pluck('name')->toArray();
 
-        $guestPelanggans = $guestBookings->filter(function($booking) use ($registeredEmails, $registeredPhones) {
+        $guestPelanggans = $guestBookings->filter(function($booking) use ($registeredEmails, $registeredPhones, $registeredNames) {
             if ($booking->customer_email && in_array($booking->customer_email, $registeredEmails)) return false;
             if ($booking->customer_phone && in_array($booking->customer_phone, $registeredPhones)) return false;
+            if ($booking->customer_name && in_array($booking->customer_name, $registeredNames)) return false;
             return true;
         })->map(function($booking) {
             $user = new User();
@@ -60,7 +61,7 @@ class PelangganController extends Controller
             return $user;
         });
 
-        $pelanggans = $registeredPelanggans->merge($guestPelanggans)->sortByDesc('created_at')->values();
+        $pelanggans = $registeredPelanggans->concat($guestPelanggans)->sortByDesc('created_at')->values();
 
         return view('pelanggan.index', compact('pelanggans'));
     }

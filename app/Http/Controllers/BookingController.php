@@ -676,10 +676,38 @@ class BookingController extends Controller
             'payment_status' => $paymentStatus
         ]);
 
+        // Generate a new Snap Token for Midtrans if Transfer/QRIS
+        $snapToken = null;
+        if ($request->payment_method === 'Transfer' || $request->payment_method === 'QRIS') {
+            $params = [
+                'transaction_details' => [
+                    'order_id' => 'BOOK-' . $booking->id . '-' . time(),
+                    'gross_amount' => (int) $booking->total_price,
+                ],
+                'customer_details' => [
+                    'first_name' => $booking->customer_name,
+                    'email' => $booking->customer_email ?: 'info@indahsarisalon.com',
+                ],
+            ];
+
+            if ($request->payment_method === 'QRIS') {
+                $params['enabled_payments'] = ['gopay', 'shopeepay', 'qris'];
+            }
+
+            try {
+                $snapToken = Snap::getSnapToken($params);
+                $booking->update(['snap_token' => $snapToken]);
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'Gagal terhubung ke Midtrans: ' . $e->getMessage()], 500);
+            }
+        }
+
         return response()->json([
             'success' => true, 
             'message' => 'Metode pembayaran berhasil diubah ke ' . strtoupper($request->payment_method),
             'payment_method' => $request->payment_method,
+            'snap_token' => $snapToken,
+            'booking_id' => $booking->id,
             'is_staff' => $isStaff
         ]);
     }

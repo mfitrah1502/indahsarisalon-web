@@ -765,8 +765,10 @@
         data-client-key="{{ config('services.midtrans.client_key') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
+        window.lastCreatedBookingId = null;
         const allStylists = @json($stylists);
         // Map avatars separately since we have an accessor but Laravel json encode might not include it by default
         allStylists.forEach(s => {
@@ -1109,6 +1111,7 @@
         });
 
         window.togglePrimaryDetail = function (checkbox) {
+            resetLastCreatedBookingId();
             const isMulti = {{ $treatment->allow_multi_select ? 'true' : 'false' }};
             const id = parseInt(checkbox.value);
 
@@ -1305,6 +1308,7 @@
         }
 
         window.updateItemStylistCards = function (detailId, stylistId, element) {
+            resetLastCreatedBookingId();
             const item = selectedDetails.find(d => d.id === detailId);
             if (!item) return;
 
@@ -1371,7 +1375,12 @@
             }
         };
 
+        function resetLastCreatedBookingId() {
+            window.lastCreatedBookingId = null;
+        }
+
         window.updateGlobalStylist = function (stylistId, element) {
+            resetLastCreatedBookingId();
             const kat = stylistId ? element.getAttribute('data-kategori') : null;
 
             // UI Update for Global
@@ -1391,10 +1400,17 @@
         }
 
         // Trigger availability check when date or time changes
-        document.getElementById('reservation_date').addEventListener('change', checkStylistAvailability);
-        document.getElementById('reservation_time').addEventListener('change', checkStylistAvailability);
+        document.getElementById('reservation_date').addEventListener('change', function() {
+            resetLastCreatedBookingId();
+            checkStylistAvailability();
+        });
+        document.getElementById('reservation_time').addEventListener('change', function() {
+            resetLastCreatedBookingId();
+            checkStylistAvailability();
+        });
 
         window.removeDetail = function (id) {
+            resetLastCreatedBookingId();
             selectedDetails = selectedDetails.filter(d => d.id !== id);
             
             // Also uncheck the checkbox if it exists in the UI (catalog)
@@ -1416,6 +1432,7 @@
         // Modal Add Detail logic
         document.querySelectorAll('.add-detail-btn').forEach(btn => {
             btn.addEventListener('click', function () {
+                resetLastCreatedBookingId();
                 const id = parseInt(this.getAttribute('data-id'));
                 const parentId = parseInt(this.getAttribute('data-parent-id'));
                 const parentName = this.getAttribute('data-parent-name');
@@ -1633,13 +1650,19 @@
 
             submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...');
 
+            const bookingId = window.lastCreatedBookingId;
+            const url = bookingId ? `/booking/${bookingId}/update-payment-method` : form.attr('action');
+
             $.ajax({
-                url: form.attr('action'),
+                url: url,
                 method: 'POST',
                 data: form.serialize(),
                 success: function (response) {
+                    if (response.booking_id) {
+                        window.lastCreatedBookingId = response.booking_id;
+                    }
                     if ((response.payment_method === 'Transfer' || response.payment_method === 'QRIS' || response.payment_method === 'transfer') && response.snap_token) {
-                        handleMidtrans(response.snap_token, response.booking_id);
+                        handleMidtrans(response.snap_token, response.booking_id || bookingId);
                     } else {
                         showSuccessFinal(response.payment_method);
                     }
@@ -1676,7 +1699,27 @@
                     $('#modalProses').modal('show');
                 },
                 onClose: function () {
-                    showSuccessFinal('transfer'); // Menampilkan pesan 'Booking Menunggu Pembayaran'
+                    Swal.fire({
+                        title: 'Pembayaran Belum Selesai ⏳',
+                        text: 'Apakah Anda ingin mencoba lagi/mengganti metode pembayaran, atau bayar nanti melalui Riwayat Pemesanan?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: '🔄 Coba Lagi / Ganti Metode',
+                        cancelButtonText: '📅 Bayar Nanti (Ke Riwayat)',
+                        confirmButtonColor: '#EA8290',
+                        cancelButtonColor: '#6c757d',
+                        allowOutsideClick: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // User stays on page to change method or try again
+                            const form = $(finalForm);
+                            const submitBtn = form.find('button[type="submit"]');
+                            submitBtn.prop('disabled', false).text('✅ Bayar & Konfirmasi');
+                        } else {
+                            // Redirect to history
+                            window.location.href = "{{ route('booking.history') }}";
+                        }
+                    });
                 }
             });
         }

@@ -50,7 +50,7 @@ class TreatmentDetail extends Model
     {
         $treatment = $this->treatment;
         $originalPrice = $this->price;
-        $isPromo = $treatment ? $treatment->is_promo : false;
+        $isPromo = ($treatment && $treatment->is_promo) ? $treatment->matchesUser($user) : false;
         $promoType = $treatment ? $treatment->promo_type : null;
         $promoValue = $treatment ? $treatment->promo_value : 0;
 
@@ -89,10 +89,10 @@ class TreatmentDetail extends Model
         }
 
         $treatment = $this->treatment;
-        $isPromo = $treatment ? $treatment->is_promo : false;
+        $currentUser = $user ?? auth()->user();
+        $isPromo = ($treatment && $treatment->is_promo) ? $treatment->matchesUser($currentUser) : false;
         $promoType = $treatment ? $treatment->promo_type : null;
         $promoValue = $treatment ? $treatment->promo_value : 0;
-        $currentUser = $user ?? auth()->user();
 
         $prices = array_filter([(int)$this->price_senior, (int)$this->price_junior]);
         $min = count($prices) > 0 ? min($prices) : (int)$this->price;

@@ -21,6 +21,7 @@ class Treatment extends Model
         'is_active',
         'promo_start_date',
         'promo_end_date',
+        'target_audience',
     ];
     
     protected $casts = [
@@ -96,4 +97,51 @@ class Treatment extends Model
         return $this->belongsTo(Category::class, 'category_id', 'id');
     }
 
+    /**
+     * Check if the promo matches the given user based on target audience
+     */
+    public function matchesUser($user = null)
+    {
+        $audience = $this->target_audience ?: 'Semua (General)';
+        
+        if ($audience === 'Semua (General)') {
+            return true;
+        }
+        
+        $currentUser = $user ?? auth()->user();
+        if (!$currentUser) {
+            return false;
+        }
+        
+        // Komunitas (Grup Awal) is any registered user
+        if ($audience === 'Komunitas (Grup Awal)') {
+            return true;
+        }
+        
+        $userTier = $currentUser->tier; // 'Regular', 'Silver', 'Colour Circle', 'Gold', 'Platinum'
+        
+        $tierHierarchy = [
+            'Regular' => 1,
+            'Silver' => 2,
+            'Colour Circle' => 3,
+            'Gold' => 4,
+            'Platinum' => 5
+        ];
+        
+        $targetTier = 'Regular';
+        if (strpos($audience, 'Silver') !== false) {
+            $targetTier = 'Silver';
+        } elseif (strpos($audience, 'Colour Circle') !== false) {
+            $targetTier = 'Colour Circle';
+        } elseif (strpos($audience, 'Gold') !== false) {
+            $targetTier = 'Gold';
+        } elseif (strpos($audience, 'Platinum') !== false) {
+            $targetTier = 'Platinum';
+        }
+        
+        $userRank = $tierHierarchy[$userTier] ?? 1;
+        $targetRank = $tierHierarchy[$targetTier] ?? 1;
+        
+        return $userRank >= $targetRank;
+    }
 }

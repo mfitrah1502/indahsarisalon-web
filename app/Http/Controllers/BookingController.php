@@ -277,7 +277,7 @@ class BookingController extends Controller
             // 3. Terapkan Potongan Promo (Date-Aware)
             $parentTreatment = $detail->treatment;
             $fixedPromoPrice = null;
-            if ($parentTreatment && $parentTreatment->is_promo) {
+            if ($parentTreatment && $parentTreatment->is_promo && $parentTreatment->matchesUser($customer)) {
                 $resDate = Carbon::parse($request->reservation_date)->toDateString();
                 $isWithinPromo = true;
 

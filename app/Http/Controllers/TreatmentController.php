@@ -125,6 +125,7 @@ class TreatmentController extends Controller
         $treatment->is_active = $request->has('is_active') ? 1 : 0;
         $treatment->promo_start_date = $request->promo_start_date ?: null;
         $treatment->promo_end_date = $request->promo_end_date ?: null;
+        $treatment->target_audience = $request->target_audience ?: 'Semua (General)';
         $treatment->allow_multi_select = $request->has('allow_multi_select') ? 1 : 0;
 
         if ($request->hasFile('image')) {
@@ -165,6 +166,7 @@ class TreatmentController extends Controller
         $treatment->is_active = $request->has('is_active') ? 1 : 0;
         $treatment->promo_start_date = $request->promo_start_date ?: null;
         $treatment->promo_end_date = $request->promo_end_date ?: null;
+        $treatment->target_audience = $request->target_audience ?: 'Semua (General)';
         $treatment->allow_multi_select = $request->has('allow_multi_select') ? 1 : 0;
 
         if ($request->hasFile('image')) {

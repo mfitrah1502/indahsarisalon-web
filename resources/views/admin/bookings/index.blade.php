@@ -566,8 +566,10 @@
             document.body.removeChild(link);
         });
 
-        $('#btn_print_receipt').on('click', function() {
+        $('#btn_print_receipt').on('click', function(e) {
+            e.preventDefault();
             const id = $('#bookingDetailModal').data('id');
+            $('#bookingDetailModal').modal('hide');
             window.open(`/admin/bookings/${id}/print`, '_blank');
         });
 

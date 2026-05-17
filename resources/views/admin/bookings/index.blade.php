@@ -304,6 +304,9 @@
                                 <button class="btn btn-outline-success w-100 rounded-3" id="btn_wa_broadcast">
                                     <i class="ti ti-users me-2"></i>Broadcast ke Grup
                                 </button>
+                                <button class="btn btn-pink w-100 rounded-3 shadow-sm" id="btn_print_receipt">
+                                    <i class="ti ti-printer me-2"></i>Cetak Struk
+                                </button>
                             </div>
                         </div>
                         
@@ -561,6 +564,11 @@
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        });
+
+        $('#btn_print_receipt').on('click', function() {
+            const id = $('#bookingDetailModal').data('id');
+            window.open(`/admin/bookings/${id}/print`, '_blank');
         });
 
         $('#btn_show_reschedule').on('click', function() {

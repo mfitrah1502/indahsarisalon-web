@@ -833,4 +833,19 @@ class BookingController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+    // ADMIN: Print thermal/POS receipt for a booking
+    public function printReceipt($id)
+    {
+        $booking = Booking::with([
+            'user', 
+            'stylist', 
+            'treatment', 
+            'cashier', 
+            'details.treatmentDetail', 
+            'details.stylist'
+        ])->findOrFail($id);
+
+        return view('admin.bookings.receipt', compact('booking'));
+    }
 }

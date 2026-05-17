@@ -18,6 +18,7 @@
                                      $badgeClass = match($tier) {
                                          'Platinum' => 'bg-info text-white',
                                          'Gold' => 'bg-warning text-dark',
+                                         'Colour Circle' => 'bg-pink text-white',
                                          'Silver' => 'bg-secondary text-white',
                                          default => 'bg-light text-muted',
                                      };

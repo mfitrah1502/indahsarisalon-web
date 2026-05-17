@@ -210,7 +210,7 @@
             let tier = btn.data('tier');
             let tierBadge = $('#popupTier');
             tierBadge.text(tier || '-');
-            let tierClass = tier === 'Platinum' ? 'bg-info text-white' : (tier === 'Gold' ? 'bg-warning text-dark' : (tier === 'Silver' ? 'bg-secondary text-white' : 'bg-light text-muted'));
+            let tierClass = tier === 'Platinum' ? 'bg-info text-white' : (tier === 'Gold' ? 'bg-warning text-dark' : (tier === 'Silver' ? 'bg-secondary text-white' : (tier === 'Colour Circle' ? 'bg-pink text-white' : 'bg-light text-muted')));
             tierBadge.removeClass().addClass('badge rounded-pill px-3 ' + tierClass);
 
             let status = btn.data('status');

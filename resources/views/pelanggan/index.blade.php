@@ -141,7 +141,7 @@
                             <span class="text-muted small"><i class="ti ti-crown me-2"></i>Tier Member</span>
                             <div>
                                 <span id="popupTier" class="badge rounded-pill px-3"></span>
-                                <span id="popupTierCC" class="badge rounded-pill px-3 bg-pink text-white ms-1" style="display: none;">Colour Circle</span>
+                                <span id="popupTierCC" class="badge rounded-pill ms-1" style="display: none; border: 1px solid #e83e8c; color: #e83e8c; background: transparent; padding: 0.15rem 0.4rem; font-size: 0.65rem;">Colour Circle</span>
                             </div>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center p-3">

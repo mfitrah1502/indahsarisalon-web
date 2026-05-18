@@ -220,10 +220,10 @@
             tierBadge.removeClass().addClass('badge rounded-pill px-3 ' + tierClass);
             
             let hasCC = btn.attr('data-has-cc');
-            if (hasCC === 'true') {
-                $('#popupTierCC').show();
+            if (hasCC === 'true' || hasCC === true || btn.data('has-cc') === true) {
+                $('#popupTierCC').css('display', 'inline-block');
             } else {
-                $('#popupTierCC').hide();
+                $('#popupTierCC').css('display', 'none');
             }
 
             let waBtn = $('#popupWaInvite');

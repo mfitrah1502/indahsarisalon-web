@@ -259,6 +259,8 @@
     </div>
 
     @push('scripts')
+        <!-- SweetAlert2 -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
             $(document).ready(function () {
                 // Theme Config (Safe Check) - only if functions exist
@@ -346,21 +348,50 @@
                         });
 
                         if (incompatible.length > 0) {
-                            const listNames = incompatible.map(d => `• ${d.treatmentName} (${d.name})`).join('\n');
-                            const confirmReset = confirm(
-                                `Stylist ${name} (${ucwords(position)}) tidak dapat melayani beberapa treatment pilihan Anda berikut:\n\n${listNames}\n\nMemilih stylist ini akan membatalkan treatment tersebut. Lanjutkan?`
-                            );
-                            if (!confirmReset) {
-                                return; // cancel stylist change
-                            }
-
-                            // Remove incompatible from selectedDetails
-                            const incompatibleIds = incompatible.map(d => d.id);
-                            selectedDetails = selectedDetails.filter(d => !incompatibleIds.includes(d.id));
-                            updateCartUI();
+                            const listNamesHtml = incompatible.map(d => `<li class="text-start fs-6 mb-1"><strong>${d.treatmentName}</strong> (${d.name})</li>`).join('');
+                            
+                            Swal.fire({
+                                title: 'Stylist Tidak Cocok',
+                                html: `
+                                    <div class="text-start text-muted small mb-3">
+                                        Stylist <strong>${name}</strong> (${ucwords(position)}) tidak dapat melayani beberapa treatment pilihan Anda berikut:
+                                    </div>
+                                    <ul class="ps-3 mb-3 text-danger">
+                                        ${listNamesHtml}
+                                    </ul>
+                                    <div class="text-start text-muted small">
+                                        Memilih stylist ini akan membatalkan treatment tersebut. Lanjutkan?
+                                    </div>
+                                `,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#EA8290',
+                                cancelButtonColor: '#6c757d',
+                                confirmButtonText: 'Ya, Lanjutkan',
+                                cancelButtonText: 'Batal',
+                                customClass: {
+                                    popup: 'rounded-4 border-0 shadow-lg'
+                                }
+                            }).then((result) => {
+                                if (result.isConfirmed) {
+                                    // Remove incompatible from selectedDetails
+                                    const incompatibleIds = incompatible.map(d => d.id);
+                                    selectedDetails = selectedDetails.filter(d => !incompatibleIds.includes(d.id));
+                                    
+                                    // Apply active stylist change
+                                    setActiveStylist(id, card, name, position);
+                                    updateCartUI();
+                                }
+                            });
+                            return;
                         }
                     }
 
+                    // If no incompatibilities, just apply
+                    setActiveStylist(id, card, name, position);
+                };
+
+                function setActiveStylist(id, card, name, position) {
                     // Update active class on stylist cards
                     $('#main_stylist_grid .stylist-card-modern').removeClass('active');
                     card.addClass('active');
@@ -373,7 +404,7 @@
 
                     // Apply styling/dimming to treatment wrappers
                     applyStylistFilters();
-                };
+                }
 
                 function ucwords(str) {
                     return str.replace(/\b[a-z]/g, function(letter) {
@@ -407,7 +438,15 @@
                     // Check if parent wrapper is dimmed
                     const wrapper = btn.closest('.treatment-wrapper');
                     if (wrapper.hasClass('treatment-item-dimmed')) {
-                        alert(`Layanan ini tidak dapat dipilih karena tidak sesuai dengan keahlian Stylist yang Anda pilih (${ucwords(selectedStylist.position)}).`);
+                        Swal.fire({
+                            title: 'Treatment Tidak Sesuai',
+                            text: `Layanan ini tidak dapat dipilih karena tidak sesuai dengan keahlian Stylist yang Anda pilih (${ucwords(selectedStylist.position)}).`,
+                            icon: 'error',
+                            confirmButtonColor: '#EA8290',
+                            customClass: {
+                                popup: 'rounded-4 border-0 shadow-lg'
+                            }
+                        });
                         return;
                     }
 
@@ -430,7 +469,15 @@
                         if (!detail.allowMulti) {
                             const sameTreatmentDetail = selectedDetails.find(d => d.treatmentId === detail.treatmentId);
                             if (sameTreatmentDetail) {
-                                alert(`Layanan "${detail.treatmentName}" sudah dipilih varian "${sameTreatmentDetail.name}".\n\nAnda hanya dapat memilih satu jenis layanan untuk kategori ini.`);
+                                Swal.fire({
+                                    title: 'Hanya Bisa Memilih Satu Varian',
+                                    html: `Layanan <strong>"${detail.treatmentName}"</strong> sudah dipilih varian <strong>"${sameTreatmentDetail.name}"</strong>.<br><br>Anda hanya dapat memilih satu jenis layanan untuk kategori ini.`,
+                                    icon: 'info',
+                                    confirmButtonColor: '#EA8290',
+                                    customClass: {
+                                        popup: 'rounded-4 border-0 shadow-lg'
+                                    }
+                                });
                                 return;
                             }
                         }
@@ -473,7 +520,15 @@
                     if (selectedDetails.length === 0) return;
                     
                     if (!selectedStylist) {
-                        alert('Silakan pilih Stylist terlebih dahulu untuk melanjutkan booking.');
+                        Swal.fire({
+                            title: 'Pilih Stylist Dahulu',
+                            text: 'Silakan pilih Stylist terlebih dahulu untuk melanjutkan booking.',
+                            icon: 'warning',
+                            confirmButtonColor: '#EA8290',
+                            customClass: {
+                                popup: 'rounded-4 border-0 shadow-lg'
+                            }
+                        });
                         return;
                     }
 

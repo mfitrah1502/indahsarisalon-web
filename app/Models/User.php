@@ -144,6 +144,10 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getTierAttribute()
     {
+        if (in_array(strtolower($this->role), ['admin', 'owner', 'karyawan'])) {
+            return 'Regular';
+        }
+
         $total = $this->total_spending;
 
         if ($total >= 3000000) return 'Platinum';
@@ -181,6 +185,10 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getHasColoringLoyaltyAttribute()
     {
+        if (in_array(strtolower($this->role), ['admin', 'owner', 'karyawan'])) {
+            return false;
+        }
+
         if (!isset($this->attributes['cached_coloring_loyalty'])) {
             // Hitung pengeluaran khusus kategori 'Coloring'
             $this->attributes['cached_coloring_loyalty'] = \App\Models\BookingDetail::whereHas('booking', function($q) {

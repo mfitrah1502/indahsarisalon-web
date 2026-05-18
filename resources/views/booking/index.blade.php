@@ -273,48 +273,57 @@
                     preset_change('preset-1');
                 }
 
-                let searchTimer;
+                function filterTreatmentsLocal() {
+                    let categoryId = $('#categoryFilter').val();
+                    let search = $('#searchInput').val().toLowerCase().trim();
 
-                function loadTreatments() {
-                    let category = $('#categoryFilter').val();
-                    let search = $('#searchInput').val();
+                    console.log('Filtering treatments locally:', { categoryId, search });
 
-                    console.log('Loading treatments...', { category, search });
+                    let visibleCount = 0;
 
-                    // Show a subtle loading state
-                    $('#treatmentList').css('opacity', '0.5');
+                    $('.treatment-wrapper').each(function() {
+                        let wrapper = $(this);
+                        let wrapperCatId = wrapper.data('category-id') ? wrapper.data('category-id').toString() : '';
+                        let name = wrapper.data('treatment-name') ? wrapper.data('treatment-name').toString().toLowerCase() : '';
 
-                    $.ajax({
-                        url: "{{ route('booking.index') }}",
-                        type: 'GET',
-                        data: {
-                            category: category,
-                            search: search,
-                            is_ajax: 1
-                        },
-                        success: function (html) {
-                            console.log('Treatments loaded successfully');
-                            $('#treatmentList').html(html).css('opacity', '1');
-                            applyStylistFilters(); // Re-apply stylist filters to newly loaded elements
-                            updateCartUI(); // Re-sync cart states
-                        },
-                        error: function (err) {
-                            console.error('AJAX Error:', err);
-                            $('#treatmentList').css('opacity', '1');
+                        let matchesCategory = !categoryId || wrapperCatId === categoryId;
+                        let matchesSearch = !search || name.includes(search);
+
+                        if (matchesCategory && matchesSearch) {
+                            wrapper.show();
+                            visibleCount++;
+                        } else {
+                            wrapper.hide();
                         }
                     });
+
+                    // Manage "no treatments found" placeholder
+                    if (visibleCount === 0) {
+                        if ($('#noTreatmentsPlaceholder').length === 0) {
+                            $('#treatmentList').append(`
+                                <div id="noTreatmentsPlaceholder" class="col-12 text-center py-5">
+                                    <div class="mb-3">
+                                        <i class="ti ti-search text-muted" style="font-size: 4rem;"></i>
+                                    </div>
+                                    <h5 class="text-muted">Tidak ada treatment ditemukan</h5>
+                                    <p class="small text-muted">Coba ubah kategori atau kata kunci pencarian Anda</p>
+                                </div>
+                            `);
+                        } else {
+                            $('#noTreatmentsPlaceholder').show();
+                        }
+                    } else {
+                        $('#noTreatmentsPlaceholder').hide();
+                    }
                 }
 
-                // Use 'input' event instead of 'keyup' to catch all changes (paste, clear, etc.)
+                // Use 'input' event to catch all changes instantly
                 $('#searchInput').on('input', function () {
-                    console.log('Search input changed:', $(this).val());
-                    clearTimeout(searchTimer);
-                    searchTimer = setTimeout(loadTreatments, 500);
+                    filterTreatmentsLocal();
                 });
 
                 $('#categoryFilter').on('change', function() {
-                    console.log('Category filter changed:', $(this).val());
-                    loadTreatments();
+                    filterTreatmentsLocal();
                 });
 
                 // Cart Logic

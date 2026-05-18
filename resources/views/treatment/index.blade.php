@@ -132,32 +132,7 @@
                             <tbody>
                                 @forelse($treatments as $treatment)
                                     @php
-                                        $hasImage = false;
-                                        $imageUrl = asset('assets/images/no-image.jpg');
-
-                                        // 1. Cek gambar utama treatment
-                                        if ($treatment->image) {
-                                            if (strpos($treatment->image, 'http') === 0) {
-                                                $imageUrl = $treatment->image;
-                                                $hasImage = true;
-                                            } else {
-                                                $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $treatment->image;
-                                                $hasImage = true;
-                                            }
-                                        } 
-                                        
-                                        // 2. Jika gambar utama kosong, coba cari dari detail/variasi
-                                        if (!$hasImage) {
-                                            $firstDetail = $treatment->details->first();
-                                            if ($firstDetail && $firstDetail->image_url) {
-                                                if (strpos($firstDetail->image_url, 'http') === 0) {
-                                                    $imageUrl = $firstDetail->image_url;
-                                                } else {
-                                                    $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $firstDetail->image_url;
-                                                }
-                                                $hasImage = true;
-                                            }
-                                        }
+                                        $imageUrl = $treatment->main_image_url;
                                     @endphp
                                     <tr class="treatment-row" 
                                         data-id="{{ $treatment->id }}"

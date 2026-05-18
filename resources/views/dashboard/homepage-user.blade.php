@@ -157,16 +157,7 @@
                             <div class="card treatment-card border-0 shadow-sm h-100 overflow-hidden border-top border-danger border-4">
                                 <div class="position-relative">
                                     @php
-                                        if (!$promo->image) {
-                                            $imageUrl = asset('assets/images/no-image.jpg');
-                                        } elseif (strpos($promo->image, 'http') === 0) {
-                                            $imageUrl = $promo->image;
-                                        } else {
-                                            $bucket = ($promo->is_promo && env('SUPABASE_PROMO_BUCKET')) 
-                                                ? env('SUPABASE_PROMO_BUCKET') 
-                                                : env('SUPABASE_BUCKET');
-                                            $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $promo->image;
-                                        }
+                                        $imageUrl = $promo->main_image_url;
                                     @endphp
                                     <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $promo->name }}"
                                         style="height: 180px; object-fit: cover;">
@@ -234,16 +225,7 @@
                                 <div class="card treatment-card border-0 shadow-sm h-100 overflow-hidden">
                                     <div class="position-relative">
                                         @php
-                                            if (!$treatment->image) {
-                                                $imageUrl = asset('assets/images/no-image.jpg');
-                                            } elseif (strpos($treatment->image, 'http') === 0) {
-                                                $imageUrl = $treatment->image;
-                                            } else {
-                                                $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) 
-                                                    ? env('SUPABASE_PROMO_BUCKET') 
-                                                    : env('SUPABASE_BUCKET');
-                                                $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
-                                            }
+                                            $imageUrl = $treatment->main_image_url;
                                         @endphp
                                         <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $treatment->name }}"
                                             style="height: 200px; object-fit: cover;">

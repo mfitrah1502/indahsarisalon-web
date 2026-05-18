@@ -1568,11 +1568,18 @@
                 document.getElementById('summaryTreatments').innerHTML = summaryHtml;
 
                 // Update global summary stylist
-                const activeGlobalCard = document.querySelector('#global_stylist_grid .stylist-card-modern.active');
                 let globalStylistName = 'Default';
-                if (activeGlobalCard) {
-                    const nameText = activeGlobalCard.querySelector('.stylist-name').innerText;
-                    globalStylistName = (nameText === 'Reset' ? 'Default' : nameText);
+                if (selectedDetails.length > 0 && selectedDetails[0].stylistId) {
+                    const found = allStylists.find(s => s.id == selectedDetails[0].stylistId);
+                    if (found) {
+                        globalStylistName = found.name;
+                    }
+                } else {
+                    const activeGlobalCard = document.querySelector('#global_stylist_grid .stylist-card-modern.active');
+                    if (activeGlobalCard) {
+                        const nameText = activeGlobalCard.querySelector('.stylist-name').innerText;
+                        globalStylistName = (nameText === 'Reset' ? 'Default' : nameText);
+                    }
                 }
                 document.getElementById('summaryStylist').innerText = globalStylistName;
                 document.getElementById('summaryDatetime').innerText = dateInput.value + ' ' + timeInput.value;

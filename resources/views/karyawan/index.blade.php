@@ -76,6 +76,13 @@
                 </div>
             @endif
 
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+                    <i class="ti ti-alert-triangle-filled me-1 text-danger"></i> {!! session('error') !!}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
             <div class="card border-0 shadow-sm rounded-4 overlay-hidden">
                 <div class="card-body p-4">
                     <!-- Modern Filter Bar -->
@@ -186,6 +193,32 @@
         <!-- SweetAlert2 -->
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
+            $(document).ready(function() {
+                @if(session('success'))
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: "{{ session('success') }}",
+                        icon: 'success',
+                        confirmButtonColor: '#EA8290',
+                        customClass: {
+                            popup: 'rounded-4 border-0 shadow-lg'
+                        }
+                    });
+                @endif
+
+                @if(session('error'))
+                    Swal.fire({
+                        title: 'Gagal',
+                        html: "{!! addslashes(session('error')) !!}",
+                        icon: 'error',
+                        confirmButtonColor: '#EA8290',
+                        customClass: {
+                            popup: 'rounded-4 border-0 shadow-lg'
+                        }
+                    });
+                @endif
+            });
+
             // AJAX filter/search
             function applyFilters() {
                 let search = $('#searchInput').val();

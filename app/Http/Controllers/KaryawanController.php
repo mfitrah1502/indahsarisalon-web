@@ -140,8 +140,25 @@ class KaryawanController extends Controller
 
     public function destroy(User $karyawan)
     {
-        $karyawan->delete();
-        return redirect()->route('karyawan.index')->with('success','Karyawan berhasil dihapus');
+        // 1. Cek riwayat booking sebagai stylist
+        $hasStylistBookings = \App\Models\Booking::where('stylist_id', $karyawan->id)->exists();
+        
+        // 2. Cek riwayat booking sebagai kasir
+        $hasCashierBookings = \App\Models\Booking::where('cashier_id', $karyawan->id)->exists();
+
+        // 3. Cek riwayat absensi
+        $hasAbsensi = $karyawan->absensi()->exists();
+
+        if ($hasStylistBookings || $hasCashierBookings || $hasAbsensi) {
+            return redirect()->route('karyawan.index')->with('error', 'Karyawan ini tidak dapat dihapus karena memiliki riwayat booking/transaksi atau absensi. Silakan ubah status karyawan menjadi "nonaktif" melalui menu edit.');
+        }
+
+        try {
+            $karyawan->delete();
+            return redirect()->route('karyawan.index')->with('success', 'Karyawan berhasil dihapus');
+        } catch (\Illuminate\Database\QueryException $e) {
+            return redirect()->route('karyawan.index')->with('error', 'Karyawan ini tidak dapat dihapus karena terikat dengan data lainnya di database. Anda dapat menonaktifkan statusnya saja.');
+        }
     }
     public function absensi($id)
     {

@@ -21,11 +21,13 @@
                                 'Platinum' => 'border: 1px solid #6c757d; color: #6c757d; background: transparent; padding: 0.15rem 0.4rem; font-size: 0.65rem;',
                                 'Gold' => 'border: 1px solid #ffc107; color: #ffc107; background: transparent; padding: 0.15rem 0.4rem; font-size: 0.65rem;',
                                 'Silver' => 'border: 1px solid #adb5bd; color: #adb5bd; background: transparent; padding: 0.15rem 0.4rem; font-size: 0.65rem;',
-                                'Colour Circle' => 'border: 1px solid #e83e8c; color: #e83e8c; background: transparent; padding: 0.15rem 0.4rem; font-size: 0.65rem;',
                                 default => 'display: none;',
                             };
                         @endphp
                         <span class="badge rounded-pill" style="{{ $tierStyle }}">{{ $tier }}</span>
+                        @if($pelanggan->is_colour_circle_member)
+                            <span class="badge rounded-pill" style="border: 1px solid #e83e8c; color: #e83e8c; background: transparent; padding: 0.15rem 0.4rem; font-size: 0.65rem;">Colour Circle</span>
+                        @endif
                     </div>
                     <small class="text-muted">@<span></span>{{ $pelanggan->username }}</small>
                 </div>
@@ -59,6 +61,7 @@
                         data-phone="{{ $pelanggan->phone }}"
                         data-status="{{ $pelanggan->status }}"
                         data-tier="{{ $pelanggan->tier ?? '-' }}"
+                        data-has-cc="{{ $pelanggan->is_colour_circle_member ? 'true' : 'false' }}"
                         data-spending="{{ $pelanggan->total_spending ?? 0 }}"
                         data-lasttrx="{{ $pelanggan->last_transaction_at ? date('d M Y, H:i', strtotime($pelanggan->last_transaction_at)) : '-' }}"
                         title="Lihat Detail">

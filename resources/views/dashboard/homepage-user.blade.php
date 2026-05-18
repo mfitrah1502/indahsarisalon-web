@@ -18,7 +18,6 @@
                                      $badgeClass = match($tier) {
                                          'Platinum' => 'bg-info text-white',
                                          'Gold' => 'bg-warning text-dark',
-                                         'Colour Circle' => 'bg-pink text-white',
                                          'Silver' => 'bg-secondary text-white',
                                          default => 'bg-light text-muted',
                                      };
@@ -26,6 +25,11 @@
                                  <span class="badge {{ $badgeClass }} px-3 py-2 rounded-pill shadow-sm animate__animated animate__fadeInDown">
                                      <i class="ti ti-crown me-1"></i> {{ $tier }} Member
                                  </span>
+                                 @if(Auth::user()->is_colour_circle_member)
+                                 <span class="badge bg-pink text-white px-3 py-2 rounded-pill shadow-sm animate__animated animate__fadeInDown">
+                                     <i class="ti ti-sparkles me-1"></i> Colour Circle Member
+                                 </span>
+                                 @endif
                              </div>
                              <p class="opacity-75 mb-4">Selamat datang kembali di Indah Sari Salon. Siap untuk tampil lebih menawan hari ini?</p>
                             <div class="d-flex flex-wrap gap-2">
@@ -126,7 +130,7 @@
                                 <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" 
                                      style="width: {{ $nextTier['percent'] }}%" aria-valuenow="{{ $nextTier['percent'] }}" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
-                            @if(Auth::user()->has_coloring_loyalty)
+                            @if(Auth::user()->is_colour_circle_member)
                                 <div class="mt-3 p-2 bg-light-danger rounded-3 d-flex align-items-center animate__animated animate__pulse animate__infinite">
                                     <i class="ti ti-sparkles text-danger me-2 fs-5"></i>
                                     <span class="small fw-bold text-danger">Anda memiliki Loyalty Coloring (Diskon 35% Aktif!)</span>

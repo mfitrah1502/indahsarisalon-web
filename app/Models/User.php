@@ -148,11 +148,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
         if ($total >= 3000000) return 'Platinum';
         if ($total >= 2000000) return 'Gold';
-        
-        if ($total >= 1500000 || ($this->is_colour_circle && (!$this->colour_circle_expired_at || $this->colour_circle_expired_at > now()))) {
-            return 'Colour Circle';
-        }
-        
         if ($total >= 1000000) return 'Silver';
         
         return 'Regular';
@@ -207,6 +202,14 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Check if user is a Colour Circle member (either by total spend >= 1.5M or specific coloring spend)
+     */
+    public function getIsColourCircleMemberAttribute()
+    {
+        return $this->total_spending >= 1500000 || $this->has_coloring_loyalty;
+    }
+
+    /**
      * Progress to Next Tier
      */
     public function getNextTierInfoAttribute()
@@ -223,16 +226,10 @@ class User extends Authenticatable implements MustVerifyEmail
             return ['next' => 'Platinum', 'needed' => $needed, 'percent' => $percent];
         }
         
-        if ($total >= 1500000) {
-            $needed = 2000000 - $total;
-            $percent = (($total - 1500000) / 500000) * 100;
-            return ['next' => 'Gold', 'needed' => $needed, 'percent' => $percent];
-        }
-        
         if ($total >= 1000000) {
-            $needed = 1500000 - $total;
-            $percent = (($total - 1000000) / 500000) * 100;
-            return ['next' => 'Colour Circle', 'needed' => $needed, 'percent' => $percent];
+            $needed = 2000000 - $total;
+            $percent = (($total - 1000000) / 1000000) * 100;
+            return ['next' => 'Gold', 'needed' => $needed, 'percent' => $percent];
         }
         
         $needed = 1000000 - $total;

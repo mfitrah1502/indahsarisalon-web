@@ -139,7 +139,10 @@
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center p-3">
                             <span class="text-muted small"><i class="ti ti-crown me-2"></i>Tier Member</span>
-                            <span id="popupTier" class="badge rounded-pill px-3"></span>
+                            <div>
+                                <span id="popupTier" class="badge rounded-pill px-3"></span>
+                                <span id="popupTierCC" class="badge rounded-pill px-3 bg-pink text-white ms-1" style="display: none;">Colour Circle</span>
+                            </div>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center p-3">
                             <span class="text-muted small"><i class="ti ti-receipt-2 me-2"></i>Total Belanja</span>
@@ -210,8 +213,15 @@
             let tier = btn.data('tier');
             let tierBadge = $('#popupTier');
             tierBadge.text(tier || '-');
-            let tierClass = tier === 'Platinum' ? 'bg-info text-white' : (tier === 'Gold' ? 'bg-warning text-dark' : (tier === 'Silver' ? 'bg-secondary text-white' : (tier === 'Colour Circle' ? 'bg-pink text-white' : 'bg-light text-muted')));
+            let tierClass = tier === 'Platinum' ? 'bg-info text-white' : (tier === 'Gold' ? 'bg-warning text-dark' : (tier === 'Silver' ? 'bg-secondary text-white' : 'bg-light text-muted'));
             tierBadge.removeClass().addClass('badge rounded-pill px-3 ' + tierClass);
+            
+            let hasCC = btn.data('has-cc');
+            if (hasCC === true || hasCC === 'true') {
+                $('#popupTierCC').show();
+            } else {
+                $('#popupTierCC').hide();
+            }
 
             let status = btn.data('status');
             let statusBadge = $('#popupStatus');

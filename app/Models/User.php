@@ -181,7 +181,22 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Check for Coloring Loyalty (Spend > 1.5M on Coloring in last 2 years, expires after 2 years without transaction)
+     * Get total spending in the last 2 years
+     */
+    public function getRecentSpendingAttribute()
+    {
+        if (!isset($this->attributes['cached_recent_spending'])) {
+            $this->attributes['cached_recent_spending'] = $this->getAllBookingsQuery()
+                ->where('status', 'berhasil')
+                ->where('payment_status', 'paid')
+                ->where('reservation_datetime', '>=', now()->subYears(2))
+                ->sum('total_price');
+        }
+        return $this->attributes['cached_recent_spending'];
+    }
+
+    /**
+     * Check for Coloring Loyalty (Spend >= 1.5M in the last 2 years)
      */
     public function getHasColoringLoyaltyAttribute()
     {
@@ -189,40 +204,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return false;
         }
 
-        // Check if last transaction is within the last 2 years
-        $lastTx = $this->last_transaction_at;
-        if (!$lastTx) {
-            return false;
-        }
-
-        $lastTxDate = \Carbon\Carbon::parse($lastTx);
-        if ($lastTxDate->lt(now()->subYears(2))) {
-            return false;
-        }
-
-        // Check minimum spending of 1.5 million
-        if ($this->total_spending >= 1500000) {
-            return true;
-        }
-
-        if (!isset($this->attributes['cached_coloring_loyalty'])) {
-            // Hitung pengeluaran khusus kategori 'Coloring'
-            $this->attributes['cached_coloring_loyalty'] = \App\Models\BookingDetail::whereHas('booking', function($q) {
-                    $q->where(function($subQ) {
-                        $subQ->where('user_id', $this->id);
-                        if (!empty($this->email)) $subQ->orWhere('customer_email', $this->email);
-                        if (!empty($this->phone)) $subQ->orWhere('customer_phone', $this->phone);
-                    })
-                      ->where('status', 'berhasil')
-                      ->where('payment_status', 'paid')
-                      ->where('reservation_datetime', '>=', now()->subYears(2));
-                })
-                ->whereHas('treatmentDetail.treatment.category', function($q) {
-                    $q->where('name', 'like', '%Coloring%');
-                })
-                ->sum('price') >= 1500000;
-        }
-        return $this->attributes['cached_coloring_loyalty'];
+        return $this->recent_spending >= 1500000;
     }
 
     /**

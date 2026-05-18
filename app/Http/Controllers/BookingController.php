@@ -70,6 +70,7 @@ class BookingController extends Controller
         $stylists = User::whereIn('role', ['admin', 'karyawan'])
             ->whereNotNull('position')
             ->where('position', '<>', '')
+            ->whereNotIn(\DB::raw('LOWER(TRIM(position))'), ['client relationship manager', 'relationship client'])
             ->get();
 
         if ($request->ajax() || $request->has('is_ajax') || $request->expectsJson() || $request->is('api/*')) {
@@ -100,6 +101,7 @@ class BookingController extends Controller
         $stylists = User::whereIn('role', ['admin', 'karyawan'])
             ->whereNotNull('position')
             ->where('position', '<>', '')
+            ->whereNotIn(\DB::raw('LOWER(TRIM(position))'), ['client relationship manager', 'relationship client'])
             ->get();
         $allTreatments = Treatment::with(['details', 'category'])->get();
         

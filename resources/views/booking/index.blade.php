@@ -322,9 +322,11 @@
 
                 // Stylist mapping to categories (all lowercased for match)
                 const stylistMapping = {
-                    'hairstylist': ['haircut', 'hair coloring', 'hair colouring', 'hair cut', 'promo'],
-                    'beautician': ['facial', 'promo'],
-                    'therapist': ['nail treatment', 'hair ritual', 'promo']
+                    'creative stylist': ['haircut', 'hair coloring', 'hair colouring', 'hair cut', 'promo'],
+                    'senior hair technician specialist': ['haircut', 'hair coloring', 'hair colouring', 'hair cut', 'promo'],
+                    'senior beautician': ['facial', 'promo'],
+                    'senior therapist': ['nail treatment', 'hair ritual', 'promo'],
+                    'junior therapist': ['nail treatment', 'hair ritual', 'promo']
                 };
 
                 let selectedStylist = null;

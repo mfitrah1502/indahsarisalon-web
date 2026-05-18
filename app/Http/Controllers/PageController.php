@@ -193,7 +193,13 @@ class PageController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return view('landing'); // file: resources/views/landing.blade.php
+        $treatments = \App\Models\Treatment::where('is_active', true)
+            ->with(['details', 'category'])
+            ->latest()
+            ->take(6)
+            ->get();
+
+        return view('landing', compact('treatments')); // file: resources/views/landing.blade.php
     }
 
     public function about()

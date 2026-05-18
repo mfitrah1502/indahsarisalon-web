@@ -181,19 +181,46 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Promo Item 1 -->
                 @php
-                    $promos = [
-                        ['title' => 'Hair Spa & Hair Mask', 'price' => 'Rp 120.000-Rp 750.000', 'desc' => 'Perawatan rambut dan kulit kepala untuk menjaga kesehatan, mengurangi kerontokan, dan menghadirkan kilau alami rambut.', 'img' => 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=600&q=80'],
-                        ['title' => 'Hair Coloring (Non Bleaching)', 'price' => 'Rp 850.000-Rp 1.550.000', 'desc' => 'Pewarnaan rambut tanpa bleaching untuk hasil warna natural yang tetap menjaga kesehatan rambut.', 'img' => 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=600&q=80'],
-                        ['title' => 'Hair Coloring (Bleaching)', 'price' => 'Rp 650.000-Rp 2.350.000', 'desc' => 'Proses pewarnaan dengan bleaching untuk menghasilkan warna yang lebih terang, bold, dan maksimal.', 'img' => 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=600&q=80'],
-                        ['title' => 'Hair Coloring (Highlight/Balayage)', 'price' => 'Rp 1.450.000-Rp 2.350.000', 'desc' => 'Teknik pewarnaan modern untuk menciptakan dimensi warna rambut yang natural, halus, dan elegan.', 'img' => 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=600&q=80'],
-                        ['title' => 'Facial Treatment & Skin Care', 'price' => 'Rp 30.000-Rp 225.000', 'desc' => 'Perawatan wajah untuk membersihkan, merawat, dan mencerahkan kulit agar tampak sehat dan bercahaya.', 'img' => asset('assets/images/facial-tratement.svg')],
-                        ['title' => 'Nail & Hand/Foot Treatment', 'price' => 'Rp 125.000-Rp 150.000', 'desc' => 'Perawatan kuku dan kulit tangan serta kaki untuk menjaga kebersihan, kelembutan, dan tampilan yang lebih rapi dan elegan.', 'img' => 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=600&q=80'],
-                    ];
+                    if (isset($treatments) && $treatments->isNotEmpty()) {
+                        $displayTreatments = [];
+                        foreach ($treatments as $treatment) {
+                            $minPrice = $treatment->details->min('price') ?? 0;
+                            $maxPrice = $treatment->details->max('price') ?? 0;
+                            if ($minPrice != $maxPrice) {
+                                $priceText = 'Rp ' . number_format($minPrice, 0, ',', '.') . ' - Rp ' . number_format($maxPrice, 0, ',', '.');
+                            } else {
+                                $priceText = 'Rp ' . number_format($minPrice, 0, ',', '.');
+                            }
+                            
+                            $desc = $treatment->details->whereNotNull('description')->where('description', '!=', '')->first()?->description;
+                            if (!$desc) {
+                                $desc = 'Pilihan variasi: ' . implode(', ', $treatment->details->pluck('name')->toArray());
+                            }
+                            if (strlen($desc) > 150) {
+                                $desc = substr($desc, 0, 147) . '...';
+                            }
+
+                            $displayTreatments[] = [
+                                'title' => $treatment->name,
+                                'price' => $priceText,
+                                'desc' => $desc,
+                                'img' => $treatment->main_image_url
+                            ];
+                        }
+                    } else {
+                        $displayTreatments = [
+                            ['title' => 'Hair Spa & Hair Mask', 'price' => 'Rp 120.000-Rp 750.000', 'desc' => 'Perawatan rambut dan kulit kepala untuk menjaga kesehatan, mengurangi kerontokan, dan menghadirkan kilau alami rambut.', 'img' => 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=600&q=80'],
+                            ['title' => 'Hair Coloring (Non Bleaching)', 'price' => 'Rp 850.000-Rp 1.550.000', 'desc' => 'Pewarnaan rambut tanpa bleaching untuk hasil warna natural yang tetap menjaga kesehatan rambut.', 'img' => 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=600&q=80'],
+                            ['title' => 'Hair Coloring (Bleaching)', 'price' => 'Rp 650.000-Rp 2.350.000', 'desc' => 'Proses pewarnaan dengan bleaching untuk menghasilkan warna yang lebih terang, bold, dan maksimal.', 'img' => 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=600&q=80'],
+                            ['title' => 'Hair Coloring (Highlight/Balayage)', 'price' => 'Rp 1.450.000-Rp 2.350.000', 'desc' => 'Teknik pewarnaan modern untuk menciptakan dimensi warna rambut yang natural, halus, dan elegan.', 'img' => 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=600&q=80'],
+                            ['title' => 'Facial Treatment & Skin Care', 'price' => 'Rp 30.000-Rp 225.000', 'desc' => 'Perawatan wajah untuk membersihkan, merawat, dan mencerahkan kulit agar tampak sehat dan bercahaya.', 'img' => asset('assets/images/facial-tratement.svg')],
+                            ['title' => 'Nail & Hand/Foot Treatment', 'price' => 'Rp 125.000-Rp 150.000', 'desc' => 'Perawatan kuku dan kulit tangan serta kaki untuk menjaga kebersihan, kelembutan, dan tampilan yang lebih rapi dan elegan.', 'img' => 'https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=600&q=80'],
+                        ];
+                    }
                 @endphp
                 
-                @foreach ($promos as $promo)
+                @foreach ($displayTreatments as $promo)
                 <div class="bg-white rounded-2xl overflow-hidden shadow-xl shadow-pink-100/50 border border-gray-100 hover:shadow-2xl hover:shadow-pink-200/50 hover:-translate-y-1 transition duration-300">
                     <div class="relative h-56">
                         <img src="{{ $promo['img'] }}" alt="Promosi" class="w-full h-full object-cover">

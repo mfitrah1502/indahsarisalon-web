@@ -377,7 +377,7 @@
                                 <div class="col-md-3 mb-3">
                                     <label class="form-label">📅 Tanggal</label>
                                     <input type="date" name="reservation_date" id="reservation_date" class="form-control"
-                                        min="{{ $initialDate }}" value="{{ $initialDate }}" required>
+                                        min="{{ $initialDate }}" value="{{ request()->input('reservation_date', $initialDate) }}" required>
                                 </div>
 
                                 <!-- JAM -->
@@ -917,12 +917,13 @@
             const holidayDates = {!! json_encode($holidays) !!};
 
             // 1. Flatpickr Logic
+            const initialDateVal = dateInput.value || 'today';
             const fp = flatpickr(dateInput, {
                 locale: 'id',
                 dateFormat: 'Y-m-d',
                 minDate: 'today',
                 disable: holidayDates,
-                defaultDate: 'today',
+                defaultDate: initialDateVal,
                 onChange: function(selectedDates, dateStr) {
                     updateTimeSlots();
                     checkStylistAvailability();
@@ -931,6 +932,9 @@
 
             // If today is > 18:00 or a holiday, find next available date
             function findNextAvailable() {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('reservation_date')) return; // Skip if pre-selected in previous step
+
                 const now = new Date();
                 const hour = now.getHours();
                 const todayStr = now.toISOString().split('T')[0];

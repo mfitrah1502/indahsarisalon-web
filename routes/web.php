@@ -141,6 +141,7 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         Route::get('/booking/select/{treatmentId?}', [BookingController::class, 'select'])->name('booking.select'); 
         Route::post('/booking/store', [BookingController::class, 'store'])->name('booking.store'); 
         Route::post('/booking/check-stylist-availability', [BookingController::class, 'checkStylistAvailability'])->name('booking.check_stylist_availability');
+        Route::post('/booking/check-booked-stylists', [BookingController::class, 'checkBookedStylists'])->name('booking.check_booked_stylists');
         Route::get('/booking/summary/{bookingId}', [BookingController::class, 'summary'])->name('booking.summary'); 
         Route::post('/booking/pay/{bookingId}', [BookingController::class, 'pay'])->name('booking.pay'); 
         Route::get('/booking/history', [BookingController::class, 'history'])->name('booking.history'); 

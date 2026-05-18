@@ -73,6 +73,8 @@ class BookingController extends Controller
             ->whereNotIn(\DB::raw('LOWER(TRIM(position))'), ['client relationship manager', 'relationship client'])
             ->get();
 
+        $holidays = \App\Models\Holiday::pluck('date')->toArray();
+
         if ($request->ajax() || $request->has('is_ajax') || $request->expectsJson() || $request->is('api/*')) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
@@ -85,7 +87,7 @@ class BookingController extends Controller
             return view('booking.partials._treatment_list', compact('treatments'));
         }
 
-        return view('booking.index', compact('treatments', 'categories', 'isOpen', 'stylists'));
+        return view('booking.index', compact('treatments', 'categories', 'isOpen', 'stylists', 'holidays'));
     }
 
     // STEP 1: Pilih stylist & waktu
@@ -894,6 +896,47 @@ class BookingController extends Controller
                 'off_work_ids' => $offWorkIds
             ]);
 
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * AJAX: Check booked & off-work stylists for a given date (Step 1).
+     */
+    public function checkBookedStylists(Request $request)
+    {
+        $date = $request->get('reservation_date');
+        if (!$date) {
+            return response()->json(['booked_stylist_ids' => [], 'off_work_ids' => []]);
+        }
+
+        try {
+            // 1. Ambil stylist yang memiliki booking aktif pada tanggal tersebut
+            $bookedStylistIds = \App\Models\BookingDetail::whereHas('booking', function ($query) use ($date) {
+                    $query->whereDate('reservation_datetime', $date)
+                          ->whereNotIn('status', ['dibatalkan']);
+                })
+                ->whereNotNull('stylist_id')
+                ->pluck('stylist_id')
+                ->map(fn($id) => (int)$id)
+                ->unique()
+                ->values()
+                ->toArray();
+
+            // 2. Ambil stylist yang absen / libur pada tanggal tersebut
+            $offWorkIds = \App\Models\Absensi::whereDate('tanggal', $date)
+                ->whereIn('status', ['Off Work', 'Libur', 'libur', 'off work'])
+                ->pluck('user_id')
+                ->map(fn($id) => (int)$id)
+                ->unique()
+                ->values()
+                ->toArray();
+
+            return response()->json([
+                'booked_stylist_ids' => $bookedStylistIds,
+                'off_work_ids' => $offWorkIds
+            ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

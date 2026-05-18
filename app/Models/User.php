@@ -181,13 +181,26 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Check for Coloring Loyalty (Spend > 1.5M on Coloring in last 2 years)
+     * Check for Coloring Loyalty (Spend > 1.5M on Coloring in last 2 years, expires after 2 years without transaction)
      */
     public function getHasColoringLoyaltyAttribute()
     {
         if (in_array(strtolower($this->role), ['admin', 'owner', 'karyawan'])) {
             return false;
         }
+
+        // Check if last transaction is within the last 2 years
+        $lastTx = $this->last_transaction_at;
+        if (!$lastTx) {
+            return false;
+        }
+
+        $lastTxDate = \Carbon\Carbon::parse($lastTx);
+        if ($lastTxDate->lt(now()->subYears(2))) {
+            return false;
+        }
+
+        // Check minimum spending of 1.5 million
         if ($this->total_spending >= 1500000) {
             return true;
         }
@@ -213,11 +226,11 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Check if user is a Colour Circle member (either by total spend >= 1.5M or specific coloring spend >= 1.5M)
+     * Check if user is a Colour Circle member (has coloring loyalty and active status)
      */
     public function getIsColourCircleMemberAttribute()
     {
-        return $this->total_spending >= 1500000 || $this->has_coloring_loyalty;
+        return $this->has_coloring_loyalty;
     }
 
     /**

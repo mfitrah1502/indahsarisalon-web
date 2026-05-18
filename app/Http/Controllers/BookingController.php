@@ -52,6 +52,13 @@ class BookingController extends Controller
             ->orderBy('treatments.name', 'asc')
             ->get();
 
+        $user = Auth::user();
+        if (!$user || $user->role === 'pelanggan') {
+            $treatments = $treatments->filter(function($t) use ($user) {
+                return $t->matchesUser($user);
+            });
+        }
+
         Log::info('Treatments Found: ' . $treatments->count());
 
         // Cek jam operasional (09:00 - 18:00)
@@ -79,8 +86,20 @@ class BookingController extends Controller
     public function select(Request $request, $treatmentId)
     {
         $treatment = Treatment::with('details')->findOrFail($treatmentId);
+        
+        $user = Auth::user();
+        if ((!$user || $user->role === 'pelanggan') && !$treatment->matchesUser($user)) {
+            abort(403, 'Anda tidak memiliki akses ke treatment ini.');
+        }
+
         $stylists = User::whereIn('role', ['admin', 'karyawan'])->get();
         $allTreatments = Treatment::with(['details', 'category'])->get();
+        
+        if (!$user || $user->role === 'pelanggan') {
+            $allTreatments = $allTreatments->filter(function($t) use ($user) {
+                return $t->matchesUser($user);
+            });
+        }
         $categories = Category::all();
 
         // Handle pre-selected details from query param ?details=1,2,3

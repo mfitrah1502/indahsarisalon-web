@@ -120,14 +120,6 @@ class Treatment extends Model
         
         $userTier = $currentUser->tier; // 'Regular', 'Silver', 'Colour Circle', 'Gold', 'Platinum'
         
-        $tierHierarchy = [
-            'Regular' => 1,
-            'Silver' => 2,
-            'Colour Circle' => 3,
-            'Gold' => 4,
-            'Platinum' => 5
-        ];
-        
         $targetTier = 'Regular';
         if (strpos($audience, 'Silver') !== false) {
             $targetTier = 'Silver';
@@ -139,9 +131,6 @@ class Treatment extends Model
             $targetTier = 'Platinum';
         }
         
-        $userRank = $tierHierarchy[$userTier] ?? 1;
-        $targetRank = $tierHierarchy[$targetTier] ?? 1;
-        
-        return $userRank >= $targetRank;
+        return strtolower($userTier) === strtolower($targetTier);
     }
 }

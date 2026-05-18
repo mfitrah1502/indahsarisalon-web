@@ -51,8 +51,13 @@
                                                     <small class="text-muted">#BOOK-{{ $booking->id }}</small>
                                                 </div>
                                                 <h6 class="fw-bold mb-1 text-dark">{{ $booking->treatment->name }}</h6>
-                                                <div class="text-muted small mb-3">
-                                                    <i class="ti ti-calendar me-1"></i>{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('d M Y, H:i') }}
+                                                <div class="small mb-1">
+                                                    <span class="badge bg-light-primary text-primary px-2 py-0.5 extra-small" style="font-size: 0.6rem;"><i class="ti ti-calendar-event me-1"></i>Reservasi:</span>
+                                                    <div class="fw-bold text-dark small mt-0.5">{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('d M Y, H:i') }} WIB</div>
+                                                </div>
+                                                <div class="small mb-3">
+                                                    <span class="badge bg-light-secondary text-secondary px-2 py-0.5 extra-small" style="font-size: 0.6rem;"><i class="ti ti-receipt me-1"></i>Transaksi:</span>
+                                                    <div class="text-muted small mt-0.5">{{ \Carbon\Carbon::parse($booking->created_at)->format('d M Y, H:i') }} WIB</div>
                                                 </div>
                                                 <div class="d-flex align-items-center justify-content-between mt-auto">
                                                     <span class="fw-bold text-primary">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</span>
@@ -101,8 +106,14 @@
                                                     </small>
                                                 </td>
                                                 <td>
-                                                    <div class="small">{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('d M Y') }}</div>
-                                                    <div class="extra-small text-muted">{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('H:i') }}</div>
+                                                    <div class="small" title="Tanggal Reservasi">
+                                                        <span class="badge bg-light-primary text-primary px-2 py-0.5 extra-small mb-1" style="font-size: 0.6rem;"><i class="ti ti-calendar-event me-1"></i>Reservasi:</span>
+                                                        <div class="fw-bold text-dark small">{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('d M Y') }} - {{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('H:i') }} WIB</div>
+                                                    </div>
+                                                    <div class="small mt-2" title="Tanggal Transaksi">
+                                                        <span class="badge bg-light-secondary text-secondary px-2 py-0.5 extra-small mb-1" style="font-size: 0.6rem;"><i class="ti ti-receipt me-1"></i>Transaksi:</span>
+                                                        <div class="text-muted small">{{ \Carbon\Carbon::parse($booking->created_at)->format('d M Y') }} - {{ \Carbon\Carbon::parse($booking->created_at)->format('H:i') }} WIB</div>
+                                                    </div>
                                                 </td>
                                                 <td class="fw-bold text-dark">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</td>
                                                 <td>
@@ -185,8 +196,14 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                <div>{{ $resDateTime->format('d M Y') }}</div>
-                                                <small class="text-muted text-uppercase">{{ $resDateTime->format('H:i') }}</small>
+                                                <div class="small" title="Tanggal Reservasi">
+                                                    <span class="badge bg-light-primary text-primary px-2 py-1 extra-small mb-1" style="font-size: 0.65rem;"><i class="ti ti-calendar-event me-1"></i>Reservasi:</span>
+                                                    <div class="fw-bold text-dark">{{ $resDateTime->format('d M Y') }} - {{ $resDateTime->format('H:i') }} WIB</div>
+                                                </div>
+                                                <div class="small mt-2" title="Tanggal Transaksi">
+                                                    <span class="badge bg-light-secondary text-secondary px-2 py-1 extra-small mb-1" style="font-size: 0.65rem;"><i class="ti ti-receipt me-1"></i>Transaksi:</span>
+                                                    <div class="text-muted">{{ $createdAt->format('d M Y') }} - {{ $createdAt->format('H:i') }} WIB</div>
+                                                </div>
                                             </td>
                                             <td class="fw-bold">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</td>
                                             <td>
@@ -327,12 +344,12 @@
                     <span class="fw-bold text-dark text-end text-break" style="max-width: 70%;">${booking.customer_email || '-'}</span>
                 </div>
                 <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <span class="text-muted small">Jadwal</span>
-                    <span class="fw-bold text-dark text-end">${formattedDate}</span>
+                    <span class="text-muted small">Jadwal Reservasi</span>
+                    <span class="fw-bold text-dark text-end">${formattedDate} - ${formattedTime} WIB</span>
                 </div>
                 <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <span class="text-muted small">Waktu</span>
-                    <span class="fw-bold text-dark text-end">${formattedTime} WIB</span>
+                    <span class="text-muted small">Tanggal Transaksi</span>
+                    <span class="fw-bold text-muted text-end">${new Date(booking.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })} - ${new Date(booking.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace(/\./g, ':')} WIB</span>
                 </div>
                 <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                     <span class="text-muted small">Stylist</span>

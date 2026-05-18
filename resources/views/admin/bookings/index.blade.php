@@ -220,10 +220,16 @@
                                             <small class="text-muted">{{ $booking->details->count() }} Sub-Layanan</small>
                                         </div>
                                     </td>
-                                    <td class="text-center">
-                                        <div class="d-flex flex-column">
-                                            <span class="fw-medium"><i class="ti ti-calendar-event me-1 text-pink"></i>{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('d/m/Y') }}</span>
-                                            <small class="text-muted"><i class="ti ti-clock me-1 text-warning"></i>{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('H:i') }}</small>
+                                    <td class="text-center" style="min-width: 160px;">
+                                        <div class="d-flex flex-column align-items-center text-center gap-2">
+                                            <div class="small" title="Tanggal Reservasi">
+                                                <span class="badge bg-light-primary text-primary px-2 py-0.5" style="font-size: 0.6rem;"><i class="ti ti-calendar-event me-1"></i>Reservasi:</span>
+                                                <div class="fw-bold text-dark small mt-0.5">{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('H:i') }}</div>
+                                            </div>
+                                            <div class="small" title="Tanggal Transaksi">
+                                                <span class="badge bg-light-secondary text-secondary px-2 py-0.5" style="font-size: 0.6rem;"><i class="ti ti-receipt me-1"></i>Transaksi:</span>
+                                                <div class="text-muted small mt-0.5">{{ \Carbon\Carbon::parse($booking->created_at)->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($booking->created_at)->format('H:i') }}</div>
+                                            </div>
                                         </div>
                                     </td>
                                     <td class="text-center">
@@ -325,9 +331,15 @@
                                 <span id="mdl_payment_method" class="fw-bold"></span>
                             </div>
                             <hr>
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="text-muted">Waktu:</span>
-                                <span id="mdl_time" class="fw-bold"></span>
+                            <div class="d-flex flex-column gap-1 mb-2">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted small">Jadwal Reservasi:</span>
+                                    <span id="mdl_time" class="fw-bold small text-primary"></span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-muted small">Tanggal Transaksi:</span>
+                                    <span id="mdl_transaction_time" class="fw-bold small text-muted"></span>
+                                </div>
                             </div>
                             <div id="reschedule_section" style="display:none;" class="mt-2 p-2 bg-white rounded border border-pink shadow-sm">
                                 <label class="small fw-bold text-pink mb-1">Ganti Jadwal:</label>
@@ -427,7 +439,22 @@
                     $('#mdl_payment_status').text(ps.label).removeClass().addClass('badge-status ' + ps.class);
                     
                     $('#mdl_payment_method').text((data.payment_method || '-').toUpperCase());
-                    $('#mdl_time').text(data.reservation_datetime);
+                    const formatDatetime = (dtStr) => {
+                        if (!dtStr) return '-';
+                        try {
+                            const date = new Date(dtStr);
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const year = date.getFullYear();
+                            const hours = String(date.getHours()).padStart(2, '0');
+                            const minutes = String(date.getMinutes()).padStart(2, '0');
+                            return `${day}/${month}/${year} - ${hours}:${minutes} WIB`;
+                        } catch(e) {
+                            return dtStr;
+                        }
+                    };
+                    $('#mdl_time').text(formatDatetime(data.reservation_datetime));
+                    $('#mdl_transaction_time').text(formatDatetime(data.created_at));
                     $('#mdl_cashier').text(data.cashier ? data.cashier.name : '-');
                     $('#mdl_total').text('Rp ' + new Intl.NumberFormat('id-ID').format(data.total_price));
 

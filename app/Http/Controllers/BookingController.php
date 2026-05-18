@@ -605,11 +605,11 @@ class BookingController extends Controller
 
         if ($filter_mode && $filter_value) {
             if ($filter_mode === 'daily') {
-                $query->whereDate('reservation_datetime', $filter_value);
+                $query->whereDate('created_at', $filter_value);
             } elseif ($filter_mode === 'monthly') {
-                $query->whereRaw("TO_CHAR(reservation_datetime, 'YYYY-MM') = ?", [$filter_value]);
+                $query->whereRaw("TO_CHAR(created_at, 'YYYY-MM') = ?", [$filter_value]);
             } elseif ($filter_mode === 'yearly') {
-                $query->whereRaw("TO_CHAR(reservation_datetime, 'YYYY') = ?", [$filter_value]);
+                $query->whereRaw("TO_CHAR(created_at, 'YYYY') = ?", [$filter_value]);
             }
         }
 

@@ -590,6 +590,31 @@
             }
         });
 
+        // Clear validation warnings on typing/focusing register fields
+        registerForm.querySelectorAll('.form-input').forEach(input => {
+            ['input', 'focus'].forEach(evt => {
+                input.addEventListener(evt, function() {
+                    // Hapus warna merah invalid dari input ini
+                    this.classList.remove('is-invalid');
+                    
+                    // Cari note error di bawah input ini dan hapus
+                    const group = this.closest('.form-group-custom');
+                    if (group) {
+                        const errorNote = group.querySelector('.text-danger');
+                        if (errorNote) {
+                            errorNote.remove();
+                        }
+                    }
+                    
+                    // Hapus alert notifikasi di atas register form jika ada
+                    const topAlert = document.querySelector('#registerView .alert-danger');
+                    if (topAlert) {
+                        topAlert.remove();
+                    }
+                });
+            });
+        });
+
         @if(session('show_welcome_wa'))
             window.addEventListener('load', function() {
                 // Tampilkan Modal

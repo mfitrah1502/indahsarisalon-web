@@ -15,10 +15,10 @@ class KeuanganController extends Controller
                         ->where('status', '!=', 'dibatalkan');
                         
         if ($request->filled(['start_date', 'end_date'])) {
-            $query->whereBetween('reservation_datetime', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
+            $query->whereBetween('created_at', [$request->start_date . ' 00:00:00', $request->end_date . ' 23:59:59']);
         }
 
-        $pemasukan = $query->with('treatment')->orderBy('reservation_datetime', 'desc')->get();
+        $pemasukan = $query->with('treatment')->orderBy('created_at', 'desc')->get();
         $totalPemasukan = $pemasukan->sum('total_price');
 
         // --- DYNAMIC CHART DATA ---
@@ -38,7 +38,7 @@ class KeuanganController extends Controller
                 for ($d = 0; $d <= $diffInDays; $d++) {
                     $date = $start->copy()->addDays($d)->toDateString();
                     $chartLabels[] = $start->copy()->addDays($d)->format('d M');
-                    $daily = Booking::whereDate('reservation_datetime', $date)
+                    $daily = Booking::whereDate('created_at', $date)
                                     ->where('payment_status', 'paid')
                                     ->where('status', '!=', 'dibatalkan')
                                     ->sum('total_price');
@@ -51,8 +51,8 @@ class KeuanganController extends Controller
                 $current = $start->copy()->startOfMonth();
                 while ($current <= $end) {
                     $chartLabels[] = $current->format('M Y');
-                    $monthly = Booking::whereYear('reservation_datetime', $current->year)
-                                     ->whereMonth('reservation_datetime', $current->month)
+                    $monthly = Booking::whereYear('created_at', $current->year)
+                                     ->whereMonth('created_at', $current->month)
                                      ->where('payment_status', 'paid')
                                      ->where('status', '!=', 'dibatalkan')
                                      ->sum('total_price');
@@ -63,7 +63,7 @@ class KeuanganController extends Controller
             }
         } else {
             // Default 6 Months Cumulative
-            $cumulativeTotal = Booking::where('reservation_datetime', '<', now()->subMonths(5)->startOfMonth())
+            $cumulativeTotal = Booking::where('created_at', '<', now()->subMonths(5)->startOfMonth())
                                      ->where('payment_status', 'paid')
                                      ->where('status', '!=', 'dibatalkan')
                                      ->sum('total_price');
@@ -71,8 +71,8 @@ class KeuanganController extends Controller
             for ($i = 5; $i >= 0; $i--) {
                 $month = now()->subMonths($i);
                 $chartLabels[] = $month->format('M');
-                $monthlyIncome = Booking::whereYear('reservation_datetime', $month->year)
-                                     ->whereMonth('reservation_datetime', $month->month)
+                $monthlyIncome = Booking::whereYear('created_at', $month->year)
+                                     ->whereMonth('created_at', $month->month)
                                      ->where('payment_status', 'paid')
                                      ->where('status', '!=', 'dibatalkan')
                                      ->sum('total_price');
@@ -161,7 +161,7 @@ class KeuanganController extends Controller
         $bookings = Booking::with('treatment')
                            ->where('payment_status', 'paid')
                            ->where('status', '!=', 'dibatalkan')
-                           ->orderBy('reservation_datetime', 'asc')
+                           ->orderBy('created_at', 'asc')
                            ->get();
 
         $expenses = Expense::orderBy('expense_date', 'asc')->get();
@@ -170,10 +170,10 @@ class KeuanganController extends Controller
         $history = [];
         foreach ($bookings as $b) {
             $history[] = [
-                'date' => Carbon::parse($b->reservation_datetime)->format('d/m/Y'),
-                'raw_date' => $b->reservation_datetime,
+                'date' => Carbon::parse($b->created_at)->format('d/m/Y'),
+                'raw_date' => $b->created_at,
                 'type' => 'Pemasukan',
-                'description' => 'Layanan Salon (' . ($b->treatment->name ?? 'Treatment') . ')',
+                'description' => 'Layanan Salon (' . ($b->treatment->name ?? 'Treatment') . ') [Reservasi: ' . Carbon::parse($b->reservation_datetime)->format('d/m/Y') . ']',
                 'amount' => $b->total_price,
                 'class' => 'text-success'
             ];

@@ -24,6 +24,12 @@ class PelangganController extends Controller
 
         // Get guest customers from bookings (including those mistakenly assigned to staff IDs)
         $guestBookingsQuery = \App\Models\Booking::selectRaw('MAX(id) as id, customer_name, customer_email, customer_phone, MAX(created_at) as last_transaction_at, SUM(total_price) as total_spending')
+            ->where(function($q) {
+                $q->whereNull('user_id')
+                  ->orWhereHas('user', function($u) {
+                      $u->where('role', '!=', 'pelanggan');
+                  });
+            })
             ->groupBy('customer_name', 'customer_email', 'customer_phone');
 
         if($request->has('search') && $request->search != ''){

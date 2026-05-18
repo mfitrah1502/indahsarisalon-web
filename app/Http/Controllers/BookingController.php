@@ -124,7 +124,12 @@ class BookingController extends Controller
                 });
                 
             $guestBookings = \App\Models\Booking::selectRaw('MAX(id) as id, customer_name, customer_email, customer_phone')
-                ->whereNull('user_id')
+                ->where(function($q) {
+                    $q->whereNull('user_id')
+                      ->orWhereHas('user', function($u) {
+                          $u->where('role', '!=', 'pelanggan');
+                      });
+                })
                 ->groupBy('customer_name', 'customer_email', 'customer_phone')
                 ->get();
                 
@@ -134,8 +139,9 @@ class BookingController extends Controller
             
             $guestCustomers = collect();
             foreach ($guestBookings as $booking) {
-                // Tampilkan semua guest, meskipun memiliki kemiripan nama/telepon dengan user terdaftar,
-                // agar admin bisa memilih guest data lama jika dibutuhkan.
+                if ($booking->customer_email && in_array($booking->customer_email, $registeredEmails)) continue;
+                if ($booking->customer_phone && in_array($booking->customer_phone, $registeredPhones)) continue;
+                if ($booking->customer_name && in_array($booking->customer_name, $registeredNames)) continue;
                 
 
                 $user = new User();

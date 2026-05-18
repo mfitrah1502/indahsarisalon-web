@@ -130,6 +130,8 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         Route::get('/admin/keuangan/pemasukan', [App\Http\Controllers\KeuanganController::class, 'pemasukan'])->name('keuangan.pemasukan');
         Route::get('/admin/keuangan/pengeluaran', [App\Http\Controllers\KeuanganController::class, 'pengeluaran'])->name('keuangan.pengeluaran');
         Route::post('/admin/keuangan/pengeluaran', [App\Http\Controllers\KeuanganController::class, 'storePengeluaran'])->name('keuangan.pengeluaran.store');
+        Route::delete('/admin/keuangan/pengeluaran/{id}', [App\Http\Controllers\KeuanganController::class, 'destroyPengeluaran'])->name('keuangan.pengeluaran.destroy');
+        Route::post('/admin/keuangan/pengeluaran/reset', [App\Http\Controllers\KeuanganController::class, 'resetPengeluaran'])->name('keuangan.pengeluaran.reset');
         Route::get('/admin/keuangan/profit/export', [App\Http\Controllers\KeuanganController::class, 'exportProfitPdf'])->name('keuangan.profit.export');
     });
 

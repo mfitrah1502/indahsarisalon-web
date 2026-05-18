@@ -244,6 +244,8 @@
                 let cleanPhone = phone.replace(/\D/g, '');
                 if (cleanPhone.startsWith('0')) {
                     cleanPhone = '62' + cleanPhone.slice(1);
+                } else if (cleanPhone.startsWith('8')) {
+                    cleanPhone = '62' + cleanPhone;
                 }
 
                 let message = `Halo, ${name}.\nSelamat anda telah menjadi member ${tier}\nSilahkan bergabung ke grup dibawah ini :\n${groupLink}`;
@@ -255,6 +257,7 @@
                     waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
                 }
                 
+                console.log('WhatsApp invite URL generated:', { name, originalPhone: phone, cleanPhone, waUrl });
                 waBtn.attr('href', waUrl).show();
             } else {
                 waBtn.hide();

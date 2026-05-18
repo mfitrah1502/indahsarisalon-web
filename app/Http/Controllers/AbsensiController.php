@@ -24,7 +24,7 @@ class AbsensiController extends Controller
         // Cek apakah sudah presensi hari ini
         $exists = Absensi::where('user_id', $user->id)
                          ->where('tanggal', $today)
-                         ->where('status', 'Hadir')
+                         ->whereIn('status', ['hadir', 'Hadir'])
                          ->exists();
 
         if ($exists) {
@@ -34,7 +34,7 @@ class AbsensiController extends Controller
         // Simpan sebagai hadir
         Absensi::updateOrCreate(
             ['user_id' => $user->id, 'tanggal' => $today],
-            ['jam_masuk' => now(), 'status' => 'Hadir']
+            ['jam_masuk' => now(), 'status' => 'hadir']
         );
 
         return response()->json(['success' => true, 'message' => 'Presensi berhasil dicatat']);
@@ -112,7 +112,7 @@ class AbsensiController extends Controller
                         ->where('tanggal', $today)
                         ->first();
 
-        if ($absen && $absen->status === 'Hadir') {
+        if ($absen && in_array(strtolower($absen->status), ['hadir'])) {
             $msg = 'Anda sudah melakukan presensi hari ini.';
             if ($request->ajax()) return response()->json(['success' => false, 'message' => $msg]);
             return redirect()->back()->with('error', $msg);
@@ -122,7 +122,7 @@ class AbsensiController extends Controller
             ['user_id' => $user->id, 'tanggal' => $today],
             [
                 'jam_masuk' => now(),
-                'status' => 'Hadir'
+                'status' => 'hadir'
             ]
         );
         

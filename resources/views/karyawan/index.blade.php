@@ -76,6 +76,13 @@
                 </div>
             @endif
 
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+                    <i class="ti ti-alert-triangle-filled me-1 text-danger"></i> {!! session('error') !!}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+
             <div class="card border-0 shadow-sm rounded-4 overlay-hidden">
                 <div class="card-body p-4">
                     <!-- Modern Filter Bar -->
@@ -93,7 +100,6 @@
                             <label class="small fw-bold text-muted mb-2">Filter Role</label>
                             <select id="filterRole" class="form-select border-0 shadow-none">
                                 <option value="">Semua Role</option>
-                                <option value="owner">Owner</option>
                                 <option value="admin">Admin</option>
                                 <option value="karyawan">Karyawan</option>
                             </select>
@@ -184,7 +190,35 @@
     </div>
 
     @push('scripts')
+        <!-- SweetAlert2 -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
+            $(document).ready(function() {
+                @if(session('success'))
+                    Swal.fire({
+                        title: 'Berhasil',
+                        text: "{{ session('success') }}",
+                        icon: 'success',
+                        confirmButtonColor: '#EA8290',
+                        customClass: {
+                            popup: 'rounded-4 border-0 shadow-lg'
+                        }
+                    });
+                @endif
+
+                @if(session('error'))
+                    Swal.fire({
+                        title: 'Gagal',
+                        html: "{!! addslashes(session('error')) !!}",
+                        icon: 'error',
+                        confirmButtonColor: '#EA8290',
+                        customClass: {
+                            popup: 'rounded-4 border-0 shadow-lg'
+                        }
+                    });
+                @endif
+            });
+
             // AJAX filter/search
             function applyFilters() {
                 let search = $('#searchInput').val();
@@ -343,7 +377,15 @@
                                     renderAbsensi(data);
                                 }
                             });
-                            alert('Data kehadiran berhasil disimpan.');
+                            Swal.fire({
+                                title: 'Berhasil',
+                                text: 'Data kehadiran berhasil disimpan.',
+                                icon: 'success',
+                                confirmButtonColor: '#EA8290',
+                                customClass: {
+                                    popup: 'rounded-4 border-0 shadow-lg'
+                                }
+                            });
                         }
                     },
                     error: function (err) {
@@ -351,7 +393,66 @@
                         if (err.responseJSON && err.responseJSON.message) {
                             msg = err.responseJSON.message;
                         }
-                        alert(msg);
+                        Swal.fire({
+                            title: 'Gagal',
+                            text: msg,
+                            icon: 'error',
+                            confirmButtonColor: '#EA8290',
+                            customClass: {
+                                popup: 'rounded-4 border-0 shadow-lg'
+                            }
+                        });
+                    }
+                });
+            });
+            // Lihat Detail Karyawan
+            $(document).on('click', '.view-detail', function (e) {
+                e.preventDefault();
+                $('#detailName').text($(this).data('name'));
+                $('#detailUsername').text($(this).data('username'));
+                $('#detailEmail').text($(this).data('email'));
+                $('#detailPhone').text($(this).data('phone'));
+                $('#detailRole').text($(this).data('role'));
+                $('#detailKategori').text($(this).data('kategori'));
+                $('#detailStatus').text($(this).data('status'));
+                $('#detailNickname').text($(this).data('nickname'));
+                $('#detailGender').text($(this).data('gender'));
+                $('#detailBirthPlace').text($(this).data('birthplace'));
+                $('#detailBirthDate').text($(this).data('birthdate'));
+                $('#detailEducation').text($(this).data('education'));
+                $('#detailEmergency').text($(this).data('emergency'));
+                $('#detailPosition').text($(this).data('position'));
+                $('#detailDivision').text($(this).data('division'));
+                $('#detailJoinDate').text($(this).data('joindate'));
+                $('#detailEmpStatus').text($(this).data('employmentstatus'));
+                $('#detailBankName').text($(this).data('bankname'));
+                $('#detailBankNumber').text($(this).data('banknumber'));
+
+                var modal = new bootstrap.Modal(document.getElementById('detailKaryawanModal'));
+                modal.show();
+            });
+
+            // SweetAlert2 for Delete Confirmation
+            $(document).on('click', '.btn-delete-employee', function (e) {
+                e.preventDefault();
+                const form = $(this).closest('form');
+                const name = $(this).closest('tr').find('h6').text().trim();
+
+                Swal.fire({
+                    title: 'Hapus Karyawan?',
+                    text: `Apakah Anda yakin ingin menghapus data karyawan "${name}"? Tindakan ini tidak dapat dibatalkan.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        popup: 'rounded-4 border-0 shadow-lg'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
                     }
                 });
             });
@@ -383,6 +484,48 @@
                         </div>
                         <button type="submit" class="btn btn-primary w-100 rounded-pill pt-2 pb-2 shadow">Simpan Kehadiran</button>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detail Karyawan -->
+    <div class="modal fade" id="detailKaryawanModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="fw-bold">Detail Profil Karyawan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Nama Lengkap</span> <strong id="detailName"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Username</span> <strong id="detailUsername"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Nama Panggilan</span> <strong id="detailNickname"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Email</span> <strong id="detailEmail"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Nomor Telepon</span> <strong id="detailPhone"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Kontak Darurat</span> <strong id="detailEmergency"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Jenis Kelamin</span> <strong id="detailGender"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Tempat Lahir</span> <strong id="detailBirthPlace"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Tanggal Lahir</span> <strong id="detailBirthDate"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Pendidikan Terakhir</span> <strong id="detailEducation"></strong></li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Role</span> <strong id="detailRole"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Posisi / Jabatan</span> <strong id="detailPosition"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Divisi</span> <strong id="detailDivision"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Status Karyawan</span> <strong id="detailEmpStatus"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Tanggal Bergabung</span> <strong id="detailJoinDate"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Status Akun</span> <strong id="detailStatus"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Nama Bank</span> <strong id="detailBankName"></strong></li>
+                                <li class="list-group-item px-0"><span class="text-muted small d-block">Nomor Rekening</span> <strong id="detailBankNumber"></strong></li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -51,8 +51,13 @@
                                                     <small class="text-muted">#BOOK-{{ $booking->id }}</small>
                                                 </div>
                                                 <h6 class="fw-bold mb-1 text-dark">{{ $booking->treatment->name }}</h6>
-                                                <div class="text-muted small mb-3">
-                                                    <i class="ti ti-calendar me-1"></i>{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('d M Y, H:i') }}
+                                                <div class="small mb-1">
+                                                    <span class="badge bg-light-primary text-primary px-2 py-0.5 extra-small" style="font-size: 0.6rem;"><i class="ti ti-calendar-event me-1"></i>Reservasi:</span>
+                                                    <div class="fw-bold text-dark small mt-0.5">{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('d M Y, H:i') }} WIB</div>
+                                                </div>
+                                                <div class="small mb-3">
+                                                    <span class="badge bg-light-secondary text-secondary px-2 py-0.5 extra-small" style="font-size: 0.6rem;"><i class="ti ti-receipt me-1"></i>Transaksi:</span>
+                                                    <div class="text-muted small mt-0.5">{{ \Carbon\Carbon::parse($booking->created_at)->format('d M Y, H:i') }} WIB</div>
                                                 </div>
                                                 <div class="d-flex align-items-center justify-content-between mt-auto">
                                                     <span class="fw-bold text-primary">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</span>
@@ -101,8 +106,14 @@
                                                     </small>
                                                 </td>
                                                 <td>
-                                                    <div class="small">{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('d M Y') }}</div>
-                                                    <div class="extra-small text-muted">{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('H:i') }}</div>
+                                                    <div class="small" title="Tanggal Reservasi">
+                                                        <span class="badge bg-light-primary text-primary px-2 py-0.5 extra-small mb-1" style="font-size: 0.6rem;"><i class="ti ti-calendar-event me-1"></i>Reservasi:</span>
+                                                        <div class="fw-bold text-dark small">{{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('d M Y') }} - {{ \Carbon\Carbon::parse($booking->reservation_datetime)->format('H:i') }} WIB</div>
+                                                    </div>
+                                                    <div class="small mt-2" title="Tanggal Transaksi">
+                                                        <span class="badge bg-light-secondary text-secondary px-2 py-0.5 extra-small mb-1" style="font-size: 0.6rem;"><i class="ti ti-receipt me-1"></i>Transaksi:</span>
+                                                        <div class="text-muted small">{{ \Carbon\Carbon::parse($booking->created_at)->format('d M Y') }} - {{ \Carbon\Carbon::parse($booking->created_at)->format('H:i') }} WIB</div>
+                                                    </div>
                                                 </td>
                                                 <td class="fw-bold text-dark">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</td>
                                                 <td>
@@ -185,8 +196,14 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                <div>{{ $resDateTime->format('d M Y') }}</div>
-                                                <small class="text-muted text-uppercase">{{ $resDateTime->format('H:i') }}</small>
+                                                <div class="small" title="Tanggal Reservasi">
+                                                    <span class="badge bg-light-primary text-primary px-2 py-1 extra-small mb-1" style="font-size: 0.65rem;"><i class="ti ti-calendar-event me-1"></i>Reservasi:</span>
+                                                    <div class="fw-bold text-dark">{{ $resDateTime->format('d M Y') }} - {{ $resDateTime->format('H:i') }} WIB</div>
+                                                </div>
+                                                <div class="small mt-2" title="Tanggal Transaksi">
+                                                    <span class="badge bg-light-secondary text-secondary px-2 py-1 extra-small mb-1" style="font-size: 0.65rem;"><i class="ti ti-receipt me-1"></i>Transaksi:</span>
+                                                    <div class="text-muted">{{ $createdAt->format('d M Y') }} - {{ $createdAt->format('H:i') }} WIB</div>
+                                                </div>
                                             </td>
                                             <td class="fw-bold">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</td>
                                             <td>
@@ -265,6 +282,9 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- Midtrans Snap JS -->
+<script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js"
+    data-client-key="{{ config('services.midtrans.client_key') }}"></script>
 
 <script>
     // Theme Config (Safe Check)
@@ -324,12 +344,12 @@
                     <span class="fw-bold text-dark text-end text-break" style="max-width: 70%;">${booking.customer_email || '-'}</span>
                 </div>
                 <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <span class="text-muted small">Jadwal</span>
-                    <span class="fw-bold text-dark text-end">${formattedDate}</span>
+                    <span class="text-muted small">Jadwal Reservasi</span>
+                    <span class="fw-bold text-dark text-end">${formattedDate} - ${formattedTime} WIB</span>
                 </div>
                 <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <span class="text-muted small">Waktu</span>
-                    <span class="fw-bold text-dark text-end">${formattedTime} WIB</span>
+                    <span class="text-muted small">Tanggal Transaksi</span>
+                    <span class="fw-bold text-muted text-end">${new Date(booking.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })} - ${new Date(booking.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).replace(/\./g, ':')} WIB</span>
                 </div>
                 <div class="list-group-item d-flex justify-content-between align-items-center px-0">
                     <span class="text-muted small">Stylist</span>
@@ -344,6 +364,25 @@
                     <span class="fw-bold text-dark">${booking.payment_status === 'paid' ? '<span class="badge bg-success">Lunas (Berhasil)</span>' : '<span class="badge bg-warning text-dark">Belum Dibayar</span>'}</span>
                 </div>
             </div>
+            
+            ${(booking.payment_status === 'unpaid' && (booking.status === 'pending' || booking.status === 'confirmed')) ? `
+                <div class="p-3 bg-light-warning rounded-3 border border-warning-subtle mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="ti ti-wallet text-warning h4 mb-0 me-2"></i>
+                        <span class="fw-bold text-dark small">Pilih Metode Pembayaran & Selesaikan</span>
+                    </div>
+                    <div class="mb-3">
+                        <select id="change_payment_method_${booking.id}" class="form-select form-select-sm">
+                            <option value="Transfer" ${booking.payment_method === 'Transfer' ? 'selected' : ''}>Transfer Bank (Midtrans)</option>
+                            <option value="QRIS" ${booking.payment_method === 'QRIS' ? 'selected' : ''}>QRIS / E-Wallet (Midtrans)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-sm btn-success w-100 py-2 fw-bold" id="btnPayNow_${booking.id}" onclick="payUnpaidBooking(${booking.id})">
+                        <i class="ti ti-credit-card me-1"></i>Bayar Sekarang
+                    </button>
+                </div>
+            ` : ''}
+
             <div class="alert alert-light-info border-0 d-flex align-items-center mb-0">
                 <i class="ti ti-info-circle me-2 h4 mb-0"></i>
                 <small>Mohon datang 10 menit sebelum jadwal untuk verifikasi.</small>
@@ -353,6 +392,72 @@
         $('#detailContent').html(html);
         $('#modalDetail').modal('show');
     }
+
+    window.payUnpaidBooking = function (id) {
+        const btn = $(`#btnPayNow_${id}`);
+        const selectEl = $(`#change_payment_method_${id}`);
+        const method = selectEl.val();
+
+        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Memproses...');
+
+        $.ajax({
+            url: `/booking/${id}/update-payment-method`,
+            type: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                payment_method: method
+            },
+            success: function (response) {
+                if (response.snap_token) {
+                    $('#modalDetail').modal('hide');
+                    
+                    snap.pay(response.snap_token, {
+                        onSuccess: function (result) {
+                            const form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = `/booking/pay/${id}`;
+                            const csrf = document.createElement('input');
+                            csrf.type = 'hidden';
+                            csrf.name = '_token';
+                            csrf.value = '{{ csrf_token() }}';
+                            form.appendChild(csrf);
+                            document.body.appendChild(form);
+                            form.submit();
+                        },
+                        onPending: function (result) {
+                            Swal.fire('Info', 'Pembayaran sedang menunggu penyelesaian.', 'info').then(() => {
+                                window.location.reload();
+                            });
+                        },
+                        onError: function (result) {
+                            Swal.fire('Error', 'Mohon maaf, transaksi gagal diproses.', 'error').then(() => {
+                                window.location.reload();
+                            });
+                        },
+                        onClose: function () {
+                            Swal.fire({
+                                title: 'Pembayaran Belum Selesai',
+                                text: 'Anda dapat melanjutkan pembayaran kapan saja dari halaman riwayat ini.',
+                                icon: 'warning',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#EA8290'
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        }
+                    });
+                } else {
+                    Swal.fire('Error', 'Gagal memproses pembayaran.', 'error').then(() => {
+                        window.location.reload();
+                    });
+                }
+            },
+            error: function (xhr) {
+                btn.prop('disabled', false).html('<i class="ti ti-credit-card me-1"></i>Bayar Sekarang');
+                Swal.fire('Error', xhr.responseJSON?.message || 'Terjadi kesalahan.', 'error');
+            }
+        });
+    };
 
     $(document).ready(function() {
         // Handle Tombol Batal di Modal Detail

@@ -52,12 +52,14 @@ class AuthController extends Controller
 {
     $request->validate([
         'name' => 'required|string|max:255',
-        'email' => 'required|string|email|unique:users',
-        'phone' => 'required|string|max:15',
-        'username' => 'required|string|unique:users',
+        'email' => 'required|string|email|unique:users,email',
+        'phone' => 'required|string|max:15|unique:users,phone',
+        'username' => 'required|string|unique:users,username',
         'password' => 'required|string|min:6|confirmed',
-        'email_verified_at' => now(),
-    'remember_token' => Str::random(60),
+    ], [
+        'email.unique' => 'email telah digunakan',
+        'phone.unique' => 'nomor telepon telah digunakan',
+        'username.unique' => 'username telah digunakan',
     ]);
 
     $user = User::create([

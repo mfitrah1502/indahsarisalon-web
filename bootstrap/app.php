@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
+            'role' => \App\Http\Middleware\RoleMiddleware::class,
             'session.timeout' => \App\Http\Middleware\SessionTimeout::class,
             'prevent-back' => \App\Http\Middleware\PreventBackHistory::class,
         ]);

@@ -20,7 +20,54 @@ class PelangganController extends Controller
             });
         }
 
-        $pelanggans = $query->get();
+        $registeredPelanggans = $query->get();
+
+        // Get guest customers from bookings (including those mistakenly assigned to staff IDs)
+        $guestBookingsQuery = \App\Models\Booking::selectRaw('MAX(id) as id, customer_name, customer_email, customer_phone, MAX(created_at) as last_transaction_at, SUM(total_price) as total_spending')
+            ->where(function($q) {
+                $q->whereNull('user_id')
+                  ->orWhereHas('user', function($u) {
+                      $u->where('role', '!=', 'pelanggan');
+                  });
+            })
+            ->groupBy('customer_name', 'customer_email', 'customer_phone');
+
+        if($request->has('search') && $request->search != ''){
+            $search = $request->search;
+            $guestBookingsQuery->where(function($q) use ($search){
+                $q->where('customer_name', 'like', "%{$search}%")
+                  ->orWhere('customer_email', 'like', "%{$search}%")
+                  ->orWhere('customer_phone', 'like', "%{$search}%");
+            });
+        }
+
+        $guestBookings = $guestBookingsQuery->get();
+
+        // Filter out guests that actually belong to registered users (matched by email/phone/name)
+        $registeredEmails = User::where('role', 'pelanggan')->whereNotNull('email')->pluck('email')->toArray();
+        $registeredPhones = User::where('role', 'pelanggan')->whereNotNull('phone')->pluck('phone')->toArray();
+        $registeredNames = User::where('role', 'pelanggan')->pluck('name')->toArray();
+
+        $guestPelanggans = $guestBookings->filter(function($booking) use ($registeredEmails, $registeredPhones, $registeredNames) {
+            if ($booking->customer_email && in_array($booking->customer_email, $registeredEmails)) return false;
+            if ($booking->customer_phone && in_array($booking->customer_phone, $registeredPhones)) return false;
+            if ($booking->customer_name && in_array($booking->customer_name, $registeredNames)) return false;
+            return true;
+        })->map(function($booking) {
+            $user = new User();
+            $user->id = 'guest-' . $booking->id;
+            $user->name = $booking->customer_name;
+            $user->username = 'Guest';
+            $user->email = $booking->customer_email ?? '-';
+            $user->phone = $booking->customer_phone ?? '-';
+            $user->role = 'pelanggan';
+            $user->status = 'guest';
+            $user->setAttribute('cached_total_spending', $booking->total_spending);
+            $user->setAttribute('last_transaction_at', $booking->last_transaction_at);
+            return $user;
+        });
+
+        $pelanggans = $registeredPelanggans->concat($guestPelanggans)->sortByDesc('created_at')->values();
 
         return view('pelanggan.index', compact('pelanggans'));
     }
@@ -41,6 +88,9 @@ class PelangganController extends Controller
             'phone'    => 'required|string|max:15',
             'password' => 'required|string|min:6|confirmed',
             'status'   => 'required|in:aktif,tidak',
+            'membership_tier' => 'nullable|string|max:50',
+            'total_spend' => 'nullable|numeric',
+            'last_transaction_at' => 'nullable|date',
         ]);
 
         User::create([
@@ -52,6 +102,9 @@ class PelangganController extends Controller
             'role'     => 'pelanggan', // selalu pelanggan
             'type'     => 'pelanggan',
             'status'   => $request->status,
+            'membership_tier' => $request->membership_tier,
+            'total_spend' => $request->total_spend ?? 0,
+            'last_transaction_at' => $request->last_transaction_at,
         ]);
 
         return redirect()->route('pelanggan.index')->with('success', 'Pelanggan berhasil ditambahkan');
@@ -64,6 +117,9 @@ class PelangganController extends Controller
             'email'    => 'required|email|unique:users,email,' . $pelanggan->id,
             'password' => 'nullable|string|min:6|confirmed',
             'status'   => 'required|in:aktif,tidak',
+            'membership_tier' => 'nullable|string|max:50',
+            'total_spend' => 'nullable|numeric',
+            'last_transaction_at' => 'nullable|date',
         ]);
 
         $pelanggan->name     = $request->name;
@@ -72,6 +128,9 @@ class PelangganController extends Controller
         $pelanggan->phone    = $request->phone;
         $pelanggan->status   = $request->status;
         $pelanggan->type     = 'pelanggan';
+        $pelanggan->membership_tier = $request->membership_tier;
+        $pelanggan->total_spend = $request->total_spend ?? 0;
+        $pelanggan->last_transaction_at = $request->last_transaction_at;
 
         if ($request->password) {
             $pelanggan->password = Hash::make($request->password);
@@ -91,6 +150,9 @@ class PelangganController extends Controller
 
     public function destroy(User $pelanggan)
     {
+        // Unlink bookings to prevent foreign key violation and keep transaction history
+        \App\Models\Booking::where('user_id', $pelanggan->id)->update(['user_id' => null]);
+
         $pelanggan->delete();
 
         return redirect()->route('pelanggan.index')
@@ -117,5 +179,15 @@ class PelangganController extends Controller
         $pelanggans = $query->get();
 
         return view('pelanggan.table', compact('pelanggans'));
+    }
+
+    public function history(User $pelanggan)
+    {
+        $bookings = $pelanggan->getAllBookingsQuery()
+            ->where('status', 'berhasil')
+            ->orderBy('reservation_datetime', 'desc')
+            ->get();
+            
+        return view('pelanggan.history_table', compact('bookings'));
     }
 }

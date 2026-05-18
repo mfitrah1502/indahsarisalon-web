@@ -1,8 +1,3 @@
 <?php
-require __DIR__ . '/vendor/autoload.php';
-$app = require_once __DIR__ . '/bootstrap/app.php';
-$kernel = $app->make(Illuminate\Contracts\Console\Kernel::class);
-$kernel->bootstrap();
-
-header('Content-Type: application/json');
-echo json_encode(\App\Models\Treatment::with('details')->get());
+$b = \App\Models\Booking::whereNull('user_id')->selectRaw('customer_name, customer_email, customer_phone')->groupBy('customer_name', 'customer_email', 'customer_phone')->get();
+echo json_encode($b);

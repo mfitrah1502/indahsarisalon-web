@@ -229,7 +229,9 @@
                                                     data-promo-type="{{ $treatment->promo_type }}"
                                                     data-promo-value="{{ $treatment->promo_value }}"
                                                     data-is-coloring="{{ (stripos($treatment->category->name ?? '', 'Coloring') !== false) ? '1' : '0' }}"
-                                                    data-duration="{{ $d->duration }}" onchange="togglePrimaryDetail(this)">
+                                                    data-duration="{{ $d->duration }}"
+                                                    data-image="{{ $d->image_url ? (strpos($d->image_url, 'http') === 0 ? $d->image_url : env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $d->image_url) : ( $treatment->image ? (strpos($treatment->image, 'http') === 0 ? $treatment->image : env('SUPABASE_URL') . '/storage/v1/object/public/' . (($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET')) . '/' . $treatment->image) : asset('assets/images/no-image.jpg') ) }}"
+                                                    onchange="togglePrimaryDetail(this)">
                                                 <label class="form-check-label p-2 w-100 border rounded cursor-pointer h-100"
                                                     for="detail_{{ $d->id }}">
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
@@ -307,12 +309,7 @@
                             {{-- Will be populated by JS --}}
                         </div>
 
-                        <div class="mb-3">
-                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill" data-bs-toggle="modal"
-                                data-bs-target="#modalAddTreatment">
-                                <i class="ti ti-plus me-1"></i>Tambah Treatment Lainnya
-                            </button>
-                        </div>
+
 
                         <div class="p-3 mb-4 rounded border-start border-primary border-4 bg-light">
                             <div class="d-flex justify-content-between align-items-center">
@@ -366,43 +363,21 @@
                                     $hasStylistPrice = $treatment->details->contains('has_stylist_price', true);
                                 @endphp
 
-                                {{-- Stylist selection will now be inside the treatment list --}}
-                                <div class="col-md-12 mb-4" id="globalStylistSection" style="{{ $hasStylistPrice ? '' : 'display: none;' }}">
-                                    <div class="p-4 bg-white border rounded shadow-sm">
-                                        <div class="d-flex flex-column mb-3">
-                                            <label class="form-label fw-bold mb-2"><i class="ti ti-heart-handshake me-1"></i>Pilih Stylist untuk Semua Layanan</label>
-                                            <p class="small text-muted mb-3">Atur semua layanan ke satu stylist yang sama secara otomatis.</p>
-                                        </div>
-                                        <div class="stylist-grid" id="global_stylist_grid">
-                                            <div class="stylist-card-modern active" data-stylist-id="" onclick="updateGlobalStylist(null, this)">
-                                                <div class="check-mark"><i class="ti ti-check"></i></div>
-                                                <div class="avatar-container d-flex align-items-center justify-content-center bg-light">
-                                                    <i class="ti ti-minus text-muted" style="font-size: 1.5rem;"></i>
-                                                </div>
-                                                <span class="stylist-name">Reset</span>
-                                                <span class="stylist-cat">Default</span>
-                                            </div>
-                                            @foreach($stylists as $stylist)
-                                                <div class="stylist-card-modern stylist-global-item-{{ $stylist->id }}" 
-                                                     data-stylist-id="{{ $stylist->id }}" 
-                                                     data-kategori="{{ strtolower($stylist->kategori) }}"
-                                                     onclick="updateGlobalStylist({{ $stylist->id }}, this)">
-                                                    <div class="check-mark"><i class="ti ti-check"></i></div>
-                                                    <div class="avatar-container">
-                                                        <img src="{{ $stylist->avatar_url }}" alt="{{ $stylist->name }}">
-                                                    </div>
-                                                    <span class="stylist-name">{{ explode(' ', $stylist->name)[0] }}</span>
-                                                    <span class="stylist-cat">{{ $stylist->kategori }}</span>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    </div>
+                                {{-- Hidden placeholder container to prevent JS errors --}}
+                                <div id="globalStylistSection" style="display: none !important;">
+                                    <div id="global_stylist_grid"></div>
                                 </div>
+                                @php
+                                    $now = \Carbon\Carbon::now();
+                                    $cutoff = \Carbon\Carbon::today()->setHour(10)->setMinute(30);
+                                    // Jika sudah lewat jam 10:30, minimal booking adalah besok
+                                    $initialDate = $now->greaterThan($cutoff) ? \Carbon\Carbon::tomorrow()->toDateString() : \Carbon\Carbon::today()->toDateString();
+                                @endphp
                                 <!-- TANGGAL -->
                                 <div class="col-md-3 mb-3">
                                     <label class="form-label">📅 Tanggal</label>
                                     <input type="date" name="reservation_date" id="reservation_date" class="form-control"
-                                        required>
+                                        min="{{ $initialDate }}" value="{{ $initialDate }}" required>
                                 </div>
 
                                 <!-- JAM -->
@@ -411,7 +386,7 @@
                                     <select name="reservation_time" id="reservation_time" class="form-select" required>
                                         <option value="">-- Pilih Jam --</option>
                                     </select>
-                                    <small class="text-muted extra-small">Jam buka: 09:00 - 18:00</small>
+                                    <small class="text-muted extra-small">Batas reservasi: 09:00 - 10:30</small>
                                 </div>
 
                             </div>
@@ -465,9 +440,10 @@
                                     <select name="payment_method" class="form-select" required>
                                         <option value="">-- Pilih Metode --</option>
                                         @if(in_array(strtolower(Auth::user()->role), ['owner', 'admin', 'karyawan']))
-                                            <option value="cash">Cash</option>
+                                            <option value="Tunai">Tunai</option>
                                         @endif
-                                        <option value="transfer">Transfer Bank (Midtrans)</option>
+                                        <option value="Transfer">Transfer Bank (Midtrans)</option>
+                                        <option value="QRIS">QRIS / E-Wallet (Midtrans)</option>
                                     </select>
                                 </div>
 
@@ -526,13 +502,32 @@
                     <div class="row g-4" id="treatmentList">
                         @foreach($allTreatments as $item)
                             @php
-                                if (!$item->image) {
-                                    $imageUrl = asset('assets/images/no-image.jpg');
-                                } elseif (strpos($item->image, 'http') === 0) {
-                                    $imageUrl = $item->image;
-                                } else {
-                                    $bucket = ($item->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
-                                    $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $item->image;
+                                $imageUrl = asset('assets/images/no-image.jpg');
+                                $hasImage = false;
+
+                                // 1. Cek gambar utama treatment
+                                if ($item->image) {
+                                    if (strpos($item->image, 'http') === 0) {
+                                        $imageUrl = $item->image;
+                                        $hasImage = true;
+                                    } else {
+                                        $bucket = ($item->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                                        $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $item->image;
+                                        $hasImage = true;
+                                    }
+                                }
+
+                                // 2. Jika gambar utama kosong, coba cari dari detail/variasi
+                                if (!$hasImage) {
+                                    $firstDetail = $item->details->first();
+                                    if ($firstDetail && $firstDetail->image_url) {
+                                        if (strpos($firstDetail->image_url, 'http') === 0) {
+                                            $imageUrl = $firstDetail->image_url;
+                                        } else {
+                                            $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $firstDetail->image_url;
+                                        }
+                                        $hasImage = true;
+                                    }
                                 }
                             @endphp
                             <div class="col-md-4 col-lg-3 treatment-item-container" data-category="{{ $item->category_id }}"
@@ -607,7 +602,8 @@
                                                             data-promo-type="{{ $item->promo_type }}"
                                                             data-promo-value="{{ $item->promo_value }}"
                                                             data-is-coloring="{{ (stripos($item->category->name ?? '', 'Coloring') !== false) ? '1' : '0' }}"
-                                                            data-duration="{{ $d->duration }}">
+                                                            data-duration="{{ $d->duration }}"
+                                                            data-image="{{ $imageUrl }}">
                                                             Pilih
                                                         </button>
                                                     </div>
@@ -630,7 +626,7 @@
             <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow-lg">
                     <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title text-white fw-bold"><i class="ti ti-users me-2"></i>Daftar Pelanggan Terdaftar</h5>
+                        <h5 class="modal-title text-white fw-bold"><i class="ti ti-users me-2"></i>Daftar Pelanggan</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body p-0">
@@ -654,7 +650,13 @@
                                         <tr class="customer-row" data-search="{{ strtolower($c->name . ' ' . $c->email . ' ' . $c->phone) }}">
                                             <td class="ps-3">
                                                 <div class="fw-bold text-dark">{{ $c->name }}</div>
-                                                <div class="small text-muted">ID: #{{ $c->id }}</div>
+                                                <div class="small text-muted">
+                                                    @if(isset($c->status) && $c->status === 'guest')
+                                                        <span class="badge bg-secondary opacity-50 px-2 rounded-pill">Guest</span>
+                                                    @else
+                                                        ID: #{{ $c->id }}
+                                                    @endif
+                                                </div>
                                             </td>
                                             <td>
                                                 <div class="small"><i class="ti ti-mail me-1"></i>{{ $c->email ?? '-' }}</div>
@@ -732,8 +734,10 @@
         data-client-key="{{ config('services.midtrans.client_key') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
+        window.lastCreatedBookingId = null;
         const allStylists = @json($stylists);
         // Map avatars separately since we have an accessor but Laravel json encode might not include it by default
         allStylists.forEach(s => {
@@ -787,6 +791,13 @@
                 const selectedCustomer = customers.find(c => c.id == id);
                 if (selectedCustomer) {
                     hasColoringLoyalty = selectedCustomer.has_coloring_loyalty;
+                    if (memberBadge) {
+                        if (selectedCustomer.status === 'guest') {
+                            memberBadge.innerHTML = '<span class="badge bg-secondary opacity-50 text-white"><i class="ti ti-user me-1"></i>Guest</span><button type="button" class="btn btn-link btn-sm text-danger p-0 ms-2" onclick="clearSelectedCustomer()">Hapus</button>';
+                        } else {
+                            memberBadge.innerHTML = '<span class="badge bg-soft-success text-success"><i class="ti ti-medal me-1"></i>Pelanggan Terdaftar</span><button type="button" class="btn btn-link btn-sm text-danger p-0 ms-2" onclick="clearSelectedCustomer()">Hapus</button>';
+                        }
+                    }
                     updateVariantLabels(); // Update selection grid labels
                     renderSelectedTreatments(); // Recalculate prices for selected list
                 }
@@ -945,10 +956,10 @@
 
                 timeSelect.innerHTML = '<option value="">-- Pilih Jam --</option>';
 
-                for (let h = 9; h <= 18; h++) {
+                for (let h = 9; h <= 10; h++) {
                     for (let m = 0; m < 60; m += 15) {
-                        // Max jam operasional adalah 18:00
-                        if (h === 18 && m > 0) break;
+                        // Batasi jam booking maksimal jam 10:30 (Permintaan Client)
+                        if (h === 10 && m > 30) break;
 
                         const timeVal = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 
@@ -983,7 +994,44 @@
 
         // MULTIPLE TREATMENTS LOGIC (V3: Choice-based Primary)
         let selectedDetails = [
-            @if($treatment->details->count() === 1)
+            @foreach($preSelectedDetails as $d)
+                {
+                    id: {{ $d->id }},
+                    parentId: {{ $d->treatment_id }},
+                    name: {!! json_encode($d->name) !!},
+                    parentName: {!! json_encode($d->treatment->name) !!},
+                    price: {{ (int) $d->price }},
+                    priceSenior: {{ (int) ($d->price_senior ?: $d->price) }},
+                    priceJunior: {{ (int) ($d->price_junior ?: $d->price) }},
+                    hasStylistPrice: {{ $d->has_stylist_price ? 'true' : 'false' }},
+                    duration: {{ (int) $d->duration }},
+                    isPrimary: {{ $d->treatment_id == $treatment->id ? 'true' : 'false' }},
+                    isPromo: {{ $d->treatment->is_promo ? 'true' : 'false' }},
+                    promoType: {!! json_encode($d->treatment->promo_type) !!},
+                    promoValue: {{ (int) $d->treatment->promo_value }},
+                    isColoring: {{ (stripos($d->treatment->category->name ?? '', 'Coloring') !== false) ? 'true' : 'false' }},
+                    @php
+                        $initImg = asset('assets/images/no-image.jpg');
+                        $hasInitImg = false;
+                        if ($d->treatment->image) {
+                            if (strpos($d->treatment->image, 'http') === 0) { $initImg = $d->treatment->image; $hasInitImg = true; }
+                            else { 
+                                $bucket = ($d->treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                                $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $d->treatment->image; 
+                                $hasInitImg = true;
+                            }
+                        }
+                        if (!$hasInitImg && $d->image_url) {
+                            if (strpos($d->image_url, 'http') === 0) { $initImg = $d->image_url; }
+                            else { $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $d->image_url; }
+                        }
+                    @endphp
+                    image: {!! json_encode($initImg) !!},
+                    stylistId: {{ request()->query('stylist_id') ? (int) request()->query('stylist_id') : 'null' }},
+                    stylistKategori: {!! request()->query('stylist_id') && ($preSelStylist = \App\Models\User::find(request()->query('stylist_id'))) ? json_encode(strtolower($preSelStylist->kategori)) : 'null' !!}
+                },
+            @endforeach
+            @if($preSelectedDetails->isEmpty() && $treatment->details->count() === 1)
                 @foreach($treatment->details as $d)
                     {
                         id: {{ $d->id }},
@@ -999,13 +1047,51 @@
                         isPromo: {{ $treatment->is_promo ? 'true' : 'false' }},
                         promoType: {!! json_encode($treatment->promo_type) !!},
                         promoValue: {{ (int) $treatment->promo_value }},
-                        isColoring: {{ (stripos($treatment->category->name ?? '', 'Coloring') !== false) ? 'true' : 'false' }}
+                        isColoring: {{ (stripos($treatment->category->name ?? '', 'Coloring') !== false) ? 'true' : 'false' }},
+                        @php
+                            $initImg = asset('assets/images/no-image.jpg');
+                            $hasInitImg = false;
+                            if ($treatment->image) {
+                                if (strpos($treatment->image, 'http') === 0) { $initImg = $treatment->image; $hasInitImg = true; }
+                                else { 
+                                    $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                                    $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image; 
+                                    $hasInitImg = true;
+                                }
+                            }
+                            if (!$hasInitImg && $d->image_url) {
+                                if (strpos($d->image_url, 'http') === 0) { $initImg = $d->image_url; }
+                                else { $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $d->image_url; }
+                            }
+                        @endphp
+                        image: {!! json_encode($initImg) !!},
+                        stylistId: {{ request()->query('stylist_id') ? (int) request()->query('stylist_id') : 'null' }},
+                        stylistKategori: {!! request()->query('stylist_id') && ($preSelStylist = \App\Models\User::find(request()->query('stylist_id'))) ? json_encode(strtolower($preSelStylist->kategori)) : 'null' !!}
                     },
                 @endforeach
             @endif
         ];
 
+        // Mark pre-selected items as checked in the variant list
+        document.addEventListener('DOMContentLoaded', function() {
+            selectedDetails.forEach(d => {
+                const checkbox = document.getElementById(`detail_${d.id}`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    // Trigger label update if any
+                    const label = checkbox.nextElementSibling;
+                    if (label && label.tagName === 'LABEL') {
+                        label.classList.add('bg-light-primary', 'border-primary', 'shadow-sm');
+                        const icon = label.querySelector('.check-icon');
+                        if (icon) icon.style.display = 'block';
+                    }
+                }
+            });
+            renderSelectedTreatments();
+        });
+
         window.togglePrimaryDetail = function (checkbox) {
+            resetLastCreatedBookingId();
             const isMulti = {{ $treatment->allow_multi_select ? 'true' : 'false' }};
             const id = parseInt(checkbox.value);
 
@@ -1043,7 +1129,8 @@
                         isPromo: checkbox.getAttribute('data-is-promo') === '1',
                         promoType: checkbox.getAttribute('data-promo-type'),
                         promoValue: parseInt(checkbox.getAttribute('data-promo-value') || 0),
-                        isColoring: checkbox.getAttribute('data-is-coloring') === '1'
+                        isColoring: checkbox.getAttribute('data-is-coloring') === '1',
+                        image: checkbox.getAttribute('data-image')
                     });
                 }
             } else {
@@ -1076,9 +1163,15 @@
                 const itemHtml = `
                         <div class="p-3 mb-3 rounded border-start border-3 border-primary bg-white shadow-sm">
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">${d.parentName}</div>
-                                    <div class="fw-bold text-dark">${d.name} <small class="text-muted fw-normal">(${d.duration} mnt)</small></div>
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3 position-relative" style="width: 60px; height: 60px;">
+                                        <img src="${d.image || '{{ asset('assets/images/no-image.jpg') }}'}" 
+                                             class="rounded shadow-sm w-100 h-100 object-fit-cover border" 
+                                             alt="${d.name}">
+                                    </div>
+                                    <div>
+                                        <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">${d.parentName}</div>
+                                        <div class="fw-bold text-dark">${d.name} <small class="text-muted fw-normal">(${d.duration} mnt)</small></div>
                                     @if($isStaff)
                                         <div class="input-group input-group-sm mt-1" style="max-width: 150px;" onclick="event.stopPropagation()">
                                             <span class="input-group-text bg-light">Rp</span>
@@ -1095,36 +1188,10 @@
                                     @endif
                                 </div>
                                 <div>
-                                    ${d.isPrimary ? '<span class="badge bg-light-primary text-primary rounded-pill">Utama</span>' : `<button type="button" class="btn btn-icon btn-link-danger btn-sm" onclick="removeDetail(${d.id})"><i class="ti ti-trash"></i></button>`}
+                                    <button type="button" class="btn btn-icon btn-link-danger btn-sm" onclick="removeDetail(${d.id})"><i class="ti ti-trash"></i></button>
                                 </div>
                             </div>
-                            ${d.hasStylistPrice ? `
-                            <div class="mt-3">
-                                <label class="extra-small text-muted mb-2"><i class="ti ti-hand-click me-1"></i>Pilih Stylist:</label>
-                                <div class="stylist-grid" data-detail-id="${d.id}">
-                                    ${allStylists.map(s => {
-                                        const isSelected = d.stylistId == s.id;
-                                        return `
-                                            <div class="stylist-card-modern ${isSelected ? 'active' : ''} stylist-item-${s.id}" 
-                                                 data-stylist-id="${s.id}" 
-                                                 data-kategori="${s.kategori ? s.kategori.toLowerCase() : ''}"
-                                                 onclick="updateItemStylistCards(${d.id}, ${s.id}, this)">
-                                                <div class="check-mark"><i class="ti ti-check"></i></div>
-                                                <div class="avatar-container">
-                                                    <img src="${s.avatar_url}" alt="${s.name}">
-                                                </div>
-                                                <span class="stylist-name">${s.name ? s.name.split(' ')[0] : ''}</span>
-                                                <span class="stylist-cat">${s.kategori || ''}</span>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
-                            ` : `
-                            <div class="mt-3">
-                                <div class="extra-small text-muted mt-1"><i class="ti ti-info-circle me-1"></i>Harga tetap untuk layanan ini.</div>
-                            </div>
-                            `}
+                            ${d.hasStylistPrice ? '' : ''}
                         </div>
                     `;
                 container.insertAdjacentHTML('beforeend', itemHtml);
@@ -1135,11 +1202,10 @@
             document.getElementById('totalPriceDisplay2').innerText = formattedTotal;
             document.getElementById('paymentTreatmentInputs').innerHTML = hiddenInputs;
 
-            // Show or hide the global stylist section based on selection
-            const showGlobal = selectedDetails.some(d => d.hasStylistPrice);
+            // The global stylist section is kept hidden as the stylist is pre-selected in Step 1
             const globalSection = document.getElementById('globalStylistSection');
             if (globalSection) {
-                globalSection.style.display = showGlobal ? '' : 'none';
+                globalSection.style.display = 'none';
             }
 
             // Apply busy states if we have them
@@ -1179,53 +1245,50 @@
         };
 
         function applyBusyStylists() {
-            selectedDetails.forEach((d, index) => {
-                const busyIds = busyStylistsMap[index] || [];
-                const container = document.querySelector(`.stylist-grid[data-detail-id="${d.id}"]`);
-                if (!container) return;
+            const globalGrid = document.getElementById('global_stylist_grid');
+            if (!globalGrid) return;
 
-                const cards = container.querySelectorAll('.stylist-card-modern');
-                cards.forEach(card => {
-                    const sid = parseInt(card.getAttribute('data-stylist-id'));
-                    const isOff = offWorkStylists.includes(sid);
-                    const isBusy = busyIds.includes(sid);
-
-                    // Reset special classes first
-                    card.classList.remove('busy', 'disabled');
-                    card.style.display = '';
-
-                    if (isOff) {
-                        card.style.display = 'none'; // Completely hide if off work
-                    } else if (isBusy) {
-                        card.classList.add('busy', 'disabled');
-                    } else {
-                        // Normal state
-                    }
-
-                    // If selected stylist becomes unavailable, reset
-                    if (d.stylistId == sid && (isOff || isBusy)) {
-                        card.classList.remove('active');
-                        d.stylistId = null;
-                        d.stylistKategori = null;
-                        renderSelectedTreatments(); // Refresh to show price reset
-                    }
-                });
+            // Collect all busy IDs across all selected treatments
+            const allBusyIds = new Set();
+            Object.values(busyStylistsMap).forEach(busyIds => {
+                busyIds.forEach(id => allBusyIds.add(id));
             });
 
-            // Also update the global stylist grid
-            const globalGrid = document.getElementById('global_stylist_grid');
-            if (globalGrid) {
-                const globalCards = globalGrid.querySelectorAll('.stylist-card-modern');
-                globalCards.forEach(card => {
-                    const sid = card.getAttribute('data-stylist-id');
-                    if (!sid) return; // Skip reset card
-                    const isOff = offWorkStylists.includes(parseInt(sid));
-                    card.style.display = isOff ? 'none' : '';
-                });
-            }
+            const cards = globalGrid.querySelectorAll('.stylist-card-modern');
+            cards.forEach(card => {
+                const sid = parseInt(card.getAttribute('data-stylist-id'));
+                if (!sid) return; // Skip "Reset" card
+
+                const isOff = offWorkStylists.includes(sid);
+                const isBusy = allBusyIds.has(sid);
+
+                card.classList.remove('busy', 'disabled');
+                card.style.display = isOff ? 'none' : '';
+                
+                if (!isOff && isBusy) {
+                    card.classList.add('busy', 'disabled');
+                }
+
+                // If currently selected stylist becomes unavailable, reset global selection
+                const currentStylistId = selectedDetails.length > 0 ? selectedDetails[0].stylistId : null;
+                if (currentStylistId == sid && (isOff || isBusy)) {
+                    const resetCard = globalGrid.querySelector('[data-stylist-id=""]');
+                    if (resetCard) {
+                        // Manually trigger reset state
+                        globalGrid.querySelectorAll('.stylist-card-modern').forEach(c => c.classList.remove('active'));
+                        resetCard.classList.add('active');
+                        selectedDetails.forEach(d => {
+                            d.stylistId = null;
+                            d.stylistKategori = null;
+                        });
+                        renderSelectedTreatments();
+                    }
+                }
+            });
         }
 
         window.updateItemStylistCards = function (detailId, stylistId, element) {
+            resetLastCreatedBookingId();
             const item = selectedDetails.find(d => d.id === detailId);
             if (!item) return;
 
@@ -1292,7 +1355,12 @@
             }
         };
 
+        function resetLastCreatedBookingId() {
+            window.lastCreatedBookingId = null;
+        }
+
         window.updateGlobalStylist = function (stylistId, element) {
+            resetLastCreatedBookingId();
             const kat = stylistId ? element.getAttribute('data-kategori') : null;
 
             // UI Update for Global
@@ -1300,11 +1368,8 @@
             element.classList.add('active');
 
             selectedDetails.forEach(d => {
-                // We only apply this to details that have stylist selection enabled
-                if (d.hasStylistPrice) {
-                    d.stylistId = stylistId;
-                    d.stylistKategori = kat;
-                }
+                d.stylistId = stylistId;
+                d.stylistKategori = kat;
             });
             renderSelectedTreatments();
         };
@@ -1315,11 +1380,31 @@
         }
 
         // Trigger availability check when date or time changes
-        document.getElementById('reservation_date').addEventListener('change', checkStylistAvailability);
-        document.getElementById('reservation_time').addEventListener('change', checkStylistAvailability);
+        document.getElementById('reservation_date').addEventListener('change', function() {
+            resetLastCreatedBookingId();
+            checkStylistAvailability();
+        });
+        document.getElementById('reservation_time').addEventListener('change', function() {
+            resetLastCreatedBookingId();
+            checkStylistAvailability();
+        });
 
         window.removeDetail = function (id) {
+            resetLastCreatedBookingId();
             selectedDetails = selectedDetails.filter(d => d.id !== id);
+            
+            // Also uncheck the checkbox if it exists in the UI (catalog)
+            const checkbox = document.getElementById(`detail_${id}`);
+            if (checkbox) {
+                checkbox.checked = false;
+                const label = checkbox.nextElementSibling;
+                if (label) {
+                    label.classList.remove('bg-white', 'border-primary', 'shadow-sm', 'bg-light-primary');
+                    const icon = label.querySelector('.check-icon');
+                    if (icon) icon.style.display = 'none';
+                }
+            }
+            
             renderSelectedTreatments();
             checkStylistAvailability();
         };
@@ -1327,6 +1412,7 @@
         // Modal Add Detail logic
         document.querySelectorAll('.add-detail-btn').forEach(btn => {
             btn.addEventListener('click', function () {
+                resetLastCreatedBookingId();
                 const id = parseInt(this.getAttribute('data-id'));
                 const parentId = parseInt(this.getAttribute('data-parent-id'));
                 const parentName = this.getAttribute('data-parent-name');
@@ -1336,10 +1422,15 @@
                     return;
                 }
 
-                // New logic: Check if another variant of the same treatment is already added
-                if (selectedDetails.some(d => d.parentId === parentId)) {
-                    alert(`Layanan dari kategori "${parentName}" sudah ditambahkan. \n\nMohon maaf, Anda hanya dapat memilih satu jenis layanan untuk setiap kategori treatment yang sama demi keamanan perawatan.`);
-                    return;
+                // If another variant of the same treatment is already added, ask to replace it
+                const existingIndex = selectedDetails.findIndex(d => d.parentId === parentId);
+                if (existingIndex !== -1) {
+                    if (confirm(`Kategori "${parentName}" sudah ada di daftar. Ganti dengan varian ini?`)) {
+                        // Remove the old one
+                        selectedDetails.splice(existingIndex, 1);
+                    } else {
+                        return;
+                    }
                 }
 
                 selectedDetails.push({
@@ -1356,7 +1447,10 @@
                     isPromo: this.getAttribute('data-is-promo') === '1',
                     promoType: this.getAttribute('data-promo-type'),
                     promoValue: parseInt(this.getAttribute('data-promo-value') || 0),
-                    isColoring: this.getAttribute('data-is-coloring') === '1'
+                    isColoring: this.getAttribute('data-is-coloring') === '1',
+                    image: this.getAttribute('data-image'),
+                    stylistId: selectedDetails.length > 0 ? selectedDetails[0].stylistId : null,
+                    stylistKategori: selectedDetails.length > 0 ? selectedDetails[0].stylistKategori : null
                 });
 
                 renderSelectedTreatments();
@@ -1451,14 +1545,6 @@
                     const currentPrice = detail.customPrice !== undefined ? detail.customPrice : basePrice;
 
                     let sNameText = '';
-                    if (detail.hasStylistPrice) {
-                        let sName = 'Belum dipilih';
-                        if (detail.stylistId) {
-                            const foundStylist = allStylists.find(s => s.id == detail.stylistId);
-                            if (foundStylist) sName = foundStylist.name;
-                        }
-                        sNameText = `<div class="extra-small text-muted">Stylist: ${sName}</div>`;
-                    }
 
                     let discountBadge = '';
                     if (hasColoringLoyalty && detail.isColoring) {
@@ -1481,7 +1567,21 @@
                 summaryHtml += '</div>';
                 document.getElementById('summaryTreatments').innerHTML = summaryHtml;
 
-                document.getElementById('summaryStylist').innerText = '(Per Layanan)';
+                // Update global summary stylist
+                let globalStylistName = 'Default';
+                if (selectedDetails.length > 0 && selectedDetails[0].stylistId) {
+                    const found = allStylists.find(s => s.id == selectedDetails[0].stylistId);
+                    if (found) {
+                        globalStylistName = found.name;
+                    }
+                } else {
+                    const activeGlobalCard = document.querySelector('#global_stylist_grid .stylist-card-modern.active');
+                    if (activeGlobalCard) {
+                        const nameText = activeGlobalCard.querySelector('.stylist-name').innerText;
+                        globalStylistName = (nameText === 'Reset' ? 'Default' : nameText);
+                    }
+                }
+                document.getElementById('summaryStylist').innerText = globalStylistName;
                 document.getElementById('summaryDatetime').innerText = dateInput.value + ' ' + timeInput.value;
 
                 const customName = document.getElementById('customer_name_input');
@@ -1520,7 +1620,7 @@
             const method = this.payment_method.value;
             if (!method) { alert('Pilih metode pembayaran.'); return; }
 
-            document.getElementById('confirmPaymentMethod').innerText = (method === 'cash' ? 'Bayar Tunai (Cash)' : 'Transfer Bank (Midtrans)');
+            document.getElementById('confirmPaymentMethod').innerText = (method === 'Tunai' ? 'Bayar Tunai' : (method === 'QRIS' ? 'QRIS / E-Wallet' : 'Transfer Bank (Midtrans)'));
             document.getElementById('confirmTotal').innerText = document.getElementById('totalPriceDisplay1').innerText;
 
             modalConfirm.show();
@@ -1537,13 +1637,19 @@
 
             submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...');
 
+            const bookingId = window.lastCreatedBookingId;
+            const url = bookingId ? `/booking/${bookingId}/update-payment-method` : form.attr('action');
+
             $.ajax({
-                url: form.attr('action'),
+                url: url,
                 method: 'POST',
                 data: form.serialize(),
                 success: function (response) {
-                    if (response.payment_method === 'transfer' && response.snap_token) {
-                        handleMidtrans(response.snap_token, response.booking_id);
+                    if (response.booking_id) {
+                        window.lastCreatedBookingId = response.booking_id;
+                    }
+                    if ((response.payment_method === 'Transfer' || response.payment_method === 'QRIS' || response.payment_method === 'transfer') && response.snap_token) {
+                        handleMidtrans(response.snap_token, response.booking_id || bookingId);
                     } else {
                         showSuccessFinal(response.payment_method);
                     }
@@ -1580,7 +1686,27 @@
                     $('#modalProses').modal('show');
                 },
                 onClose: function () {
-                    showSuccessFinal('transfer'); // Menampilkan pesan 'Booking Menunggu Pembayaran'
+                    Swal.fire({
+                        title: 'Pembayaran Belum Selesai ⏳',
+                        text: 'Apakah Anda ingin mencoba lagi/mengganti metode pembayaran, atau bayar nanti melalui Riwayat Pemesanan?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: '🔄 Coba Lagi / Ganti Metode',
+                        cancelButtonText: '📅 Bayar Nanti (Ke Riwayat)',
+                        confirmButtonColor: '#EA8290',
+                        cancelButtonColor: '#6c757d',
+                        allowOutsideClick: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // User stays on page to change method or try again
+                            const form = $(finalForm);
+                            const submitBtn = form.find('button[type="submit"]');
+                            submitBtn.prop('disabled', false).text('✅ Bayar & Konfirmasi');
+                        } else {
+                            // Redirect to history
+                            window.location.href = "{{ route('booking.history') }}";
+                        }
+                    });
                 }
             });
         }
@@ -1588,13 +1714,13 @@
         function showSuccessFinal(method) {
             const isStaff = {{ ($isStaff || strtolower(Auth::user()->role) === 'karyawan') ? 'true' : 'false' }};
 
-            if (method === 'cash') {
+            if (method === 'Tunai') {
                 if (isStaff) {
                     $('#modalStatusTitle').text('Pembayaran Berhasil! ✅');
                     $('#modalStatusDesc').text('Booking telah berhasil dicatat dan status pembayaran ditandai sebagai LUNAS.');
                 } else {
                     $('#modalStatusTitle').text('Booking Berhasil! 📅');
-                    $('#modalStatusDesc').text('Booking Anda telah masuk ke sistem. Silakan lakukan pembayaran di lokasi (Cash).');
+                    $('#modalStatusDesc').text('Booking Anda telah masuk ke sistem. Silakan lakukan pembayaran di lokasi (Tunai).');
                 }
             } else {
                 $('#modalStatusTitle').text('Booking Menunggu Pembayaran ⏳');
@@ -1615,13 +1741,13 @@
             $('#modalStatusAction').html(`
                     <div class="d-grid gap-2">
                         <button class="btn btn-outline-secondary" onclick="window.location.href='{{ route('booking.history') }}'">Nanti Saja</button>
-                        <button class="btn btn-success" onclick="switchPaymentToCash(${bookingId})">Ganti ke Bayar Tunai (Cash)</button>
+                        <button class="btn btn-success" onclick="switchPaymentToTunai(${bookingId})">Ganti ke Bayar Tunai</button>
                     </div>
                 `);
             $('#modalProses').modal('show');
         }
 
-        window.switchPaymentToCash = function (id) {
+        window.switchPaymentToTunai = function (id) {
             const btn = event.target;
             $(btn).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Memproses...');
 
@@ -1630,14 +1756,14 @@
                 method: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
-                    payment_method: 'cash'
+                    payment_method: 'tunai'
                 },
                 success: function (response) {
-                    showSuccessFinal('cash');
+                    showSuccessFinal('tunai');
                 },
                 error: function (xhr) {
                     alert('Gagal mengubah metode: ' + (xhr.responseJSON?.message || 'Error'));
-                    $(btn).prop('disabled', false).text('Ganti ke Bayar Tunai (Cash)');
+                    $(btn).prop('disabled', false).text('Ganti ke Bayar Tunai');
                 }
             });
         };

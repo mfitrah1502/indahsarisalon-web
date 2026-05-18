@@ -21,6 +21,7 @@ class Treatment extends Model
         'is_active',
         'promo_start_date',
         'promo_end_date',
+        'target_audience',
     ];
     
     protected $casts = [
@@ -63,10 +64,18 @@ class Treatment extends Model
     {
         $images = [];
 
-        // Collect from details
-        foreach ($this->details as $detail) {
-            if ($detail->image_url && !in_array($detail->image_url, $images)) {
-                $images[] = $detail->image_url;
+        // Use direct query to avoid loading models and causing infinite recursion
+        // when TreatmentDetails are serialized and try to access parent Treatment
+        $detailImages = \Illuminate\Support\Facades\DB::table('treatment_details')
+            ->where('treatment_id', $this->id)
+            ->whereNotNull('image_url')
+            ->where('image_url', '!=', '')
+            ->pluck('image_url')
+            ->toArray();
+
+        foreach ($detailImages as $url) {
+            if (!in_array($url, $images)) {
+                $images[] = $url;
             }
         }
 
@@ -88,4 +97,39 @@ class Treatment extends Model
         return $this->belongsTo(Category::class, 'category_id', 'id');
     }
 
+    /**
+     * Check if the promo matches the given user based on target audience
+     */
+    public function matchesUser($user = null)
+    {
+        $audience = strtolower($this->target_audience ?: 'general');
+        
+        if (in_array($audience, ['general', 'semua (general)', 'semua'])) {
+            return true;
+        }
+        
+        $currentUser = $user ?? auth()->user();
+        if (!$currentUser) {
+            return false;
+        }
+        
+        if (in_array($audience, ['komunitas (grup awal)', 'komunitas'])) {
+            return true;
+        }
+        
+        $userTier = strtolower($currentUser->tier); // 'regular', 'silver', 'colour circle', 'gold', 'platinum'
+        
+        $targetTier = 'regular';
+        if (strpos($audience, 'silver') !== false) {
+            $targetTier = 'silver';
+        } elseif (strpos($audience, 'colour circle') !== false) {
+            $targetTier = 'colour circle';
+        } elseif (strpos($audience, 'gold') !== false) {
+            $targetTier = 'gold';
+        } elseif (strpos($audience, 'platinum') !== false) {
+            $targetTier = 'platinum';
+        }
+        
+        return $userTier === $targetTier;
+    }
 }

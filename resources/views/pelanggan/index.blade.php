@@ -96,7 +96,7 @@
                                 <tr class="bg-transparent shadow-none">
                                     <th class="text-muted small fw-bold px-3 py-2">PELANGGAN</th>
                                     <th class="text-muted small fw-bold py-2">KONTAK</th>
-                                    <th class="text-muted small fw-bold py-2">TIER / LOYALTY</th>
+                                    <th class="text-muted small fw-bold py-2">LIFETIME SPEND</th>
                                     <th class="text-muted small fw-bold py-2">STATUS</th>
                                     <th class="text-muted small fw-bold py-2 text-end px-3">AKSI</th>
                                 </tr>
@@ -139,26 +139,51 @@
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center p-3">
                             <span class="text-muted small"><i class="ti ti-crown me-2"></i>Tier Member</span>
-                            <span id="popupTier" class="badge rounded-pill px-3"></span>
+                            <div>
+                                <span id="popupTier" class="badge rounded-pill px-3"></span>
+                                <span id="popupTierCC" class="badge rounded-pill ms-1" style="display: none; border: 1px solid #e83e8c; color: #e83e8c; background: transparent; padding: 0.15rem 0.4rem; font-size: 0.65rem;">Colour Circle</span>
+                            </div>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center p-3">
                             <span class="text-muted small"><i class="ti ti-receipt-2 me-2"></i>Total Belanja</span>
                             <span id="popupTotalSpending" class="fw-bold text-dark"></span>
                         </div>
                         <div class="list-group-item d-flex justify-content-between align-items-center p-3">
+                            <span class="text-muted small"><i class="ti ti-calendar me-2"></i>Transaksi Terakhir</span>
+                            <span id="popupLastTrx" class="fw-medium"></span>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3">
                             <span class="text-muted small"><i class="ti ti-activity me-2"></i>Status</span>
                             <span id="popupStatus" class="badge rounded-pill px-3"></span>
                         </div>
                     </div>
+
+                    <!-- Riwayat Booking Section -->
+                    <div class="mt-4">
+                        <h6 class="fw-bold mb-3"><i class="ti ti-history me-2 text-primary"></i>Riwayat Transaksi</h6>
+                        <div id="popupHistoryContainer" class="border rounded-3 p-3 bg-light">
+                            <div class="text-center py-3">
+                                <div class="spinner-border text-primary spinner-border-sm" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span class="ms-2 small text-muted">Memuat riwayat...</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-footer border-0 p-3">
-                    <button type="button" class="btn btn-secondary rounded-pill px-4 w-100" data-bs-dismiss="modal">Tutup</button>
+                <div class="modal-footer border-0 p-3 d-flex gap-2">
+                    <a href="#" id="popupWaInvite" target="_blank" class="btn btn-success rounded-pill px-4 flex-grow-1" style="display: none;">
+                        <i class="ti ti-brand-whatsapp me-2"></i>Undang Grup WA
+                    </a>
+                    <button type="button" class="btn btn-secondary rounded-pill px-4 flex-grow-1" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
     </div>
 
 @push('scripts')
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // AJAX filter/search
         function applyFilters() {
@@ -187,13 +212,30 @@
             $('#popupUsername').text('@' + btn.data('username'));
             $('#popupEmail').text(btn.data('email')); 
             $('#popupPhone').text(btn.data('phone') || '-');
-            $('#popupTotalSpending').text('Rp ' + btn.data('spending').toLocaleString('id-ID'));
+            $('#popupTotalSpending').text('Rp ' + parseInt(btn.data('spending') || 0).toLocaleString('id-ID'));
+            $('#popupLastTrx').text(btn.data('lasttrx') || '-');
             
             let tier = btn.data('tier');
             let tierBadge = $('#popupTier');
-            tierBadge.text(tier);
+            tierBadge.text(tier || '-');
             let tierClass = tier === 'Platinum' ? 'bg-info text-white' : (tier === 'Gold' ? 'bg-warning text-dark' : (tier === 'Silver' ? 'bg-secondary text-white' : 'bg-light text-muted'));
             tierBadge.removeClass().addClass('badge rounded-pill px-3 ' + tierClass);
+            
+            let hasCC = btn.attr('data-has-cc');
+            if (hasCC === 'true' || hasCC === true || btn.data('has-cc') === true) {
+                $('#popupTierCC').css('display', 'inline-block');
+            } else {
+                $('#popupTierCC').css('display', 'none');
+            }
+
+            let waBtn = $('#popupWaInvite');
+            if (tier === 'Platinum' || tier === 'Gold') {
+                waBtn.attr('href', 'https://chat.whatsapp.com/Kv5F6HrNlugBpc5Py0kCGH?mode=gi_t').show();
+            } else if (tier === 'Silver') {
+                waBtn.attr('href', 'https://chat.whatsapp.com/Jifm43U6J4d9ltRPak0wVd?mode=gi_t').show();
+            } else {
+                waBtn.hide();
+            }
 
             let status = btn.data('status');
             let statusBadge = $('#popupStatus');
@@ -202,6 +244,53 @@
 
             var modal = new bootstrap.Modal(document.getElementById('customerDetailModal'));
             modal.show();
+
+            // Fetch History
+            let id = btn.data('id');
+            $('#popupHistoryContainer').html(`
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary spinner-border-sm" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <span class="ms-2 small text-muted">Memuat riwayat...</span>
+                </div>
+            `);
+            
+            $.ajax({
+                url: "/pelanggan/" + id + "/history",
+                type: "GET",
+                success: function (response) {
+                    $('#popupHistoryContainer').html(response).removeClass('p-3 bg-light');
+                },
+                error: function() {
+                    $('#popupHistoryContainer').html('<div class="text-center py-3 text-danger small">Gagal memuat riwayat.</div>');
+                }
+            });
+        });
+
+        // SweetAlert2 for Delete Confirmation
+        $(document).on('click', '.btn-delete-customer', function (e) {
+            e.preventDefault();
+            const form = $(this).closest('form');
+            const name = $(this).closest('tr').find('h6').text().trim();
+
+            Swal.fire({
+                title: 'Hapus Pelanggan?',
+                text: `Apakah Anda yakin ingin menghapus data pelanggan "${name}"? Tindakan ini tidak dapat dibatalkan.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    popup: 'rounded-4 border-0 shadow-lg'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
         });
     </script>
 @endpush

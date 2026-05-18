@@ -27,7 +27,13 @@ class PageController extends Controller
           ->where(function($q) use ($today) {
               $q->whereNull('promo_end_date')->orWhere('promo_end_date', '>=', $today);
           })
-          ->with(['details', 'category'])->get();
+          ->with(['details.treatment.category'])->get();
+        
+        if ($user && $user->role === 'pelanggan') {
+            $promoTreatments = $promoTreatments->filter(function($t) use ($user) {
+                return $t->matchesUser($user);
+            });
+        }
         
         if (in_array(strtolower($user->role), ['admin', 'karyawan'])) {
             $today = now()->format('Y-m-d');
@@ -54,9 +60,36 @@ class PageController extends Controller
                                             ->where('status', '!=', 'dibatalkan')
                                             ->sum('total_price');
             $grandTotalPengeluaran = Expense::sum('amount');
+
+            // Hitung pelanggan terdaftar
+            $registeredCount = \App\Models\User::where('role', 'pelanggan')->count();
+
+            // Hitung pelanggan guest/offline unik dari bookings (sama seperti di PelangganController)
+            $guestBookings = Booking::select('customer_name', 'customer_email', 'customer_phone')
+                ->where(function($q) {
+                    $q->whereNull('user_id')
+                      ->orWhereHas('user', function($u) {
+                          $u->where('role', '!=', 'pelanggan');
+                      });
+                })
+                ->groupBy('customer_name', 'customer_email', 'customer_phone')
+                ->get();
+
+            $registeredEmails = \App\Models\User::where('role', 'pelanggan')->whereNotNull('email')->pluck('email')->toArray();
+            $registeredPhones = \App\Models\User::where('role', 'pelanggan')->whereNotNull('phone')->pluck('phone')->toArray();
+            $registeredNames = \App\Models\User::where('role', 'pelanggan')->pluck('name')->toArray();
+
+            $guestCount = $guestBookings->filter(function($booking) use ($registeredEmails, $registeredPhones, $registeredNames) {
+                if ($booking->customer_email && in_array($booking->customer_email, $registeredEmails)) return false;
+                if ($booking->customer_phone && in_array($booking->customer_phone, $registeredPhones)) return false;
+                if ($booking->customer_name && in_array($booking->customer_name, $registeredNames)) return false;
+                return true;
+            })->count();
+
+            $totalPelangganCombined = $registeredCount + $guestCount;
             
             $stats = [
-                'total_pelanggan' => \App\Models\User::where('role', 'pelanggan')->count(),
+                'total_pelanggan' => $totalPelangganCombined,
                 'total_pemasukan' => $grandTotalPemasukan,
                 'total_pengeluaran' => $grandTotalPengeluaran,
                 'profit' => $grandTotalPemasukan - $grandTotalPengeluaran,
@@ -140,8 +173,16 @@ class PageController extends Controller
                                 ->first();
 
         $categories = \App\Models\Category::where('name', '!=', 'Promo')->with(['treatments' => function($q) {
-            $q->where('is_active', true)->with('details');
-        }])->get();
+            $q->where('is_active', true);
+        }, 'treatments.details'])->get();
+
+        if ($user && $user->role === 'pelanggan') {
+            foreach ($categories as $category) {
+                $category->setRelation('treatments', $category->treatments->filter(function($t) use ($user) {
+                    return $t->matchesUser($user);
+                }));
+            }
+        }
 
         return view('dashboard.homepage-user', compact('latestBooking', 'categories', 'promoTreatments'));
     }

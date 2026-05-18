@@ -52,6 +52,13 @@ class BookingController extends Controller
             ->orderBy('treatments.name', 'asc')
             ->get();
 
+        $user = Auth::user();
+        if (!$user || $user->role === 'pelanggan') {
+            $treatments = $treatments->filter(function($t) use ($user) {
+                return $t->matchesUser($user);
+            });
+        }
+
         Log::info('Treatments Found: ' . $treatments->count());
 
         // Cek jam operasional (09:00 - 18:00)
@@ -59,6 +66,11 @@ class BookingController extends Controller
         $start = Carbon::createFromTime(9, 0, 0);
         $end = Carbon::createFromTime(18, 0, 0);
         $isOpen = $now->between($start, $end);
+
+        $stylists = User::whereIn('role', ['admin', 'karyawan'])
+            ->whereNotNull('position')
+            ->where('position', '<>', '')
+            ->get();
 
         if ($request->ajax() || $request->has('is_ajax') || $request->expectsJson() || $request->is('api/*')) {
             if ($request->expectsJson() || $request->is('api/*')) {
@@ -72,33 +84,91 @@ class BookingController extends Controller
             return view('booking.partials._treatment_list', compact('treatments'));
         }
 
-        return view('booking.index', compact('treatments', 'categories', 'isOpen'));
+        return view('booking.index', compact('treatments', 'categories', 'isOpen', 'stylists'));
     }
 
     // STEP 1: Pilih stylist & waktu
-    public function select($treatmentId)
+    public function select(Request $request, $treatmentId)
     {
         $treatment = Treatment::with('details')->findOrFail($treatmentId);
-        $stylists = User::where('role', 'admin')->get();
+        
+        $user = Auth::user();
+        if ((!$user || $user->role === 'pelanggan') && !$treatment->matchesUser($user)) {
+            abort(403, 'Anda tidak memiliki akses ke treatment ini.');
+        }
+
+        $stylists = User::whereIn('role', ['admin', 'karyawan'])
+            ->whereNotNull('position')
+            ->where('position', '<>', '')
+            ->get();
         $allTreatments = Treatment::with(['details', 'category'])->get();
+        
+        if (!$user || $user->role === 'pelanggan') {
+            $allTreatments = $allTreatments->filter(function($t) use ($user) {
+                return $t->matchesUser($user);
+            });
+        }
         $categories = Category::all();
+
+        // Handle pre-selected details from query param ?details=1,2,3
+        $preSelectedDetails = collect();
+        if ($request->filled('details')) {
+            $ids = explode(',', $request->details);
+            $preSelectedDetails = TreatmentDetail::with('treatment.category')
+                ->whereIn('id', $ids)
+                ->get();
+        }
         
         // Ambil data staff untuk UI (Hanya Admin dan Karyawan)
-        $isStaff = in_array(strtolower(Auth::user()->role ?? ''), ['owner', 'admin']);
+        $isStaff = in_array(strtolower(Auth::user()->role ?? ''), ['owner', 'admin', 'karyawan']);
         $customers = [];
         if ($isStaff) {
-            $customers = User::where('role', 'pelanggan')
+            $registeredCustomers = User::where('role', 'pelanggan')
                 ->orderBy('name', 'asc')
                 ->get(['id', 'name', 'email', 'phone'])
                 ->map(function($user) {
+                    $user->status = 'aktif';
                     return $user->append('has_coloring_loyalty');
                 });
+                
+            $guestBookings = \App\Models\Booking::selectRaw('MAX(id) as id, customer_name, customer_email, customer_phone')
+                ->where(function($q) {
+                    $q->whereNull('user_id')
+                      ->orWhereHas('user', function($u) {
+                          $u->where('role', '!=', 'pelanggan');
+                      });
+                })
+                ->groupBy('customer_name', 'customer_email', 'customer_phone')
+                ->get();
+                
+            $registeredEmails = $registeredCustomers->pluck('email')->filter()->toArray();
+            $registeredPhones = $registeredCustomers->pluck('phone')->filter()->toArray();
+            $registeredNames = $registeredCustomers->pluck('name')->filter()->toArray();
+            
+            $guestCustomers = collect();
+            foreach ($guestBookings as $booking) {
+                if ($booking->customer_email && in_array($booking->customer_email, $registeredEmails)) continue;
+                if ($booking->customer_phone && in_array($booking->customer_phone, $registeredPhones)) continue;
+                if ($booking->customer_name && in_array($booking->customer_name, $registeredNames)) continue;
+                
+
+                $user = new User();
+                $user->id = 'guest-' . $booking->id;
+                $user->name = $booking->customer_name;
+                $user->email = $booking->customer_email ?? '-';
+                $user->phone = $booking->customer_phone ?? '-';
+                $user->status = 'guest';
+                $user->setAttribute('has_coloring_loyalty', false);
+                $guestCustomers->push($user);
+            }
+            
+            $customers = $registeredCustomers->concat($guestCustomers)->sortBy('name')->values();
         }
 
         // Ambil tanggal libur
         $holidays = \App\Models\Holiday::pluck('date')->toArray();
 
-        return view('booking.select', compact('treatment', 'stylists', 'allTreatments', 'categories', 'holidays', 'customers', 'isStaff'));
+        return view('booking.select', compact('treatment', 'stylists', 'allTreatments', 'categories', 'holidays', 'customers', 'isStaff', 'preSelectedDetails'));
     }
     // STEP 2: Simpan booking
     public function store(Request $request)
@@ -111,7 +181,7 @@ class BookingController extends Controller
             'stylist_ids.*' => 'nullable|exists:users,id',
             'reservation_date' => 'required|date',
             'reservation_time' => 'required',
-            'payment_method' => 'required|in:cash,transfer'
+            'payment_method' => 'required|in:Tunai,Transfer,QRIS'
         ]);
 
         // Server-side validation: Ensure one variant per treatment
@@ -133,15 +203,18 @@ class BookingController extends Controller
             return redirect()->back()->with('error', $msg);
         }
 
-        // Validasi Jam Operasional (09:00 - 18:00)
+        // Validasi Jam Operasional (09:00 - 10:30 sesuai permintaan client)
         $dateTime = Carbon::parse($request->reservation_date.' '.$request->reservation_time);
         $hour = $dateTime->hour;
+        $minute = $dateTime->minute;
         
-        if ($hour < 9 || $hour >= 18) {
+        // Cek apakah lebih dari jam 10:30
+        if ($hour < 9 || $hour > 10 || ($hour === 10 && $minute > 30)) {
+            $errorMsg = 'Mohon maaf, jam reservasi maksimal adalah pukul 10:30.';
             if ($request->ajax()) {
-                return response()->json(['message' => 'Mohon maaf, jam reservasi harus di antara 09:00 - 18:00.'], 400);
+                return response()->json(['message' => $errorMsg], 400);
             }
-            return redirect()->back()->with('error', 'Mohon maaf, jam reservasi harus di antara 09:00 - 18:00.');
+            return redirect()->back()->with('error', $errorMsg);
         }
 
         
@@ -161,8 +234,8 @@ class BookingController extends Controller
             $currStart = \Carbon\Carbon::parse($b->reservation_datetime);
             foreach ($b->details as $d) {
                 if ($d->treatmentDetail) {
-                    $dur = $d->treatmentDetail->duration;
-                    $currEnd = $currStart->copy()->addMinutes($dur);
+                    // Sistem otomatis memblokir 7 jam dari jam terpilih (permintaan client)
+                    $currEnd = $currStart->copy()->addHours(7);
                     if ($d->stylist_id) {
                         $stylistWindows[$d->stylist_id][] = ['start' => $currStart->copy(), 'end' => $currEnd->copy()];
                     }
@@ -171,21 +244,27 @@ class BookingController extends Controller
             }
         }
 
+        // Pre-fetch all needed data BEFORE any loops to avoid N+1 queries
+        $allDetailIds = collect($request->treatment_detail_ids)->filter()->unique()->toArray();
+        $allStylistIds = collect($request->stylist_ids)->filter()->unique()->toArray();
+        $preloadedDetails = \App\Models\TreatmentDetail::with(['treatment.category'])->whereIn('id', $allDetailIds)->get()->keyBy('id');
+        $preloadedStylists = \App\Models\User::whereIn('id', $allStylistIds)->get()->keyBy('id');
+
         $tempRequestedStart = $startCheckpoint->copy();
         foreach ($request->treatment_detail_ids as $index => $dId) {
             $sId = $request->stylist_ids[$index] ?? null;
             if (!$sId) continue;
 
-            $detail = \App\Models\TreatmentDetail::find($dId);
+            $detail = $preloadedDetails->get($dId);
             if (!$detail) continue;
 
-            $dur = $detail->duration;
-            $tempRequestedEnd = $tempRequestedStart->copy()->addMinutes($dur);
+            // Blokir 7 jam untuk pengecekan ketersediaan (permintaan client)
+            $tempRequestedEnd = $tempRequestedStart->copy()->addHours(7);
 
             if (isset($stylistWindows[$sId])) {
                 foreach ($stylistWindows[$sId] as $win) {
                     if ($tempRequestedStart->lt($win['end']) && $tempRequestedEnd->gt($win['start'])) {
-                        $stylistName = \App\Models\User::find($sId)->name ?? 'Stylist';
+                        $stylistName = $preloadedStylists->get($sId)->name ?? 'Stylist';
                         $msg = "Mohon maaf, $stylistName sudah memiliki jadwal pada jam tersebut (layanan ke-" . ($index+1) . "). Silakan pilih stylist lain atau geser jam reservasi.";
                         if ($request->ajax()) return response()->json(['message' => $msg], 422);
                         return redirect()->back()->with('error', $msg);
@@ -214,16 +293,22 @@ class BookingController extends Controller
         }
 
         $customer = null;
-        if ($request->selected_user_id) {
-            $customer = User::find($request->selected_user_id);
+        $selectedUserId = is_numeric($request->selected_user_id) ? $request->selected_user_id : null;
+        
+        if ($selectedUserId) {
+            $customer = User::find($selectedUserId);
         } elseif (!$isStaff && Auth::check()) {
             $customer = $authUser;
         }
 
+
+        // Pre-fetch all needed data to avoid N+1 queries
         foreach ($detailIds as $index => $dId) {
-            $detail = TreatmentDetail::findOrFail($dId);
+            $detail = $preloadedDetails->get($dId);
+            if (!$detail) continue;
+            
             $sId = $stylistIds[$index] ?? null;
-            $stylist = $sId ? User::find($sId) : null;
+            $stylist = $sId ? $preloadedStylists->get($sId) : null;
             
             $price = $detail->price;
             
@@ -255,7 +340,7 @@ class BookingController extends Controller
             // 3. Terapkan Potongan Promo (Date-Aware)
             $parentTreatment = $detail->treatment;
             $fixedPromoPrice = null;
-            if ($parentTreatment && $parentTreatment->is_promo) {
+            if ($parentTreatment && $parentTreatment->is_promo && $parentTreatment->matchesUser($customer)) {
                 $resDate = Carbon::parse($request->reservation_date)->toDateString();
                 $isWithinPromo = true;
 
@@ -295,10 +380,10 @@ class BookingController extends Controller
             $booking_details_data[] = [
                 'treatment_detail_id' => $detail->id,
                 'stylist_id' => $sId,
-                'price' => max(0, $price),
+                'price' => (int)max(0, $price),
                 'parent_treatment_id' => $detail->treatment_id
             ];
-            $total_price += max(0, $price);
+            $total_price += (int)max(0, $price);
         }
 
         Log::info('Booking Attempt', [
@@ -312,7 +397,7 @@ class BookingController extends Controller
         ]);
         
         $paymentMethod = strtolower($request->payment_method);
-        $paymentStatus = ($isStaff && $paymentMethod === 'cash') ? 'paid' : 'unpaid';
+        $paymentStatus = ($isStaff && $paymentMethod === 'tunai') ? 'paid' : 'unpaid';
 
         // Log Debug untuk investigasi masalah 'unpaid'
         try {
@@ -329,7 +414,7 @@ class BookingController extends Controller
         } catch (\Exception $e) {}
 
         $booking = Booking::create([
-            'user_id' => $request->selected_user_id ?: ($isStaff ? null : $authUser->id),
+            'user_id' => $selectedUserId ?: ($isStaff ? null : $authUser->id),
             'customer_name' => $request->customer_name,
             'customer_phone' => $request->customer_phone,
             'customer_email' => $request->customer_email,
@@ -337,10 +422,10 @@ class BookingController extends Controller
             'stylist_id' => $booking_details_data[0]['stylist_id'],
             'treatment_id' => $booking_details_data[0]['parent_treatment_id'],
             'reservation_datetime' => Carbon::parse($request->reservation_date.' '.$request->reservation_time),
-            'total_price' => $total_price,
+            'total_price' => (int)$total_price,
             'status' => 'pending',
             'payment_status' => $paymentStatus,
-            'payment_method' => $request->payment_method
+            'payment_method' => strtolower($request->payment_method) === 'tunai' ? 'Tunai' : $request->payment_method
         ]);
 
         foreach ($booking_details_data as $item) {
@@ -354,7 +439,7 @@ class BookingController extends Controller
 
         // Midtrans Logic
         $snapToken = null;
-        if ($request->payment_method === 'transfer') {
+        if ($request->payment_method === 'Transfer' || $request->payment_method === 'QRIS') {
             $params = [
                 'transaction_details' => [
                     'order_id' => 'BOOK-' . $booking->id . '-' . time(),
@@ -365,6 +450,10 @@ class BookingController extends Controller
                     'email' => (strtolower($authUser->role) === 'pelanggan' && $authUser->type !== 'karyawan') ? $authUser->email : 'info@indahsarisalon.com', // Fallback email for staff bookings
                 ],
             ];
+
+            if ($request->payment_method === 'QRIS') {
+                $params['enabled_payments'] = ['gopay', 'shopeepay', 'qris'];
+            }
 
             try {
                 $snapToken = Snap::getSnapToken($params);
@@ -427,12 +516,13 @@ class BookingController extends Controller
 
         if (strtolower($user->role) === 'pelanggan' && $user->type !== 'karyawan') {
             $query->where('user_id', $user->id);
-        } elseif (in_array(strtolower($user->role), ['owner', 'admin']) || $user->type === 'karyawan') {
+        } elseif ($user->type === 'karyawan' && !in_array(strtolower($user->role), ['owner', 'admin'])) {
             $query->where(function ($q) use ($user) {
                 $q->where('cashier_id', $user->id)
                     ->orWhere('stylist_id', $user->id);
             });
         }
+        // Owner and Admin will bypass the where clauses to see ALL bookings.
 
         $allBookings = $query->orderBy('reservation_datetime', 'desc')->get();
 
@@ -515,11 +605,11 @@ class BookingController extends Controller
 
         if ($filter_mode && $filter_value) {
             if ($filter_mode === 'daily') {
-                $query->whereDate('reservation_datetime', $filter_value);
+                $query->whereDate('created_at', $filter_value);
             } elseif ($filter_mode === 'monthly') {
-                $query->whereRaw("TO_CHAR(reservation_datetime, 'YYYY-MM') = ?", [$filter_value]);
+                $query->whereRaw("TO_CHAR(created_at, 'YYYY-MM') = ?", [$filter_value]);
             } elseif ($filter_mode === 'yearly') {
-                $query->whereRaw("TO_CHAR(reservation_datetime, 'YYYY') = ?", [$filter_value]);
+                $query->whereRaw("TO_CHAR(created_at, 'YYYY') = ?", [$filter_value]);
             }
         }
 
@@ -533,10 +623,7 @@ class BookingController extends Controller
             'dibatalkan' => Booking::where('status', 'dibatalkan')->count(),
         ];
 
-        // Tentukan view berdasarkan role
-        $view = (strtolower(Auth::user()->role) === 'admin') ? 'karyawan.bookings.index' : 'admin.bookings.index';
-
-        return view($view, compact('bookings', 'status', 'stats'));
+        return view('admin.bookings.index', compact('bookings', 'status', 'stats'));
     }
 
     // ADMIN: Update status booking
@@ -566,18 +653,65 @@ class BookingController extends Controller
         return redirect()->back()->with('success', 'Status booking berhasil diperbarui.');
     }
 
+    public function reschedule(Request $request, Booking $booking)
+    {
+        $request->validate([
+            'reservation_datetime' => 'required|date'
+        ]);
+
+        $booking->update([
+            'reservation_datetime' => $request->reservation_datetime
+        ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Jadwal booking berhasil diperbarui.',
+                'new_datetime' => $booking->reservation_datetime
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Jadwal booking berhasil diperbarui.');
+    }
+
     // ADMIN: View detail booking (JSON)
     public function show($id)
     {
-        $booking = Booking::with(['user', 'stylist', 'treatment', 'cashier', 'details.treatmentDetail', 'details.stylist'])->findOrFail($id);
-        return response()->json($booking);
+        try {
+            $booking = Booking::with([
+                'user', 
+                'stylist', 
+                'treatment', 
+                'cashier', 
+                'details.treatmentDetail', 
+                'details.stylist'
+            ])->findOrFail($id);
+            
+            // Disable appends to prevent expensive calculations and infinite recursion during serialization
+            $booking->setAppends([]);
+            if ($booking->treatment) $booking->treatment->setAppends([]);
+            
+            $booking->details->each(function($detail) {
+                $detail->setAppends([]);
+                if ($detail->treatmentDetail) {
+                    $detail->treatmentDetail->setAppends([]);
+                }
+            });
+
+            return response()->json($booking);
+        } catch (\Throwable $e) { // Use Throwable to catch both Exception and Error
+            \Log::error("Error showing booking detail: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Gagal mengambil data: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     // Update metode pembayaran (untuk fitur ganti mind/cancel midtrans)
     public function updatePaymentMethod(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
-        $request->validate(['payment_method' => 'required|in:cash,transfer']);
+        $request->validate(['payment_method' => 'required|in:Tunai,Transfer,QRIS']);
 
         $authId = Auth::id();
         $authUser = $authId ? \App\Models\User::find($authId) : null;
@@ -598,17 +732,45 @@ class BookingController extends Controller
             'new_method' => $request->payment_method
         ]);
 
-        $paymentStatus = ($isStaff && strtolower($request->payment_method) === 'cash') ? 'paid' : 'unpaid';
+        $paymentStatus = ($isStaff && strtolower($request->payment_method) === 'tunai') ? 'paid' : 'unpaid';
 
         $booking->update([
-            'payment_method' => $request->payment_method,
+            'payment_method' => strtolower($request->payment_method) === 'tunai' ? 'Tunai' : $request->payment_method,
             'payment_status' => $paymentStatus
         ]);
+
+        // Generate a new Snap Token for Midtrans if Transfer/QRIS
+        $snapToken = null;
+        if ($request->payment_method === 'Transfer' || $request->payment_method === 'QRIS') {
+            $params = [
+                'transaction_details' => [
+                    'order_id' => 'BOOK-' . $booking->id . '-' . time(),
+                    'gross_amount' => (int) $booking->total_price,
+                ],
+                'customer_details' => [
+                    'first_name' => $booking->customer_name,
+                    'email' => $booking->customer_email ?: 'info@indahsarisalon.com',
+                ],
+            ];
+
+            if ($request->payment_method === 'QRIS') {
+                $params['enabled_payments'] = ['gopay', 'shopeepay', 'qris'];
+            }
+
+            try {
+                $snapToken = Snap::getSnapToken($params);
+                $booking->update(['snap_token' => $snapToken]);
+            } catch (\Exception $e) {
+                return response()->json(['message' => 'Gagal terhubung ke Midtrans: ' . $e->getMessage()], 500);
+            }
+        }
 
         return response()->json([
             'success' => true, 
             'message' => 'Metode pembayaran berhasil diubah ke ' . strtoupper($request->payment_method),
             'payment_method' => $request->payment_method,
+            'snap_token' => $snapToken,
+            'booking_id' => $booking->id,
             'is_staff' => $isStaff
         ]);
     }
@@ -628,6 +790,17 @@ class BookingController extends Controller
 
         try {
             $startTime = Carbon::parse($date . ' ' . $time);
+            $hour = $startTime->hour;
+            $minute = $startTime->minute;
+
+            // Validasi 10:30 di AJAX juga
+            if ($hour < 9 || $hour > 10 || ($hour === 10 && $minute > 30)) {
+                return response()->json([
+                    'conflicts' => [], 
+                    'off_work_ids' => [],
+                    'message' => 'Maksimal booking jam 10:30'
+                ]);
+            }
             
             // 0. Check if it's a holiday
             $isHoliday = \App\Models\Holiday::where('date', $date)->exists();
@@ -665,8 +838,8 @@ class BookingController extends Controller
                     // Details are sequential
                     foreach ($b->details as $d) {
                         if ($d->treatmentDetail) {
-                            $duration = $d->treatmentDetail->duration;
-                            $currentEnd = $currentStart->copy()->addMinutes($duration);
+                            // Blokir 7 jam (permintaan client)
+                            $currentEnd = $currentStart->copy()->addHours(7);
                             
                             if ($d->stylist_id) {
                                 $stylistWindows[$d->stylist_id][] = [
@@ -693,8 +866,8 @@ class BookingController extends Controller
                         continue;
                     }
 
-                    $duration = $detail->duration;
-                    $currentRequestedEnd = $currentRequestedStart->copy()->addMinutes($duration);
+                    // Blokir 7 jam (permintaan client)
+                    $currentRequestedEnd = $currentRequestedStart->copy()->addHours(7);
 
                     $busyIds = [];
                     foreach ($stylistWindows as $stylistId => $windows) {
@@ -722,5 +895,20 @@ class BookingController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
+    }
+
+    // ADMIN: Print thermal/POS receipt for a booking
+    public function printReceipt($id)
+    {
+        $booking = Booking::with([
+            'user', 
+            'stylist', 
+            'treatment', 
+            'cashier', 
+            'details.treatmentDetail', 
+            'details.stylist'
+        ])->findOrFail($id);
+
+        return view('admin.bookings.receipt', compact('booking'));
     }
 }

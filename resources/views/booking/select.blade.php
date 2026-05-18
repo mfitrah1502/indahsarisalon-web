@@ -663,7 +663,7 @@
             <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow-lg">
                     <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title text-white fw-bold"><i class="ti ti-users me-2"></i>Daftar Pelanggan Terdaftar</h5>
+                        <h5 class="modal-title text-white fw-bold"><i class="ti ti-users me-2"></i>Daftar Pelanggan</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body p-0">

@@ -134,10 +134,10 @@ class BookingController extends Controller
             
             $guestCustomers = collect();
             foreach ($guestBookings as $booking) {
-                if ($booking->customer_email && in_array($booking->customer_email, $registeredEmails)) continue;
-                if ($booking->customer_phone && in_array($booking->customer_phone, $registeredPhones)) continue;
-                if ($booking->customer_name && in_array($booking->customer_name, $registeredNames)) continue;
+                // Tampilkan semua guest, meskipun memiliki kemiripan nama/telepon dengan user terdaftar,
+                // agar admin bisa memilih guest data lama jika dibutuhkan.
                 
+
                 $user = new User();
                 $user->id = 'guest-' . $booking->id;
                 $user->name = $booking->customer_name;

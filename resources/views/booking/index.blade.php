@@ -35,6 +35,101 @@
         border-radius: 8px;
     }
 
+    /* Stylist Card Modern Styles */
+    .stylist-grid {
+        display: flex;
+        overflow-x: auto;
+        gap: 12px;
+        padding: 5px 2px 15px 2px;
+        scrollbar-width: thin;
+        scrollbar-color: #EA8290 transparent;
+    }
+    .stylist-grid::-webkit-scrollbar {
+        height: 6px;
+    }
+    .stylist-grid::-webkit-scrollbar-thumb {
+        background: #EA8290;
+        border-radius: 10px;
+    }
+    .stylist-card-modern {
+        flex: 0 0 100px;
+        background: #fff;
+        border: 2px solid #f0f0f0;
+        border-radius: 15px;
+        padding: 12px 8px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    .stylist-card-modern:hover {
+        border-color: #EA8290;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+    .stylist-card-modern.active {
+        border-color: #EA8290;
+        background: #fff5f6;
+        box-shadow: 0 4px 12px rgba(234, 130, 144, 0.2);
+    }
+    .stylist-card-modern .avatar-container {
+        width: 50px;
+        height: 50px;
+        margin: 0 auto 8px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .stylist-card-modern .avatar-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .stylist-card-modern .stylist-name {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #333;
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .stylist-card-modern .stylist-cat {
+        font-size: 0.6rem;
+        color: #888;
+        display: block;
+    }
+    .stylist-card-modern .check-mark {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: #EA8290;
+        color: #fff;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .stylist-card-modern.active .check-mark {
+        display: flex;
+    }
+
+    /* Dimmed/Disabled Treatment Styles */
+    .treatment-item-dimmed {
+        opacity: 0.35;
+        filter: grayscale(0.6);
+        transition: all 0.3s ease;
+    }
+    .treatment-item-dimmed .btn-add-cart {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+        cursor: not-allowed;
+    }
+
     /* Floating Cart Styles */
     #floatingCart {
         position: fixed;
@@ -88,6 +183,39 @@
                             </div>
                         </div>
                     @endif
+
+                    <!-- Pemilihan Stylist Terlebih Dahulu (Premium Layout) -->
+                    <div class="col-md-12 mb-4">
+                        <div class="p-3 bg-white border rounded-3 shadow-sm">
+                            <label class="form-label fw-bold mb-2"><i class="ti ti-heart-handshake me-1 text-primary"></i>Pilih Stylist Pilihan Anda</label>
+                            <p class="small text-muted mb-3">Silakan pilih stylist terlebih dahulu. Kategori treatment akan disesuaikan dengan posisi keahlian stylist yang dipilih.</p>
+                            <div class="stylist-grid" id="main_stylist_grid">
+                                <div class="stylist-card-modern active" data-stylist-id="" data-position="" onclick="selectMainStylist(null, this)">
+                                    <div class="check-mark"><i class="ti ti-check"></i></div>
+                                    <div class="avatar-container d-flex align-items-center justify-content-center bg-light">
+                                        <i class="ti ti-minus text-muted" style="font-size: 1.5rem;"></i>
+                                    </div>
+                                    <span class="stylist-name">Semua</span>
+                                    <span class="stylist-cat">Default</span>
+                                </div>
+                                @forelse($stylists as $stylist)
+                                    <div class="stylist-card-modern" 
+                                         data-stylist-id="{{ $stylist->id }}" 
+                                         data-stylist-name="{{ $stylist->name }}"
+                                         data-position="{{ strtolower($stylist->position) }}"
+                                         onclick="selectMainStylist({{ $stylist->id }}, this)">
+                                        <div class="check-mark"><i class="ti ti-check"></i></div>
+                                        <div class="avatar-container">
+                                            <img src="{{ $stylist->avatar_url }}" alt="{{ $stylist->name }}">
+                                        </div>
+                                        <span class="stylist-name">{{ explode(' ', $stylist->name)[0] }}</span>
+                                        <span class="stylist-cat">{{ ucwords(strtolower($stylist->position)) }}</span>
+                                    </div>
+                                @empty
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Filter kategori & search -->
                     <div class="row g-2 mb-3">
@@ -165,6 +293,8 @@
                         success: function (html) {
                             console.log('Treatments loaded successfully');
                             $('#treatmentList').html(html).css('opacity', '1');
+                            applyStylistFilters(); // Re-apply stylist filters to newly loaded elements
+                            updateCartUI(); // Re-sync cart states
                         },
                         error: function (err) {
                             console.error('AJAX Error:', err);
@@ -188,8 +318,99 @@
                 // Cart Logic
                 let selectedDetails = [];
 
+                // Stylist mapping to categories (all lowercased for match)
+                const stylistMapping = {
+                    'hairstylist': ['haircut', 'hair coloring', 'hair colouring', 'hair cut', 'promo'],
+                    'beautician': ['facial', 'promo'],
+                    'therapist': ['nail treatment', 'hair ritual', 'promo']
+                };
+
+                let selectedStylist = null;
+
+                window.selectMainStylist = function(id, element) {
+                    const card = $(element);
+                    const position = card.data('position') ? card.data('position').toLowerCase() : '';
+                    const name = card.data('stylist-name') || '';
+
+                    if (card.hasClass('active')) {
+                        return;
+                    }
+
+                    // Check compatibility if there are selected treatments
+                    if (id !== null && selectedDetails.length > 0 && position) {
+                        const allowedCats = stylistMapping[position] || [];
+                        const incompatible = selectedDetails.filter(d => {
+                            const btn = $(`.btn-add-cart[data-id="${d.id}"]`);
+                            const cat = btn.data('category') ? btn.data('category').toLowerCase() : '';
+                            return !allowedCats.includes(cat);
+                        });
+
+                        if (incompatible.length > 0) {
+                            const listNames = incompatible.map(d => `• ${d.treatmentName} (${d.name})`).join('\n');
+                            const confirmReset = confirm(
+                                `Stylist ${name} (${ucwords(position)}) tidak dapat melayani beberapa treatment pilihan Anda berikut:\n\n${listNames}\n\nMemilih stylist ini akan membatalkan treatment tersebut. Lanjutkan?`
+                            );
+                            if (!confirmReset) {
+                                return; // cancel stylist change
+                            }
+
+                            // Remove incompatible from selectedDetails
+                            const incompatibleIds = incompatible.map(d => d.id);
+                            selectedDetails = selectedDetails.filter(d => !incompatibleIds.includes(d.id));
+                            updateCartUI();
+                        }
+                    }
+
+                    // Update active class on stylist cards
+                    $('#main_stylist_grid .stylist-card-modern').removeClass('active');
+                    card.addClass('active');
+
+                    if (id === null) {
+                        selectedStylist = null;
+                    } else {
+                        selectedStylist = { id: id, name: name, position: position };
+                    }
+
+                    // Apply styling/dimming to treatment wrappers
+                    applyStylistFilters();
+                };
+
+                function ucwords(str) {
+                    return str.replace(/\b[a-z]/g, function(letter) {
+                        return letter.toUpperCase();
+                    });
+                }
+
+                function applyStylistFilters() {
+                    if (!selectedStylist || !selectedStylist.position) {
+                        // Reset all dimming
+                        $('.treatment-wrapper').removeClass('treatment-item-dimmed');
+                        return;
+                    }
+
+                    const allowedCats = stylistMapping[selectedStylist.position] || [];
+
+                    $('.treatment-wrapper').each(function() {
+                        const wrapper = $(this);
+                        const cat = wrapper.data('category') ? wrapper.data('category').toLowerCase() : '';
+                        if (allowedCats.includes(cat)) {
+                            wrapper.removeClass('treatment-item-dimmed');
+                        } else {
+                            wrapper.addClass('treatment-item-dimmed');
+                        }
+                    });
+                }
+
                 $(document).on('click', '.btn-add-cart', function() {
                     const btn = $(this);
+                    
+                    // Check if parent wrapper is dimmed
+                    const wrapper = btn.closest('.treatment-wrapper');
+                    if (wrapper.hasClass('treatment-item-dimmed')) {
+                        alert(`Layanan ini tidak dapat dipilih karena tidak sesuai dengan keahlian Stylist yang Anda pilih (${ucwords(selectedStylist.position)}).`);
+                        return;
+                    }
+
                     const detail = {
                         id: btn.data('id'),
                         treatmentId: btn.data('treatment-id'),
@@ -251,9 +472,14 @@
                 $('#btnGoToSelect').on('click', function() {
                     if (selectedDetails.length === 0) return;
                     
+                    if (!selectedStylist) {
+                        alert('Silakan pilih Stylist terlebih dahulu untuk melanjutkan booking.');
+                        return;
+                    }
+
                     const ids = selectedDetails.map(d => d.id).join(',');
-                    // Redirect to select page with multiple IDs
-                    window.location.href = "{{ route('booking.select', ['treatmentId' => ':id']) }}".replace(':id', selectedDetails[0].treatmentId) + '?details=' + ids;
+                    // Redirect to select page with multiple IDs and selected stylist_id
+                    window.location.href = "{{ route('booking.select', ['treatmentId' => ':id']) }}".replace(':id', selectedDetails[0].treatmentId) + '?details=' + ids + '&stylist_id=' + selectedStylist.id;
                 });
             });
         </script>

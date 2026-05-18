@@ -309,12 +309,7 @@
                             {{-- Will be populated by JS --}}
                         </div>
 
-                        <div class="mb-3">
-                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill" data-bs-toggle="modal"
-                                data-bs-target="#modalAddTreatment">
-                                <i class="ti ti-plus me-1"></i>Tambah Treatment Lainnya
-                            </button>
-                        </div>
+
 
                         <div class="p-3 mb-4 rounded border-start border-primary border-4 bg-light">
                             <div class="d-flex justify-content-between align-items-center">
@@ -368,41 +363,9 @@
                                     $hasStylistPrice = $treatment->details->contains('has_stylist_price', true);
                                 @endphp
 
-                                {{-- Stylist selection will now be inside the treatment list --}}
-                                <div class="col-md-12 mb-4" id="globalStylistSection">
-                                    <div class="p-4 bg-white border rounded shadow-sm">
-                                        <div class="d-flex flex-column mb-3">
-                                            <label class="form-label fw-bold mb-2"><i class="ti ti-heart-handshake me-1"></i>Pilih Stylist untuk Semua Layanan</label>
-                                            <p class="small text-muted mb-3">Atur semua layanan ke satu stylist yang sama secara otomatis.</p>
-                                        </div>
-                                        <div class="stylist-grid" id="global_stylist_grid">
-                                            <div class="stylist-card-modern active" data-stylist-id="" onclick="updateGlobalStylist(null, this)">
-                                                <div class="check-mark"><i class="ti ti-check"></i></div>
-                                                <div class="avatar-container d-flex align-items-center justify-content-center bg-light">
-                                                    <i class="ti ti-minus text-muted" style="font-size: 1.5rem;"></i>
-                                                </div>
-                                                <span class="stylist-name">Reset</span>
-                                                <span class="stylist-cat">Default</span>
-                                            </div>
-                                            @forelse($stylists as $stylist)
-                                                <div class="stylist-card-modern stylist-global-item-{{ $stylist->id }}" 
-                                                     data-stylist-id="{{ $stylist->id }}" 
-                                                     data-kategori="{{ strtolower($stylist->kategori) }}"
-                                                     onclick="updateGlobalStylist({{ $stylist->id }}, this)">
-                                                    <div class="check-mark"><i class="ti ti-check"></i></div>
-                                                    <div class="avatar-container">
-                                                        <img src="{{ $stylist->avatar_url }}" alt="{{ $stylist->name }}">
-                                                    </div>
-                                                    <span class="stylist-name">{{ explode(' ', $stylist->name)[0] }}</span>
-                                                    <span class="stylist-cat">{{ ucwords(strtolower(!empty($stylist->position) ? $stylist->position : $stylist->kategori)) }}</span>
-                                                </div>
-                                            @empty
-                                                <div class="col-12">
-                                                    <p class="text-danger small"><i class="ti ti-alert-circle me-1"></i>Tidak ada data stylist ditemukan (Admin/Karyawan).</p>
-                                                </div>
-                                            @endforelse
-                                        </div>
-                                    </div>
+                                {{-- Hidden placeholder container to prevent JS errors --}}
+                                <div id="globalStylistSection" style="display: none !important;">
+                                    <div id="global_stylist_grid"></div>
                                 </div>
                                 @php
                                     $now = \Carbon\Carbon::now();
@@ -1063,7 +1026,9 @@
                             else { $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $d->image_url; }
                         }
                     @endphp
-                    image: {!! json_encode($initImg) !!}
+                    image: {!! json_encode($initImg) !!},
+                    stylistId: {{ request()->query('stylist_id') ? (int) request()->query('stylist_id') : 'null' }},
+                    stylistKategori: {!! request()->query('stylist_id') && ($preSelStylist = \App\Models\User::find(request()->query('stylist_id'))) ? json_encode(strtolower($preSelStylist->kategori)) : 'null' !!}
                 },
             @endforeach
             @if($preSelectedDetails->isEmpty() && $treatment->details->count() === 1)
@@ -1099,7 +1064,9 @@
                                 else { $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $d->image_url; }
                             }
                         @endphp
-                        image: {!! json_encode($initImg) !!}
+                        image: {!! json_encode($initImg) !!},
+                        stylistId: {{ request()->query('stylist_id') ? (int) request()->query('stylist_id') : 'null' }},
+                        stylistKategori: {!! request()->query('stylist_id') && ($preSelStylist = \App\Models\User::find(request()->query('stylist_id'))) ? json_encode(strtolower($preSelStylist->kategori)) : 'null' !!}
                     },
                 @endforeach
             @endif
@@ -1235,10 +1202,10 @@
             document.getElementById('totalPriceDisplay2').innerText = formattedTotal;
             document.getElementById('paymentTreatmentInputs').innerHTML = hiddenInputs;
 
-            // The global stylist section is now always visible
+            // The global stylist section is kept hidden as the stylist is pre-selected in Step 1
             const globalSection = document.getElementById('globalStylistSection');
             if (globalSection) {
-                globalSection.style.display = '';
+                globalSection.style.display = 'none';
             }
 
             // Apply busy states if we have them

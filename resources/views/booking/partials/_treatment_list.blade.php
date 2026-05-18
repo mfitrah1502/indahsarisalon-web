@@ -1,5 +1,5 @@
 @foreach($treatments as $treatment)
-    <div class="col-md-4 mb-4">
+    <div class="col-md-4 mb-4 treatment-wrapper" data-category="{{ strtolower($treatment->category->name ?? '') }}">
         <div class="card treatment-card h-100 border-0 shadow-sm">
             @php
                 $images = $treatment->all_images;
@@ -91,6 +91,7 @@
                                             data-treatment-id="{{ $treatment->id }}"
                                             data-name="{{ $detail->name }}"
                                             data-treatment-name="{{ $treatment->name }}"
+                                            data-category="{{ strtolower($treatment->category->name ?? '') }}"
                                             data-allow-multi="{{ $treatment->allow_multi_select ? '1' : '0' }}">
                                             Pilih
                                         </button>
@@ -107,6 +108,7 @@
                                 data-treatment-id="{{ $treatment->id }}"
                                 data-name="{{ $d->name }}"
                                 data-treatment-name="{{ $treatment->name }}"
+                                data-category="{{ strtolower($treatment->category->name ?? '') }}"
                                 data-allow-multi="{{ $treatment->allow_multi_select ? '1' : '0' }}">
                                 Pilih Treatment <i class="ti ti-chevron-right ms-1"></i>
                             </button>

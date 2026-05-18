@@ -67,6 +67,11 @@ class BookingController extends Controller
         $end = Carbon::createFromTime(18, 0, 0);
         $isOpen = $now->between($start, $end);
 
+        $stylists = User::whereIn('role', ['admin', 'karyawan'])
+            ->whereNotNull('position')
+            ->where('position', '<>', '')
+            ->get();
+
         if ($request->ajax() || $request->has('is_ajax') || $request->expectsJson() || $request->is('api/*')) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
@@ -79,7 +84,7 @@ class BookingController extends Controller
             return view('booking.partials._treatment_list', compact('treatments'));
         }
 
-        return view('booking.index', compact('treatments', 'categories', 'isOpen'));
+        return view('booking.index', compact('treatments', 'categories', 'isOpen', 'stylists'));
     }
 
     // STEP 1: Pilih stylist & waktu

@@ -394,7 +394,7 @@
                                                         <img src="{{ $stylist->avatar_url }}" alt="{{ $stylist->name }}">
                                                     </div>
                                                     <span class="stylist-name">{{ explode(' ', $stylist->name)[0] }}</span>
-                                                    <span class="stylist-cat">{{ $stylist->kategori }}</span>
+                                                    <span class="stylist-cat">{{ ucwords(strtolower(!empty($stylist->position) ? $stylist->position : $stylist->kategori)) }}</span>
                                                 </div>
                                             @empty
                                                 <div class="col-12">

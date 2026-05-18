@@ -92,7 +92,10 @@ class BookingController extends Controller
             abort(403, 'Anda tidak memiliki akses ke treatment ini.');
         }
 
-        $stylists = User::whereIn('role', ['admin', 'karyawan'])->get();
+        $stylists = User::whereIn('role', ['admin', 'karyawan'])
+            ->whereNotNull('position')
+            ->where('position', '<>', '')
+            ->get();
         $allTreatments = Treatment::with(['details', 'category'])->get();
         
         if (!$user || $user->role === 'pelanggan') {

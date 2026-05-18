@@ -73,7 +73,7 @@
                 </a>
                 <form action="{{ route('pelanggan.destroy', $pelanggan->id) }}" method="POST" class="d-inline">
                     @csrf @method('DELETE')
-                    <button type="submit" class="btn btn-light action-btn text-danger" title="Hapus" onclick="return confirm('Hapus pelanggan ini?')">
+                    <button type="button" class="btn btn-light action-btn text-danger btn-delete-customer" title="Hapus">
                         <i class="ti ti-trash fs-5"></i>
                     </button>
                 </form>

@@ -183,6 +183,8 @@
     </div>
 
     @push('scripts')
+        <!-- SweetAlert2 -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
             // AJAX filter/search
             function applyFilters() {
@@ -342,7 +344,15 @@
                                     renderAbsensi(data);
                                 }
                             });
-                            alert('Data kehadiran berhasil disimpan.');
+                            Swal.fire({
+                                title: 'Berhasil',
+                                text: 'Data kehadiran berhasil disimpan.',
+                                icon: 'success',
+                                confirmButtonColor: '#EA8290',
+                                customClass: {
+                                    popup: 'rounded-4 border-0 shadow-lg'
+                                }
+                            });
                         }
                     },
                     error: function (err) {
@@ -350,7 +360,15 @@
                         if (err.responseJSON && err.responseJSON.message) {
                             msg = err.responseJSON.message;
                         }
-                        alert(msg);
+                        Swal.fire({
+                            title: 'Gagal',
+                            text: msg,
+                            icon: 'error',
+                            confirmButtonColor: '#EA8290',
+                            customClass: {
+                                popup: 'rounded-4 border-0 shadow-lg'
+                            }
+                        });
                     }
                 });
             });
@@ -379,6 +397,31 @@
 
                 var modal = new bootstrap.Modal(document.getElementById('detailKaryawanModal'));
                 modal.show();
+            });
+
+            // SweetAlert2 for Delete Confirmation
+            $(document).on('click', '.btn-delete-employee', function (e) {
+                e.preventDefault();
+                const form = $(this).closest('form');
+                const name = $(this).closest('tr').find('h6').text().trim();
+
+                Swal.fire({
+                    title: 'Hapus Karyawan?',
+                    text: `Apakah Anda yakin ingin menghapus data karyawan "${name}"? Tindakan ini tidak dapat dibatalkan.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        popup: 'rounded-4 border-0 shadow-lg'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
             });
         </script>
     @endpush

@@ -182,6 +182,8 @@
     </div>
 
 @push('scripts')
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // AJAX filter/search
         function applyFilters() {
@@ -262,6 +264,31 @@
                 },
                 error: function() {
                     $('#popupHistoryContainer').html('<div class="text-center py-3 text-danger small">Gagal memuat riwayat.</div>');
+                }
+            });
+        });
+
+        // SweetAlert2 for Delete Confirmation
+        $(document).on('click', '.btn-delete-customer', function (e) {
+            e.preventDefault();
+            const form = $(this).closest('form');
+            const name = $(this).closest('tr').find('h6').text().trim();
+
+            Swal.fire({
+                title: 'Hapus Pelanggan?',
+                text: `Apakah Anda yakin ingin menghapus data pelanggan "${name}"? Tindakan ini tidak dapat dibatalkan.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    popup: 'rounded-4 border-0 shadow-lg'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
                 }
             });
         });

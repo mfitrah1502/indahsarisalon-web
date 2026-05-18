@@ -49,8 +49,8 @@
                                             style="display:inline;">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-danger btn-sm"
-                                                onclick="return confirm('Yakin ingin menghapus produk ini?')">Hapus</button>
+                                            <button type="button" class="btn btn-danger btn-sm btn-delete-produk"
+                                                data-name="{{ $produk->nama }}">Hapus</button>
                                         </form>
                                     </td>
                                 </tr>
@@ -62,11 +62,13 @@
         </div>
     </div>
 @push('scripts')
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function () {
             $('#searchInput').on('keyup', function () {
                 let query = $(this).val();
-
+ 
                 $.ajax({
                     url: "{{ route('produk.index') }}", // route yang sama
                     type: 'GET',
@@ -75,6 +77,31 @@
                         // Ambil tbody dari response dan ganti tabel
                         let tbody = $(data).find('tbody').html();
                         $('tbody').html(tbody);
+                    }
+                });
+            });
+
+            // SweetAlert2 for Delete Confirmation
+            $(document).on('click', '.btn-delete-produk', function (e) {
+                e.preventDefault();
+                const form = $(this).closest('form');
+                const name = $(this).data('name');
+
+                Swal.fire({
+                    title: 'Hapus Produk?',
+                    text: `Apakah Anda yakin ingin menghapus produk "${name}"?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        popup: 'rounded-4 border-0 shadow-lg'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
                     }
                 });
             });

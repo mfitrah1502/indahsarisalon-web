@@ -171,8 +171,11 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0 p-3">
-                    <button type="button" class="btn btn-secondary rounded-pill px-4 w-100" data-bs-dismiss="modal">Tutup</button>
+                <div class="modal-footer border-0 p-3 d-flex gap-2">
+                    <a href="#" id="popupWaInvite" target="_blank" class="btn btn-success rounded-pill px-4 flex-grow-1" style="display: none;">
+                        <i class="ti ti-brand-whatsapp me-2"></i>Undang Grup WA
+                    </a>
+                    <button type="button" class="btn btn-secondary rounded-pill px-4 flex-grow-1" data-bs-dismiss="modal">Tutup</button>
                 </div>
             </div>
         </div>
@@ -216,11 +219,20 @@
             let tierClass = tier === 'Platinum' ? 'bg-info text-white' : (tier === 'Gold' ? 'bg-warning text-dark' : (tier === 'Silver' ? 'bg-secondary text-white' : 'bg-light text-muted'));
             tierBadge.removeClass().addClass('badge rounded-pill px-3 ' + tierClass);
             
-            let hasCC = btn.data('has-cc');
-            if (hasCC === true || hasCC === 'true') {
+            let hasCC = btn.attr('data-has-cc');
+            if (hasCC === 'true') {
                 $('#popupTierCC').show();
             } else {
                 $('#popupTierCC').hide();
+            }
+
+            let waBtn = $('#popupWaInvite');
+            if (tier === 'Platinum' || tier === 'Gold') {
+                waBtn.attr('href', 'https://chat.whatsapp.com/Kv5F6HrNlugBpc5Py0kCGH?mode=gi_t').show();
+            } else if (tier === 'Silver') {
+                waBtn.attr('href', 'https://chat.whatsapp.com/Jifm43U6J4d9ltRPak0wVd?mode=gi_t').show();
+            } else {
+                waBtn.hide();
             }
 
             let status = btn.data('status');

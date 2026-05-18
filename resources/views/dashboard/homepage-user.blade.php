@@ -219,7 +219,7 @@
                                 <div class="card border-0 shadow-sm overflow-hidden position-relative rounded-4" style="width: 340px; z-index: 2; border: 1px solid rgba(255,255,255,0.8) !important;">
                                     <div class="bg-white p-3 text-center aruniva-doctor-card">
                                         <div class="rounded-3 overflow-hidden mb-3 position-relative" style="height: 240px; background: #FFF5F6;">
-                                            <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=600&auto=format&fit=cover" alt="Aruniva Skin Care" class="w-100 h-100" style="object-fit: cover;">
+                                            <img src="{{ asset('assets/images/dr-agnes-nauli.jpg') }}" alt="Dr. Agnes Nauli, M.Ked (DV), Sp. DVE" class="w-100 h-100" style="object-fit: cover;">
                                             <div class="position-absolute bottom-0 start-0 end-0 p-2 text-white bg-dark bg-opacity-50 small">
                                                 <i class="ti ti-circle-check text-success me-1"></i> Penanganan Medis Berbasis Bukti
                                             </div>

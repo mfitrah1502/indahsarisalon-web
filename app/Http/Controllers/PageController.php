@@ -149,6 +149,14 @@ class PageController extends Controller
             $q->where('is_active', true);
         }, 'treatments.details'])->get();
 
+        if ($user && $user->role === 'pelanggan') {
+            foreach ($categories as $category) {
+                $category->setRelation('treatments', $category->treatments->filter(function($t) use ($user) {
+                    return $t->matchesUser($user);
+                }));
+            }
+        }
+
         return view('dashboard.homepage-user', compact('latestBooking', 'categories', 'promoTreatments'));
     }
     public function landing()

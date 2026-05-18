@@ -184,12 +184,10 @@
                                     <div class="mb-3">
                                         <label class="extra-small fw-bold mb-1">Target Audiens</label>
                                         <select name="target_audience" class="form-select glass-input form-control-sm">
-                                            <option value="Semua (General)">Semua (General)</option>
-                                            <option value="Komunitas (Grup Awal)">Komunitas (Grup Awal)</option>
-                                            <option value="Silver Member">Silver Member</option>
-                                            <option value="Colour Circle Member">Colour Circle Member</option>
-                                            <option value="Gold Member">Gold Member</option>
-                                            <option value="Platinum Member">Platinum Member</option>
+                                            <option value="general">Semua (General)</option>
+                                            <option value="silver">Silver Member</option>
+                                            <option value="gold">Gold Member</option>
+                                            <option value="platinum">Platinum Member</option>
                                         </select>
                                     </div>
                                     <div class="mb-3">

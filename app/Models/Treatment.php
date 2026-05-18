@@ -102,9 +102,9 @@ class Treatment extends Model
      */
     public function matchesUser($user = null)
     {
-        $audience = $this->target_audience ?: 'Semua (General)';
+        $audience = strtolower($this->target_audience ?: 'general');
         
-        if ($audience === 'Semua (General)') {
+        if (in_array($audience, ['general', 'semua (general)', 'semua'])) {
             return true;
         }
         
@@ -113,24 +113,23 @@ class Treatment extends Model
             return false;
         }
         
-        // Komunitas (Grup Awal) is any registered user
-        if ($audience === 'Komunitas (Grup Awal)') {
+        if (in_array($audience, ['komunitas (grup awal)', 'komunitas'])) {
             return true;
         }
         
-        $userTier = $currentUser->tier; // 'Regular', 'Silver', 'Colour Circle', 'Gold', 'Platinum'
+        $userTier = strtolower($currentUser->tier); // 'regular', 'silver', 'colour circle', 'gold', 'platinum'
         
-        $targetTier = 'Regular';
-        if (strpos($audience, 'Silver') !== false) {
-            $targetTier = 'Silver';
-        } elseif (strpos($audience, 'Colour Circle') !== false) {
-            $targetTier = 'Colour Circle';
-        } elseif (strpos($audience, 'Gold') !== false) {
-            $targetTier = 'Gold';
-        } elseif (strpos($audience, 'Platinum') !== false) {
-            $targetTier = 'Platinum';
+        $targetTier = 'regular';
+        if (strpos($audience, 'silver') !== false) {
+            $targetTier = 'silver';
+        } elseif (strpos($audience, 'colour circle') !== false) {
+            $targetTier = 'colour circle';
+        } elseif (strpos($audience, 'gold') !== false) {
+            $targetTier = 'gold';
+        } elseif (strpos($audience, 'platinum') !== false) {
+            $targetTier = 'platinum';
         }
         
-        return strtolower($userTier) === strtolower($targetTier);
+        return $userTier === $targetTier;
     }
 }

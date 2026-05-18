@@ -207,12 +207,10 @@
                                     <div class="mb-3">
                                         <label class="extra-small fw-bold mb-1">Target Audiens</label>
                                         <select name="target_audience" class="form-select glass-input form-control-sm">
-                                            <option value="Semua (General)" {{ $treatment->target_audience == 'Semua (General)' ? 'selected' : '' }}>Semua (General)</option>
-                                            <option value="Komunitas (Grup Awal)" {{ $treatment->target_audience == 'Komunitas (Grup Awal)' ? 'selected' : '' }}>Komunitas (Grup Awal)</option>
-                                            <option value="Silver Member" {{ $treatment->target_audience == 'Silver Member' ? 'selected' : '' }}>Silver Member</option>
-                                            <option value="Colour Circle Member" {{ $treatment->target_audience == 'Colour Circle Member' ? 'selected' : '' }}>Colour Circle Member</option>
-                                            <option value="Gold Member" {{ $treatment->target_audience == 'Gold Member' ? 'selected' : '' }}>Gold Member</option>
-                                            <option value="Platinum Member" {{ $treatment->target_audience == 'Platinum Member' ? 'selected' : '' }}>Platinum Member</option>
+                                            <option value="general" {{ $treatment->target_audience == 'general' ? 'selected' : '' }}>Semua (General)</option>
+                                            <option value="silver" {{ $treatment->target_audience == 'silver' ? 'selected' : '' }}>Silver Member</option>
+                                            <option value="gold" {{ $treatment->target_audience == 'gold' ? 'selected' : '' }}>Gold Member</option>
+                                            <option value="platinum" {{ $treatment->target_audience == 'platinum' ? 'selected' : '' }}>Platinum Member</option>
                                         </select>
                                     </div>
                                     <div class="mb-3">

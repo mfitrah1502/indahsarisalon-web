@@ -188,6 +188,9 @@ class User extends Authenticatable implements MustVerifyEmail
         if (in_array(strtolower($this->role), ['admin', 'owner', 'karyawan'])) {
             return false;
         }
+        if ($this->total_spending >= 1500000) {
+            return true;
+        }
 
         if (!isset($this->attributes['cached_coloring_loyalty'])) {
             // Hitung pengeluaran khusus kategori 'Coloring'
@@ -210,7 +213,7 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Check if user is a Colour Circle member (either by total spend >= 1.5M or specific coloring spend)
+     * Check if user is a Colour Circle member (either by total spend >= 1.5M or specific coloring spend >= 1.5M)
      */
     public function getIsColourCircleMemberAttribute()
     {

@@ -115,12 +115,40 @@ class BookingController extends Controller
         $isStaff = in_array(strtolower(Auth::user()->role ?? ''), ['owner', 'admin', 'karyawan']);
         $customers = [];
         if ($isStaff) {
-            $customers = User::where('role', 'pelanggan')
+            $registeredCustomers = User::where('role', 'pelanggan')
                 ->orderBy('name', 'asc')
                 ->get(['id', 'name', 'email', 'phone'])
                 ->map(function($user) {
+                    $user->status = 'aktif';
                     return $user->append('has_coloring_loyalty');
                 });
+                
+            $guestBookings = \App\Models\Booking::selectRaw('MAX(id) as id, customer_name, customer_email, customer_phone')
+                ->whereNull('user_id')
+                ->groupBy('customer_name', 'customer_email', 'customer_phone')
+                ->get();
+                
+            $registeredEmails = $registeredCustomers->pluck('email')->filter()->toArray();
+            $registeredPhones = $registeredCustomers->pluck('phone')->filter()->toArray();
+            $registeredNames = $registeredCustomers->pluck('name')->filter()->toArray();
+            
+            $guestCustomers = collect();
+            foreach ($guestBookings as $booking) {
+                if ($booking->customer_email && in_array($booking->customer_email, $registeredEmails)) continue;
+                if ($booking->customer_phone && in_array($booking->customer_phone, $registeredPhones)) continue;
+                if ($booking->customer_name && in_array($booking->customer_name, $registeredNames)) continue;
+                
+                $user = new User();
+                $user->id = 'guest-' . $booking->id;
+                $user->name = $booking->customer_name;
+                $user->email = $booking->customer_email ?? '-';
+                $user->phone = $booking->customer_phone ?? '-';
+                $user->status = 'guest';
+                $user->setAttribute('has_coloring_loyalty', false);
+                $guestCustomers->push($user);
+            }
+            
+            $customers = $registeredCustomers->concat($guestCustomers)->sortBy('name')->values();
         }
 
         // Ambil tanggal libur
@@ -251,8 +279,10 @@ class BookingController extends Controller
         }
 
         $customer = null;
-        if ($request->selected_user_id) {
-            $customer = User::find($request->selected_user_id);
+        $selectedUserId = is_numeric($request->selected_user_id) ? $request->selected_user_id : null;
+        
+        if ($selectedUserId) {
+            $customer = User::find($selectedUserId);
         } elseif (!$isStaff && Auth::check()) {
             $customer = $authUser;
         }
@@ -370,7 +400,7 @@ class BookingController extends Controller
         } catch (\Exception $e) {}
 
         $booking = Booking::create([
-            'user_id' => $request->selected_user_id ?: ($isStaff ? null : $authUser->id),
+            'user_id' => $selectedUserId ?: ($isStaff ? null : $authUser->id),
             'customer_name' => $request->customer_name,
             'customer_phone' => $request->customer_phone,
             'customer_email' => $request->customer_email,

@@ -687,7 +687,13 @@
                                         <tr class="customer-row" data-search="{{ strtolower($c->name . ' ' . $c->email . ' ' . $c->phone) }}">
                                             <td class="ps-3">
                                                 <div class="fw-bold text-dark">{{ $c->name }}</div>
-                                                <div class="small text-muted">ID: #{{ $c->id }}</div>
+                                                <div class="small text-muted">
+                                                    @if(isset($c->status) && $c->status === 'guest')
+                                                        <span class="badge bg-secondary opacity-50 px-2 rounded-pill">Guest</span>
+                                                    @else
+                                                        ID: #{{ $c->id }}
+                                                    @endif
+                                                </div>
                                             </td>
                                             <td>
                                                 <div class="small"><i class="ti ti-mail me-1"></i>{{ $c->email ?? '-' }}</div>
@@ -822,6 +828,13 @@
                 const selectedCustomer = customers.find(c => c.id == id);
                 if (selectedCustomer) {
                     hasColoringLoyalty = selectedCustomer.has_coloring_loyalty;
+                    if (memberBadge) {
+                        if (selectedCustomer.status === 'guest') {
+                            memberBadge.innerHTML = '<span class="badge bg-secondary opacity-50 text-white"><i class="ti ti-user me-1"></i>Guest</span><button type="button" class="btn btn-link btn-sm text-danger p-0 ms-2" onclick="clearSelectedCustomer()">Hapus</button>';
+                        } else {
+                            memberBadge.innerHTML = '<span class="badge bg-soft-success text-success"><i class="ti ti-medal me-1"></i>Pelanggan Terdaftar</span><button type="button" class="btn btn-link btn-sm text-danger p-0 ms-2" onclick="clearSelectedCustomer()">Hapus</button>';
+                        }
+                    }
                     updateVariantLabels(); // Update selection grid labels
                     renderSelectedTreatments(); // Recalculate prices for selected list
                 }

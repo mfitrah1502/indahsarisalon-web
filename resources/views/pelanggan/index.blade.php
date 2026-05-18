@@ -229,10 +229,33 @@
             }
 
             let waBtn = $('#popupWaInvite');
-            if (tier === 'Platinum' || tier === 'Gold') {
-                waBtn.attr('href', 'https://chat.whatsapp.com/Kv5F6HrNlugBpc5Py0kCGH?mode=gi_t').show();
+            let groupLink = '';
+            if (tier === 'Platinum') {
+                groupLink = 'https://chat.whatsapp.com/Kv5F6HrNlugBpc5Py0kCGH?mode=gi_t';
+            } else if (tier === 'Gold') {
+                groupLink = 'https://chat.whatsapp.com/J7QpkhenO5kJpfumE7a6ag?mode=gi_t';
             } else if (tier === 'Silver') {
-                waBtn.attr('href', 'https://chat.whatsapp.com/Jifm43U6J4d9ltRPak0wVd?mode=gi_t').show();
+                groupLink = 'https://chat.whatsapp.com/Jifm43U6J4d9ltRPak0wVd?mode=gi_t';
+            }
+
+            if (groupLink) {
+                let name = btn.data('name') || '';
+                let phone = btn.data('phone') ? btn.data('phone').toString().trim() : '';
+                let cleanPhone = phone.replace(/\D/g, '');
+                if (cleanPhone.startsWith('0')) {
+                    cleanPhone = '62' + cleanPhone.slice(1);
+                }
+
+                let message = `Halo, ${name}.\nSelamat anda telah menjadi member ${tier}\nSilahkan bergabung ke grup dibawah ini :\n${groupLink}`;
+                
+                let waUrl = '';
+                if (cleanPhone) {
+                    waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
+                } else {
+                    waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+                }
+                
+                waBtn.attr('href', waUrl).show();
             } else {
                 waBtn.hide();
             }

@@ -16,7 +16,7 @@ class SessionTimeout
      */
     public function handle(Request $request, Closure $next): Response
 {
-    $timeout = 50000; // detik
+    $timeout = 300; // detik
 
     if (Auth::check()) {
         $currentTime = time();

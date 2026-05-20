@@ -135,7 +135,7 @@
         position: relative;
     }
     .stylist-card-modern.disabled::after {
-        content: 'Penuh';
+        content: 'Sibuk';
         position: absolute;
         bottom: 2px;
         left: 50%;

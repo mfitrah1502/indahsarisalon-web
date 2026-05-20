@@ -228,7 +228,9 @@ class BookingController extends Controller
         $startCheckpoint = \Carbon\Carbon::parse($requestedDate . ' ' . $requestedTime);
 
         // Ambil semua booking yang aktif hari ini (selain dibatalkan & selesai/berhasil)
-        $existingBookings = \App\Models\Booking::whereDate('reservation_datetime', $requestedDate)
+        $startOfDay = $requestedDate . ' 00:00:00';
+        $endOfDay = $requestedDate . ' 23:59:59';
+        $existingBookings = \App\Models\Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
             ->whereNotIn('status', ['dibatalkan', 'success'])
             ->with(['details.treatmentDetail'])
             ->get();
@@ -633,14 +635,18 @@ class BookingController extends Controller
     // ADMIN: Update status booking
     public function updateStatus(Request $request, Booking $booking)
     {
+        // Validate status, allow both Indonesian and English terms
         $request->validate([
-            'status' => 'required|in:pending,berhasil,dibatalkan'
+            'status' => 'required|in:pending,berhasil,success,dibatalkan'
         ]);
-
-        $updateData = ['status' => $request->status];
-
-        // Jika status diubah menjadi berhasil (Selesai), maka status pembayaran otomatis Paid
-        if ($request->status === 'success') {
+        // Normalize status for database storage
+        $status = $request->status;
+        if ($status === 'success') {
+            $status = 'berhasil'; // store Indonesian term in DB
+        }
+        $updateData = ['status' => $status];
+        // If status indicates completion, set payment_status to paid
+        if ($status === 'berhasil') {
             $updateData['payment_status'] = 'paid';
         }
 
@@ -817,7 +823,7 @@ class BookingController extends Controller
             }
 
             // 0a. Check for stylists who are "Off Work" or "Libur"
-            $offWorkIds = \App\Models\Absensi::whereDate('tanggal', $date)
+            $offWorkIds = \App\Models\Absensi::where('tanggal', $date)
                 ->whereIn('status', ['Off Work', 'Libur', 'libur', 'off work'])
                 ->pluck('user_id')
                 ->map(fn($id) => (int)$id)
@@ -828,7 +834,9 @@ class BookingController extends Controller
                 $startTime = Carbon::parse($date . ' ' . $time);
                 
                 // 1. Get ALL bookings for that day (except dibatalkan & selesai/berhasil)
-                $existingBookings = Booking::whereDate('reservation_datetime', $date)
+                $startOfDay = $date . ' 00:00:00';
+                $endOfDay = $date . ' 23:59:59';
+                $existingBookings = Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
                     ->whereNotIn('status', ['dibatalkan', 'success'])
                     ->with(['details.treatmentDetail'])
                     ->get();
@@ -912,11 +920,16 @@ class BookingController extends Controller
         }
 
         try {
-            // 1. Ambil stylist yang memiliki booking aktif pada tanggal tersebut (selain dibatalkan & selesai/berhasil)
-            $bookedStylistIds = \App\Models\BookingDetail::whereHas('booking', function ($query) use ($date) {
-                    $query->whereDate('reservation_datetime', $date)
-                          ->whereNotIn('status', ['dibatalkan', 'success']);
-                })
+            $startOfDay = $date . ' 00:00:00';
+            $endOfDay = $date . ' 23:59:59';
+
+            // 1. Ambil ID booking yang aktif pada tanggal tersebut (selain dibatalkan & success)
+            $bookingIds = \App\Models\Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
+                ->whereNotIn('status', ['dibatalkan', 'success'])
+                ->pluck('id');
+
+            // 2. Ambil stylist yang memiliki booking aktif pada tanggal tersebut
+            $bookedStylistIds = \App\Models\BookingDetail::whereIn('booking_id', $bookingIds)
                 ->whereNotNull('stylist_id')
                 ->pluck('stylist_id')
                 ->map(fn($id) => (int)$id)
@@ -924,8 +937,8 @@ class BookingController extends Controller
                 ->values()
                 ->toArray();
 
-            // 2. Ambil stylist yang absen / libur pada tanggal tersebut
-            $offWorkIds = \App\Models\Absensi::whereDate('tanggal', $date)
+            // 3. Ambil stylist yang absen / libur pada tanggal tersebut
+            $offWorkIds = \App\Models\Absensi::where('tanggal', $date)
                 ->whereIn('status', ['Off Work', 'Libur', 'libur', 'off work'])
                 ->pluck('user_id')
                 ->map(fn($id) => (int)$id)

@@ -170,6 +170,16 @@
     .cursor-pointer {
         cursor: pointer;
     }
+
+    /* Animation spin untuk loader icon */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .spin {
+        animation: spin 1.5s linear infinite;
+        display: inline-block;
+    }
 </style>
 @endpush
 
@@ -717,8 +727,8 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0">
                 <div class="modal-body text-center py-4" id="modalStatusContent">
-                    <div class="mb-3">
-                        <i class="ti ti-loader text-primary" style="font-size: 3rem;"></i>
+                    <div class="mb-3" id="modalStatusIconContainer">
+                        <i class="ti ti-loader text-primary spin" style="font-size: 3rem;"></i>
                     </div>
                     <h4 id="modalStatusTitle">Booking sedang diproses</h4>
                     <p id="modalStatusDesc" class="text-muted">Terima kasih telah melakukan booking. Silakan klik tombol di
@@ -1635,11 +1645,41 @@
             submitBooking();
         });
 
+        function showModalStatus(state, title, desc, actionHtml) {
+            let iconHtml = '';
+            if (state === 'loading') {
+                iconHtml = '<i class="ti ti-loader text-primary spin" style="font-size: 3.5rem; display: inline-block;"></i>';
+            } else if (state === 'success') {
+                iconHtml = '<i class="ti ti-circle-check text-success" style="font-size: 3.5rem;"></i>';
+            } else if (state === 'pending') {
+                iconHtml = '<i class="ti ti-clock text-warning" style="font-size: 3.5rem;"></i>';
+            } else if (state === 'error') {
+                iconHtml = '<i class="ti ti-circle-x text-danger" style="font-size: 3.5rem;"></i>';
+            } else if (state === 'question') {
+                iconHtml = '<i class="ti ti-help-circle text-info" style="font-size: 3.5rem;"></i>';
+            }
+
+            $('#modalStatusIconContainer').html(iconHtml);
+            $('#modalStatusTitle').text(title);
+            if (desc.startsWith('<') || desc.includes('<strong>')) {
+                $('#modalStatusDesc').html(desc);
+            } else {
+                $('#modalStatusDesc').text(desc);
+            }
+            if (actionHtml !== undefined && actionHtml !== null) {
+                $('#modalStatusAction').html(actionHtml);
+            }
+            $('#modalProses').modal('show');
+        }
+
         function submitBooking() {
             const form = $(finalForm);
             const submitBtn = form.find('button[type="submit"]');
 
             submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...');
+
+            // Show loading modal immediately to guide user
+            showModalStatus('loading', 'Booking sedang diproses...', 'Mohon tunggu sebentar, data booking Anda sedang disimpan.', '');
 
             const bookingId = window.lastCreatedBookingId;
             const url = bookingId ? `/booking/${bookingId}/update-payment-method` : form.attr('action');
@@ -1659,13 +1699,21 @@
                     }
                 },
                 error: function (xhr) {
-                    alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || 'Gagal menyimpan booking'));
                     submitBtn.prop('disabled', false).text('✅ Bayar & Konfirmasi');
+                    showModalStatus(
+                        'error',
+                        'Booking Gagal ❌',
+                        xhr.responseJSON?.message || 'Terjadi kesalahan saat menyimpan data booking.',
+                        '<button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Tutup</button>'
+                    );
                 }
             });
         }
 
         function handleMidtrans(token, bookingId) {
+            // Hide loading modal first so Midtrans overlay opens correctly
+            $('#modalProses').modal('hide');
+
             snap.pay(token, {
                 onSuccess: function (result) {
                     // Update database secara frontend (karena webhook midtrans tidak jalan di localhost)
@@ -1684,19 +1732,28 @@
                     showSuccessFinal('transfer');
                 },
                 onError: function (result) {
-                    $('#modalStatusTitle').text('Pembayaran Gagal ❌');
-                    $('#modalStatusDesc').text('Mohon maaf, transaksi Anda gagal diproses.');
-                    $('#modalStatusAction').html('<a href="{{ route("booking.history") }}" class="btn btn-primary px-4">Lihat Riwayat Booking</a>');
-                    $('#modalProses').modal('show');
+                    const isStaff = {{ ($isStaff || strtolower(Auth::user()->role) === 'karyawan') ? 'true' : 'false' }};
+                    const historyUrl = isStaff ? "{{ route('admin.bookings.index') }}" : "{{ route('booking.history') }}";
+                    const btnText = isStaff ? 'Lihat Status Pemesanan' : 'Lihat Riwayat Booking';
+                    showModalStatus(
+                        'error',
+                        'Pembayaran Gagal ❌',
+                        'Mohon maaf, transaksi Anda gagal diproses.',
+                        `<a href="${historyUrl}" class="btn btn-primary px-4">${btnText}</a>`
+                    );
                 },
                 onClose: function () {
+                    const isStaff = {{ ($isStaff || strtolower(Auth::user()->role) === 'karyawan') ? 'true' : 'false' }};
+                    const historyUrl = isStaff ? "{{ route('admin.bookings.index') }}" : "{{ route('booking.history') }}";
                     Swal.fire({
                         title: 'Pembayaran Belum Selesai ⏳',
-                        text: 'Apakah Anda ingin mencoba lagi/mengganti metode pembayaran, atau bayar nanti melalui Riwayat Pemesanan?',
+                        text: isStaff
+                            ? 'Apakah Anda ingin mencoba lagi/mengganti metode pembayaran, atau bayar nanti melalui Status Pemesanan?'
+                            : 'Apakah Anda ingin mencoba lagi/mengganti metode pembayaran, atau bayar nanti melalui Riwayat Pemesanan?',
                         icon: 'warning',
                         showCancelButton: true,
                         confirmButtonText: '🔄 Coba Lagi / Ganti Metode',
-                        cancelButtonText: '📅 Bayar Nanti (Ke Riwayat)',
+                        cancelButtonText: isStaff ? '📅 Bayar Nanti (Ke Status Pemesanan)' : '📅 Bayar Nanti (Ke Riwayat)',
                         confirmButtonColor: '#EA8290',
                         cancelButtonColor: '#6c757d',
                         allowOutsideClick: false
@@ -1707,8 +1764,8 @@
                             const submitBtn = form.find('button[type="submit"]');
                             submitBtn.prop('disabled', false).text('✅ Bayar & Konfirmasi');
                         } else {
-                            // Redirect to history
-                            window.location.href = "{{ route('booking.history') }}";
+                            // Redirect to history/status
+                            window.location.href = historyUrl;
                         }
                     });
                 }
@@ -1717,38 +1774,50 @@
 
         function showSuccessFinal(method) {
             const isStaff = {{ ($isStaff || strtolower(Auth::user()->role) === 'karyawan') ? 'true' : 'false' }};
+            const historyUrl = isStaff ? "{{ route('admin.bookings.index') }}" : "{{ route('booking.history') }}";
+            const btnText = isStaff ? 'Lihat Status Pemesanan' : 'Lihat Riwayat Booking';
+            const actionHtml = `<a href="${historyUrl}" class="btn btn-primary px-4">${btnText}</a>`;
+            const m = method ? method.toLowerCase() : '';
 
-            if (method === 'Tunai') {
+            if (m === 'tunai') {
                 if (isStaff) {
-                    $('#modalStatusTitle').text('Pembayaran Berhasil! ✅');
-                    $('#modalStatusDesc').text('Booking telah berhasil dicatat dan status pembayaran ditandai sebagai LUNAS.');
+                    showModalStatus(
+                        'success',
+                        'Booking Berhasil Dicatat! 📅',
+                        'Booking telah berhasil dicatat dengan status pembayaran BELUM BAYAR.',
+                        actionHtml
+                    );
                 } else {
-                    $('#modalStatusTitle').text('Booking Berhasil! 📅');
-                    $('#modalStatusDesc').text('Booking Anda telah masuk ke sistem. Silakan lakukan pembayaran di lokasi (Tunai).');
+                    showModalStatus(
+                        'success',
+                        'Booking Berhasil! 📅',
+                        'Booking Anda telah masuk ke sistem. Silakan lakukan pembayaran tunai di lokasi (salon) setelah treatment selesai.',
+                        actionHtml
+                    );
                 }
             } else {
-                $('#modalStatusTitle').text('Booking Menunggu Pembayaran ⏳');
-                $('#modalStatusDesc').text('Pesanan Anda telah dicatat. Mohon selesaikan pembayaran agar jadwal dapat dikonfirmasi.');
+                showModalStatus(
+                    'pending',
+                    'Booking Menunggu Pembayaran ⏳',
+                    'Pesanan Anda telah dicatat. Mohon selesaikan pembayaran agar jadwal dapat dikonfirmasi.',
+                    actionHtml
+                );
             }
-
-            $('#modalStatusAction').html('<a href="{{ route("booking.history") }}" class="btn btn-primary px-4">Lihat Riwayat Booking</a>');
-            $('#modalProses').modal('show');
         }
 
         function showPendingPayment(bookingId) {
-            $('#modalStatusTitle').text('Lanjutkan Pembayaran?');
-            $('#modalStatusDesc').html(`
-                    Pembayaran belum selesai. Anda bisa melanjutkan pembayaran melalui Riwayat Booking, 
-                    atau jika ingin <strong>bayar di tempat</strong>, Anda bisa mengganti metodenya sekarang.
-                `);
-
-            $('#modalStatusAction').html(`
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-secondary" onclick="window.location.href='{{ route('booking.history') }}'">Nanti Saja</button>
-                        <button class="btn btn-success" onclick="switchPaymentToTunai(${bookingId})">Ganti ke Bayar Tunai</button>
-                    </div>
-                `);
-            $('#modalProses').modal('show');
+            const isStaff = {{ ($isStaff || strtolower(Auth::user()->role) === 'karyawan') ? 'true' : 'false' }};
+            const historyUrl = isStaff ? "{{ route('admin.bookings.index') }}" : "{{ route('booking.history') }}";
+            const desc = isStaff
+                ? `Pembayaran belum selesai. Anda bisa melanjutkan pembayaran melalui Status Pemesanan, atau jika ingin <strong>bayar di tempat</strong>, Anda bisa mengganti metodenya sekarang.`
+                : `Pembayaran belum selesai. Anda bisa melanjutkan pembayaran melalui Riwayat Booking, atau jika ingin <strong>bayar di tempat</strong>, Anda bisa mengganti metodenya sekarang.`;
+            const actionHtml = `
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-secondary" onclick="window.location.href='${historyUrl}'">Nanti Saja</button>
+                    <button class="btn btn-success" onclick="switchPaymentToTunai(${bookingId})">Ganti ke Bayar Tunai</button>
+                </div>
+            `;
+            showModalStatus('question', 'Lanjutkan Pembayaran?', desc, actionHtml);
         }
 
         window.switchPaymentToTunai = function (id) {
@@ -1766,8 +1835,13 @@
                     showSuccessFinal('tunai');
                 },
                 error: function (xhr) {
-                    alert('Gagal mengubah metode: ' + (xhr.responseJSON?.message || 'Error'));
                     $(btn).prop('disabled', false).text('Ganti ke Bayar Tunai');
+                    Swal.fire({
+                        title: 'Gagal Mengubah Metode ❌',
+                        text: xhr.responseJSON?.message || 'Terjadi kesalahan saat mengubah metode pembayaran.',
+                        icon: 'error',
+                        confirmButtonColor: '#EA8290'
+                    });
                 }
             });
         };

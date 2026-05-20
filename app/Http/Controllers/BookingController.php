@@ -227,9 +227,9 @@ class BookingController extends Controller
         $requestedTime = $request->reservation_time;
         $startCheckpoint = \Carbon\Carbon::parse($requestedDate . ' ' . $requestedTime);
 
-        // Ambil semua booking yang aktif hari ini
+        // Ambil semua booking yang aktif hari ini (selain dibatalkan & selesai/berhasil)
         $existingBookings = \App\Models\Booking::whereDate('reservation_datetime', $requestedDate)
-            ->whereNotIn('status', ['dibatalkan'])
+            ->whereNotIn('status', ['dibatalkan', 'berhasil'])
             ->with(['details.treatmentDetail'])
             ->get();
 
@@ -827,9 +827,9 @@ class BookingController extends Controller
             if ($time) {
                 $startTime = Carbon::parse($date . ' ' . $time);
                 
-                // 1. Get ALL bookings for that day (except dibatalkan)
+                // 1. Get ALL bookings for that day (except dibatalkan & selesai/berhasil)
                 $existingBookings = Booking::whereDate('reservation_datetime', $date)
-                    ->whereNotIn('status', ['dibatalkan'])
+                    ->whereNotIn('status', ['dibatalkan', 'berhasil'])
                     ->with(['details.treatmentDetail'])
                     ->get();
 
@@ -912,10 +912,10 @@ class BookingController extends Controller
         }
 
         try {
-            // 1. Ambil stylist yang memiliki booking aktif pada tanggal tersebut
+            // 1. Ambil stylist yang memiliki booking aktif pada tanggal tersebut (selain dibatalkan & selesai/berhasil)
             $bookedStylistIds = \App\Models\BookingDetail::whereHas('booking', function ($query) use ($date) {
                     $query->whereDate('reservation_datetime', $date)
-                          ->whereNotIn('status', ['dibatalkan']);
+                          ->whereNotIn('status', ['dibatalkan', 'berhasil']);
                 })
                 ->whereNotNull('stylist_id')
                 ->pluck('stylist_id')

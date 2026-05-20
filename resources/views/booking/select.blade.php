@@ -374,14 +374,14 @@
                                     $initialDate = $now->greaterThan($cutoff) ? \Carbon\Carbon::tomorrow()->toDateString() : \Carbon\Carbon::today()->toDateString();
                                 @endphp
                                 <!-- TANGGAL -->
-                                <div class="col-md-3 mb-3">
+                                <div class="col-md-3 mb-3" @if(request()->filled('reservation_date')) style="display: none;" @endif>
                                     <label class="form-label">📅 Tanggal</label>
                                     <input type="date" name="reservation_date" id="reservation_date" class="form-control"
                                         min="{{ $initialDate }}" value="{{ request()->input('reservation_date', $initialDate) }}" required>
                                 </div>
 
                                 <!-- JAM -->
-                                <div class="col-md-3 mb-3">
+                                <div class="{{ request()->filled('reservation_date') ? 'col-md-6' : 'col-md-3' }} mb-3">
                                     <label class="form-label">⏰ Jam Reservasi</label>
                                     <select name="reservation_time" id="reservation_time" class="form-select" required>
                                         <option value="">-- Pilih Jam --</option>

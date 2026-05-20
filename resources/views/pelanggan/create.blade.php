@@ -64,26 +64,7 @@
                             </div>
                         </div>
 
-                        <h5 class="mb-3 border-bottom pb-2 mt-4">Data Transaksi & Keanggotaan</h5>
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label>Membership Tier</label>
-                                <select name="membership_tier" class="form-select">
-                                    <option value="">-- Pilih --</option>
-                                    <option value="Platinum" {{ old('membership_tier') == 'Platinum' ? 'selected' : '' }}>Platinum</option>
-                                    <option value="Gold" {{ old('membership_tier') == 'Gold' ? 'selected' : '' }}>Gold</option>
-                                    <option value="Silver" {{ old('membership_tier') == 'Silver' ? 'selected' : '' }}>Silver</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label>Total Spend (Rp)</label>
-                                <input type="number" name="total_spend" class="form-control" value="{{ old('total_spend', 0) }}" min="0">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label>Tanggal Transaksi Terakhir</label>
-                                <input type="datetime-local" name="last_transaction_at" class="form-control" value="{{ old('last_transaction_at') }}">
-                            </div>
-                        </div>
+
                         
                         <!-- Role otomatis pelanggan -->
                         <input type="hidden" name="role" value="pelanggan">

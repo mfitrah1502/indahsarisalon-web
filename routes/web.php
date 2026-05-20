@@ -70,10 +70,10 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         Route::get('/', [PelangganController::class, 'index'])->name('index');
         Route::get('/create', [PelangganController::class, 'create'])->name('create');
         Route::post('/', [PelangganController::class, 'store'])->name('store');
-        Route::get('/{pelanggan}/edit', [PelangganController::class, 'edit'])->name('edit');
-        Route::put('/{pelanggan}', [PelangganController::class, 'update'])->name('update');
-        Route::delete('/{pelanggan}', [PelangganController::class, 'destroy'])->name('destroy');
-        Route::get('/{pelanggan}', [PelangganController::class, 'show'])->name('show');
+        Route::get('/{id}/edit', [PelangganController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [PelangganController::class, 'update'])->name('update');
+        Route::delete('/{id}', [PelangganController::class, 'destroy'])->name('destroy');
+        Route::get('/{id}', [PelangganController::class, 'show'])->name('show');
         Route::get('/{id}/history', [PelangganController::class, 'history'])->name('history');
     });
 

@@ -89,20 +89,27 @@ class ProfileController extends Controller
             'last_education' => 'nullable|string|max:255',
         ]);
 
-        $user->update([
+        $data = [
             'name' => $request->name,
             'username' => $request->username,
             'phone' => $request->phone,
             'email' => $request->email,
-            'nickname' => $request->nickname,
-            'birth_place' => $request->birth_place,
-            'birth_date' => $request->birth_date,
-            'gender' => $request->gender,
-            'emergency_contact' => $request->emergency_contact,
-            'bank_account_name' => $request->bank_account_name,
-            'bank_account_number' => $request->bank_account_number,
-            'last_education' => $request->last_education,
-        ]);
+        ];
+
+        if ($user->role != 'pelanggan') {
+            $data = array_merge($data, [
+                'nickname' => $request->nickname,
+                'birth_place' => $request->birth_place,
+                'birth_date' => $request->birth_date,
+                'gender' => $request->gender,
+                'emergency_contact' => $request->emergency_contact,
+                'bank_account_name' => $request->bank_account_name,
+                'bank_account_number' => $request->bank_account_number,
+                'last_education' => $request->last_education,
+            ]);
+        }
+
+        $user->update($data);
 
         return response()->json([
             'success' => true, 

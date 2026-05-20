@@ -132,7 +132,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         if (!isset($this->attributes['cached_total_spending'])) {
             $this->attributes['cached_total_spending'] = $this->getAllBookingsQuery()
-                ->where('status', 'berhasil')
+                ->where('status', 'success')
                 ->where('payment_status', 'paid')
                 ->sum('total_price');
         }
@@ -172,7 +172,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         if (!isset($this->attributes['cached_last_transaction_at'])) {
             $latestBooking = $this->getAllBookingsQuery()
-                ->where('status', 'berhasil')
+                ->where('status', 'success')
                 ->latest('reservation_datetime')
                 ->first();
             $this->attributes['cached_last_transaction_at'] = $latestBooking ? $latestBooking->reservation_datetime : null;
@@ -187,7 +187,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         if (!isset($this->attributes['cached_recent_spending'])) {
             $this->attributes['cached_recent_spending'] = $this->getAllBookingsQuery()
-                ->where('status', 'berhasil')
+                ->where('status', 'success')
                 ->where('payment_status', 'paid')
                 ->where('reservation_datetime', '>=', now()->subYears(2))
                 ->sum('total_price');

@@ -174,6 +174,7 @@
                                 </div>
                             </div>
                         </div>
+                        @if(Auth::user()->role != 'pelanggan')
                         <div class="col-md-6 mb-4">
                             <div class="info-box border">
                                 <span class="info-label">Nickname / Panggilan</span>
@@ -214,6 +215,7 @@
                                 </div>
                             </div>
                         </div>
+                        @endif
 
                         <!-- Data Kepegawaian (Hanya muncul jika bukan Customer) -->
                         @if(Auth::user()->role != 'pelanggan')
@@ -297,6 +299,12 @@
                             <label class="form-label">Email Address</label>
                             <input type="email" name="email" class="form-control" value="{{ Auth::user()->email }}" required>
                         </div>
+                        @if(Auth::user()->role == 'pelanggan')
+                        <div class="mb-3">
+                            <label class="form-label">Nomor Telepon</label>
+                            <input type="text" name="phone" class="form-control" value="{{ Auth::user()->phone }}" required placeholder="08123456789">
+                        </div>
+                        @else
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Nomor Telepon</label>
@@ -331,7 +339,6 @@
                                 <input type="text" name="last_education" class="form-control" value="{{ Auth::user()->last_education }}">
                             </div>
                             
-                            @if(Auth::user()->role != 'pelanggan')
                             <div class="col-12 mt-2">
                                 <hr>
                                 <label class="fw-bold mb-2">Informasi Perbankan</label>
@@ -344,8 +351,8 @@
                                 <label class="form-label text-muted small">Nomor Rekening</label>
                                 <input type="text" name="bank_account_number" class="form-control" value="{{ Auth::user()->bank_account_number }}">
                             </div>
-                            @endif
                         </div>
+                        @endif
                         <div class="text-end mt-4">
                             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
                             <button type="submit" class="btn btn-pink px-4">Simpan Perubahan</button>

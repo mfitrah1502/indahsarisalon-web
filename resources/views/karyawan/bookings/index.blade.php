@@ -100,7 +100,7 @@
                     </div>
                     <div class="flex-grow-1 ms-3">
                         <h6 class="text-white mb-0 opacity-75 small">Selesai / Berhasil</h6>
-                        <h4 class="text-white mb-0 fw-bold">{{ $stats['berhasil'] }}</h4>
+                        <h4 class="text-white mb-0 fw-bold">{{ $stats['success'] }}</h4>
                     </div>
                 </div>
             </div>
@@ -169,8 +169,8 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ $status == 'berhasil' ? 'active fw-bold' : '' }}" 
-                           href="{{ route('admin.bookings.index', ['status' => 'berhasil']) }}">
+                        <a class="nav-link {{ $status == 'success' ? 'active fw-bold' : '' }}" 
+                           href="{{ route('admin.bookings.index', ['status' => 'success']) }}">
                             ✅ Selesai (Berhasil)
                         </a>
                     </li>
@@ -378,7 +378,7 @@
                     
                     const statusMap = {
                         'pending': { label: '⏳ Pending', class: 'bg-warning text-dark' },
-                        'berhasil': { label: '✅ Selesai', class: 'bg-success text-white' },
+                        'success': { label: '✅ Selesai', class: 'bg-success text-white' },
                         'dibatalkan': { label: '❌ Batal', class: 'bg-danger text-white' }
                     };
                     const payMap = {
@@ -432,11 +432,11 @@
 
         function updateBookingStatus(status) {
             Swal.fire({
-                title: status === 'berhasil' ? 'Selesaikan Pesanan?' : 'Batalkan Pesanan?',
+                title: status === 'success' ? 'Selesaikan Pesanan?' : 'Batalkan Pesanan?',
                 text: "Status akan diperbarui secara permanen.",
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: status === 'berhasil' ? '#2ecc71' : '#e74c3c',
+                confirmButtonColor: status === 'success' ? '#2ecc71' : '#e74c3c',
                 cancelButtonColor: '#95a5a6',
                 confirmButtonText: 'Ya, Lanjutkan!',
                 cancelButtonText: 'Kembali'
@@ -462,7 +462,7 @@
             });
         }
 
-        $('#btnMarkFinished').click(() => updateBookingStatus('berhasil'));
+        $('#btnMarkFinished').click(() => updateBookingStatus('success'));
         $('#btnCancelBooking').click(() => updateBookingStatus('dibatalkan'));
     });
 </script>

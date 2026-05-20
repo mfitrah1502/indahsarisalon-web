@@ -26,7 +26,7 @@
                     <td class="small">
                         @php
                             $statusClass = match(strtolower($booking->status)) {
-                                'berhasil' => 'bg-light-success text-success',
+                                'success' => 'bg-light-success text-success',
                                 'pending' => 'bg-light-warning text-warning',
                                 'dibatalkan' => 'bg-light-danger text-danger',
                                 default => 'bg-light-secondary text-secondary',

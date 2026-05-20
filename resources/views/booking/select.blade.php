@@ -216,7 +216,7 @@
 
                         <!-- INFO TREATMENT -->
                         <!-- VARIANT CHECKLIST (Hanya muncul jika treatment utama punya banyak detail) -->
-                        @if($treatment->details->count() > 1)
+                        @if($treatment->details->count() > 1 && $preSelectedDetails->isEmpty())
                             <div class="p-3 mb-3 bg-light-warning rounded-3 border border-warning border-opacity-25 shadow-sm">
                                 <h6 class="fw-bold mb-3 text-dark"><i class="ti ti-list-check me-1"></i>Pilih Detail Layanan:
                                     <span class="text-primary">{{ $treatment->name }}</span></h6>

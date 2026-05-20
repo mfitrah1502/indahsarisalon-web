@@ -228,7 +228,7 @@
                             <div class="p-3 bg-white border rounded-3 shadow-sm h-100 d-flex flex-column justify-content-between">
                                 <div>
                                     <label class="form-label fw-bold mb-2"><i class="ti ti-calendar me-1 text-primary"></i>Pilih Tanggal Reservasi</label>
-                                    <p class="small text-muted mb-3">Tentukan tanggal kunjungan Anda ke salon terlebih dahulu.</p>
+                                    <p class="small text-muted mb-3">Tentukan tanggal kunjungan Anda ke salon terlebih dahulu. Batas waktu reservasi (09:00-10:30) </p>
                                 </div>
                                 @php
                                     $now = \Carbon\Carbon::now();

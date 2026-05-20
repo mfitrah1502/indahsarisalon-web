@@ -67,7 +67,6 @@
                         title="Lihat Detail">
                     <i class="ti ti-eye fs-5"></i>
                 </button>
-                @if($pelanggan->status !== 'guest')
                 <a href="{{ route('pelanggan.edit', $pelanggan->id) }}" class="btn btn-light action-btn text-warning" title="Edit">
                     <i class="ti ti-edit fs-5"></i>
                 </a>
@@ -77,7 +76,6 @@
                         <i class="ti ti-trash fs-5"></i>
                     </button>
                 </form>
-                @endif
             </div>
         </td>
     </tr>

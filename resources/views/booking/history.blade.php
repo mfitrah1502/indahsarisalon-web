@@ -365,6 +365,10 @@
                     <span class="text-muted">Status Pembayaran</span>
                     <span class="fw-bold text-dark">${booking.payment_status === 'paid' ? '<span class="badge bg-success">Lunas (Berhasil)</span>' : '<span class="badge bg-warning text-dark">Belum Dibayar</span>'}</span>
                 </div>
+<div class="list-group-item d-flex justify-content-between px-0">
+    <span class="text-muted">Status Pemesanan</span>
+    <span class="fw-bold text-dark">${booking.status === 'pending' ? '<span class="badge bg-warning text-dark">Pending</span>' : (booking.status === 'confirmed' ? '<span class="badge bg-success">Confirmed</span>' : (booking.status === 'cancelled' ? '<span class="badge bg-danger">Dibatalkan</span>' : ''))}</span>
+</div>
             </div>
             
             ${(booking.payment_status === 'unpaid' && (booking.status === 'pending' || booking.status === 'confirmed')) ? `

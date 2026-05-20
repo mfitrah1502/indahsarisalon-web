@@ -30,6 +30,7 @@ class PelangganController extends Controller
                       $u->where('role', '!=', 'pelanggan');
                   });
             })
+            ->where('status', '!=', 'dibatalkan')
             ->groupBy('customer_name', 'customer_email', 'customer_phone');
 
         if($request->has('search') && $request->search != ''){
@@ -55,6 +56,8 @@ class PelangganController extends Controller
             return true;
         })->map(function($booking) {
             $user = new User();
+            $user->incrementing = false;
+            $user->keyType = 'string';
             $user->id = 'guest-' . $booking->id;
             $user->name = $booking->customer_name;
             $user->username = 'Guest';
@@ -75,10 +78,29 @@ class PelangganController extends Controller
     {
         return view('pelanggan.create'); // form tambah pelanggan
     }
-    public function edit(User $pelanggan)
-{
-    return view('pelanggan.edit', compact('pelanggan')); // form edit
-}
+    public function edit($id)
+    {
+        if (strpos($id, 'guest-') === 0) {
+            $bookingId = str_replace('guest-', '', $id);
+            $booking = \App\Models\Booking::findOrFail($bookingId);
+            
+            $pelanggan = new User();
+            $pelanggan->incrementing = false;
+            $pelanggan->keyType = 'string';
+            $pelanggan->id = $id;
+            $pelanggan->name = $booking->customer_name;
+            $pelanggan->username = 'Guest';
+            $pelanggan->email = $booking->customer_email ?? '-';
+            $pelanggan->phone = $booking->customer_phone ?? '-';
+            $pelanggan->role = 'pelanggan';
+            $pelanggan->status = 'guest';
+            
+            return view('pelanggan.edit', compact('pelanggan'));
+        }
+
+        $pelanggan = User::findOrFail($id);
+        return view('pelanggan.edit', compact('pelanggan'));
+    }
     public function store(Request $request)
     {
         $request->validate([
@@ -88,9 +110,6 @@ class PelangganController extends Controller
             'phone'    => 'required|string|max:15',
             'password' => 'required|string|min:6|confirmed',
             'status'   => 'required|in:aktif,tidak',
-            'membership_tier' => 'nullable|string|max:50',
-            'total_spend' => 'nullable|numeric',
-            'last_transaction_at' => 'nullable|date',
         ]);
 
         User::create([
@@ -102,24 +121,52 @@ class PelangganController extends Controller
             'role'     => 'pelanggan', // selalu pelanggan
             'type'     => 'pelanggan',
             'status'   => $request->status,
-            'membership_tier' => $request->membership_tier,
-            'total_spend' => $request->total_spend ?? 0,
-            'last_transaction_at' => $request->last_transaction_at,
         ]);
 
         return redirect()->route('pelanggan.index')->with('success', 'Pelanggan berhasil ditambahkan');
     }
-    public function update(Request $request, User $pelanggan)
+    public function update(Request $request, $id)
     {
+        if (strpos($id, 'guest-') === 0) {
+            $request->validate([
+                'name'  => 'required|string|max:255',
+                'email' => 'nullable|email',
+                'phone' => 'required|string|max:15',
+            ]);
+
+            $bookingId = str_replace('guest-', '', $id);
+            $originBooking = \App\Models\Booking::findOrFail($bookingId);
+
+            $bookingsQuery = \App\Models\Booking::where(function($q) use ($originBooking) {
+                if (!empty($originBooking->customer_email) && $originBooking->customer_email !== '-') {
+                    $q->orWhere('customer_email', $originBooking->customer_email);
+                }
+                if (!empty($originBooking->customer_phone) && $originBooking->customer_phone !== '-') {
+                    $q->orWhere('customer_phone', $originBooking->customer_phone);
+                }
+                if (!empty($originBooking->customer_name) && $originBooking->customer_name !== '-') {
+                    $q->orWhere('customer_name', $originBooking->customer_name);
+                }
+            });
+
+            $bookingsQuery->update([
+                'customer_name' => $request->name,
+                'customer_email' => $request->email ?? '-',
+                'customer_phone' => $request->phone,
+            ]);
+
+            return redirect()->route('pelanggan.index')->with('success', 'Pelanggan Guest berhasil diupdate');
+        }
+
+        $pelanggan = User::findOrFail($id);
+
         $request->validate([
             'name'     => 'required|string|max:255',
             'username' => 'required|string|max:255|unique:users,username,' . $pelanggan->id,
             'email'    => 'required|email|unique:users,email,' . $pelanggan->id,
+            'phone'    => 'required|string|max:15',
             'password' => 'nullable|string|min:6|confirmed',
             'status'   => 'required|in:aktif,tidak',
-            'membership_tier' => 'nullable|string|max:50',
-            'total_spend' => 'nullable|numeric',
-            'last_transaction_at' => 'nullable|date',
         ]);
 
         $pelanggan->name     = $request->name;
@@ -128,9 +175,6 @@ class PelangganController extends Controller
         $pelanggan->phone    = $request->phone;
         $pelanggan->status   = $request->status;
         $pelanggan->type     = 'pelanggan';
-        $pelanggan->membership_tier = $request->membership_tier;
-        $pelanggan->total_spend = $request->total_spend ?? 0;
-        $pelanggan->last_transaction_at = $request->last_transaction_at;
 
         if ($request->password) {
             $pelanggan->password = Hash::make($request->password);
@@ -148,8 +192,32 @@ class PelangganController extends Controller
     //     return view('pelanggan.show', compact('pelanggan'));
     // }
 
-    public function destroy(User $pelanggan)
+    public function destroy($id)
     {
+        if (strpos($id, 'guest-') === 0) {
+            $bookingId = str_replace('guest-', '', $id);
+            $originBooking = \App\Models\Booking::findOrFail($bookingId);
+
+            $bookingsQuery = \App\Models\Booking::where(function($q) use ($originBooking) {
+                if (!empty($originBooking->customer_email) && $originBooking->customer_email !== '-') {
+                    $q->orWhere('customer_email', $originBooking->customer_email);
+                }
+                if (!empty($originBooking->customer_phone) && $originBooking->customer_phone !== '-') {
+                    $q->orWhere('customer_phone', $originBooking->customer_phone);
+                }
+                if (!empty($originBooking->customer_name) && $originBooking->customer_name !== '-') {
+                    $q->orWhere('customer_name', $originBooking->customer_name);
+                }
+            });
+
+            $bookingsQuery->delete();
+
+            return redirect()->route('pelanggan.index')
+                ->with('success', 'Pelanggan Guest dan seluruh riwayat pemesanannya berhasil dihapus');
+        }
+
+        $pelanggan = User::findOrFail($id);
+
         // Unlink bookings to prevent foreign key violation and keep transaction history
         \App\Models\Booking::where('user_id', $pelanggan->id)->update(['user_id' => null]);
 
@@ -191,17 +259,17 @@ class PelangganController extends Controller
                 $bookings = collect();
             } else {
                 $bookings = \App\Models\Booking::where(function($q) use ($originBooking) {
-                    if (!empty($originBooking->customer_email)) {
+                    if (!empty($originBooking->customer_email) && $originBooking->customer_email !== '-') {
                         $q->orWhere('customer_email', $originBooking->customer_email);
                     }
-                    if (!empty($originBooking->customer_phone)) {
+                    if (!empty($originBooking->customer_phone) && $originBooking->customer_phone !== '-') {
                         $q->orWhere('customer_phone', $originBooking->customer_phone);
                     }
-                    if (!empty($originBooking->customer_name)) {
+                    if (!empty($originBooking->customer_name) && $originBooking->customer_name !== '-') {
                         $q->orWhere('customer_name', $originBooking->customer_name);
                     }
                 })
-                ->where('status', 'success')
+                ->where('status', '!=', 'dibatalkan')
                 ->orderBy('reservation_datetime', 'desc')
                 ->get();
             }

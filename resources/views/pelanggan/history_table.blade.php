@@ -26,13 +26,19 @@
                     <td class="small">
                         @php
                             $statusClass = match(strtolower($booking->status)) {
-                                'success' => 'bg-light-success text-success',
+                                'success', 'berhasil' => 'bg-light-success text-success',
                                 'pending' => 'bg-light-warning text-warning',
                                 'dibatalkan' => 'bg-light-danger text-danger',
                                 default => 'bg-light-secondary text-secondary',
                             };
+                            $statusText = match(strtolower($booking->status)) {
+                                'success', 'berhasil' => 'Selesai',
+                                'pending' => 'Pending',
+                                'dibatalkan' => 'Dibatalkan',
+                                default => ucfirst($booking->status),
+                            };
                         @endphp
-                        <span class="badge {{ $statusClass }} rounded-pill" style="font-size: 0.7rem;">Selesai</span>
+                        <span class="badge {{ $statusClass }} rounded-pill" style="font-size: 0.7rem;">{{ $statusText }}</span>
                     </td>
                     <td class="small fw-bold text-end">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</td>
                 </tr>

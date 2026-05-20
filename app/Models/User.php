@@ -114,12 +114,33 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getAllBookingsQuery()
     {
+        if (is_string($this->id) && strpos($this->id, 'guest-') === 0) {
+            return \App\Models\Booking::where(function ($q) {
+                $hasIdentifier = false;
+                if (!empty($this->email) && $this->email !== '-') {
+                    $q->orWhere('customer_email', $this->email);
+                    $hasIdentifier = true;
+                }
+                if (!empty($this->phone) && $this->phone !== '-') {
+                    $q->orWhere('customer_phone', $this->phone);
+                    $hasIdentifier = true;
+                }
+                if (!empty($this->name) && $this->name !== '-') {
+                    $q->orWhere('customer_name', $this->name);
+                    $hasIdentifier = true;
+                }
+                if (!$hasIdentifier) {
+                    $q->whereRaw('1=0');
+                }
+            });
+        }
+
         return \App\Models\Booking::where(function ($q) {
-            $q->where('user_id', $this->id);
-            if (!empty($this->email)) {
+            $q->where('user_id', (int)$this->id);
+            if (!empty($this->email) && $this->email !== '-') {
                 $q->orWhere('customer_email', $this->email);
             }
-            if (!empty($this->phone)) {
+            if (!empty($this->phone) && $this->phone !== '-') {
                 $q->orWhere('customer_phone', $this->phone);
             }
         });

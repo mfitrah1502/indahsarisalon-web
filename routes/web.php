@@ -91,6 +91,7 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         Route::get('/admin/bookings', [BookingController::class, 'adminIndex'])->name('admin.bookings.index');
         Route::get('/admin/bookings/{id}', [BookingController::class, 'show'])->name('admin.bookings.show');
         Route::patch('/admin/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('admin.bookings.updateStatus');
+        Route::post('/admin/bookings/{id}/pay-cash', [BookingController::class, 'payCash'])->name('admin.bookings.payCash');
         Route::patch('/admin/bookings/{booking}/reschedule', [BookingController::class, 'reschedule'])->name('admin.bookings.reschedule');
         Route::get('/admin/bookings/{id}/print', [BookingController::class, 'printReceipt'])->name('admin.bookings.print');
 

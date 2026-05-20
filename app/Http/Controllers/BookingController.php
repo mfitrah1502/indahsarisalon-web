@@ -401,7 +401,7 @@ class BookingController extends Controller
         ]);
         
         $paymentMethod = strtolower($request->payment_method);
-        $paymentStatus = ($isStaff && $paymentMethod === 'tunai') ? 'paid' : 'unpaid';
+        $paymentStatus = 'unpaid';
 
         // Log Debug untuk investigasi masalah 'unpaid'
         try {
@@ -736,7 +736,7 @@ class BookingController extends Controller
             'new_method' => $request->payment_method
         ]);
 
-        $paymentStatus = ($isStaff && strtolower($request->payment_method) === 'tunai') ? 'paid' : 'unpaid';
+        $paymentStatus = 'unpaid';
 
         $booking->update([
             'payment_method' => strtolower($request->payment_method) === 'tunai' ? 'Tunai' : $request->payment_method,
@@ -939,6 +939,56 @@ class BookingController extends Controller
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // ADMIN: Process cash payment for a booking
+    public function payCash(Request $request, $id)
+    {
+        try {
+            $booking = Booking::findOrFail($id);
+
+            if (strtolower($booking->payment_method) !== 'tunai') {
+                return response()->json([
+                    'message' => 'Metode pembayaran bukan tunai!'
+                ], 400);
+            }
+
+            if ($booking->payment_status === 'paid') {
+                return response()->json([
+                    'message' => 'Pemesanan ini sudah lunas!'
+                ], 400);
+            }
+
+            $request->validate([
+                'cash_nominal' => 'required|numeric|min:0'
+            ]);
+
+            $cashNominal = (int) $request->cash_nominal;
+            if ($cashNominal < $booking->total_price) {
+                return response()->json([
+                    'message' => 'Nominal pembayaran kurang!'
+                ], 422);
+            }
+
+            $change = $cashNominal - $booking->total_price;
+
+            $booking->update([
+                'payment_status' => 'paid',
+                'cashier_id' => Auth::id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pembayaran tunai berhasil diproses.',
+                'change' => $change,
+                'formatted_change' => 'Rp ' . number_format($change, 0, ',', '.')
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error("Error processing cash payment: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Gagal memproses pembayaran: ' . $e->getMessage()
+            ], 500);
         }
     }
 

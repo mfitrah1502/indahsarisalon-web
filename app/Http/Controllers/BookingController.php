@@ -637,16 +637,16 @@ class BookingController extends Controller
     {
         // Validate status, allow both Indonesian and English terms
         $request->validate([
-            'status' => 'required|in:pending,berhasil,success,dibatalkan'
+            'status' => 'required|in:pending,success,dibatalkan'
         ]);
         // Normalize status for database storage
         $status = $request->status;
         if ($status === 'success') {
-            $status = 'berhasil'; // store Indonesian term in DB
+            $status = 'success'; // store Indonesian term in DB
         }
         $updateData = ['status' => $status];
         // If status indicates completion, set payment_status to paid
-        if ($status === 'berhasil') {
+        if ($status === 'success') {
             $updateData['payment_status'] = 'paid';
         }
 

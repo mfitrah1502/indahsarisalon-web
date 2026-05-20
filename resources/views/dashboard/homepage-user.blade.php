@@ -284,7 +284,7 @@
                                                 <span class="fw-bold text-danger h5 mb-0">Rp
                                                     {{ number_format($promo->details->min('price') ?? 0, 0, ',', '.') }}</span>
                                             </div>
-                                            <a href="{{ route('booking.select', $promo->id) }}"
+                                            <a href="{{ route('booking.index', ['treatment_id' => $promo->id]) }}"
                                                 class="btn btn-danger rounded-pill px-4 shadow-sm">
                                                 Ambil Promo
                                             </a>
@@ -341,7 +341,7 @@
                                                 <span class="fw-bold text-primary h5 mb-0">Rp
                                                     {{ number_format($treatment->details->min('price') ?? 0, 0, ',', '.') }}</span>
                                             </div>
-                                            <a href="{{ route('booking.select', $treatment->id) }}"
+                                            <a href="{{ route('booking.index', ['treatment_id' => $treatment->id]) }}"
                                                 class="btn btn-primary rounded-pill px-3">
                                                 Booking
                                             </a>

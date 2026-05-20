@@ -823,8 +823,9 @@ class BookingController extends Controller
             }
 
             // 0a. Check for stylists who are "Off Work" or "Libur"
+            // Unified off‑work status check – only entries with status exactly 'off' (case‑insensitive) are considered
             $offWorkIds = \App\Models\Absensi::where('tanggal', $date)
-                ->whereIn('status', ['Off Work', 'Libur', 'libur', 'off work'])
+                ->whereRaw('LOWER(status) = ?', ['off'])
                 ->pluck('user_id')
                 ->map(fn($id) => (int)$id)
                 ->toArray();
@@ -939,7 +940,7 @@ class BookingController extends Controller
 
             // 3. Ambil stylist yang absen / libur pada tanggal tersebut
             $offWorkIds = \App\Models\Absensi::where('tanggal', $date)
-                ->whereIn('status', ['Off Work', 'Libur', 'libur', 'off work'])
+                ->whereIn('status', ['off'])
                 ->pluck('user_id')
                 ->map(fn($id) => (int)$id)
                 ->unique()

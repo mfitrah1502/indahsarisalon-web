@@ -1277,10 +1277,15 @@
                 const isBusy = allBusyIds.has(sid);
 
                 card.classList.remove('busy', 'disabled');
-                card.style.display = isOff ? 'none' : '';
                 
-                if (!isOff && isBusy) {
-                    card.classList.add('busy', 'disabled');
+                if (isOff) {
+                    card.classList.add('disabled');
+                    card.style.display = 'none'; // Optional: hide off-work
+                } else {
+                    card.style.display = '';
+                    if (isBusy) {
+                        card.classList.add('busy', 'disabled');
+                    }
                 }
 
                 // If currently selected stylist becomes unavailable, reset global selection
@@ -1374,6 +1379,10 @@
         }
 
         window.updateGlobalStylist = function (stylistId, element) {
+            // If the clicked card is disabled (off‑work or busy), ignore selection
+            if (element.classList.contains('disabled')) {
+                return;
+            }
             resetLastCreatedBookingId();
             const kat = stylistId ? element.getAttribute('data-kategori') : null;
 

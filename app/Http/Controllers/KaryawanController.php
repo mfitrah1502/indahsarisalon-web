@@ -57,32 +57,42 @@ class KaryawanController extends Controller
         'last_education' => 'nullable|string|max:255',
     ]);
 
-    User::create([
-        'name' => $request->name,
-        'username' => $request->username,
-        'email' => $request->email,
-        'phone' => $request->phone,
-        'password' => Hash::make($request->password),
-        'role' => $request->role,       // simpan role dari form
-        'type' => 'karyawan',
-        'kategori' => null,
-        'status' => $request->status ?? 'aktif',
-        'nickname' => $request->nickname,
-        'birth_place' => $request->birth_place,
-        'birth_date' => $request->birth_date,
-        'gender' => $request->gender,
-        'position' => $request->position,
-        'division' => $request->division,
-        'join_date' => $request->join_date,
-        'employment_status' => $request->employment_status,
-        'emergency_contact' => $request->emergency_contact,
-        'bank_account_name' => $request->bank_account_name,
-        'bank_account_number' => $request->bank_account_number,
-        'last_education' => $request->last_education,
-    ]);
+        $kategori = null;
+        if ($request->filled('position')) {
+            $pos = strtolower($request->position);
+            if (str_contains($pos, 'senior') || str_contains($pos, 'creative')) {
+                $kategori = 'senior';
+            } elseif (str_contains($pos, 'junior')) {
+                $kategori = 'junior';
+            }
+        }
 
-    return redirect()->route('karyawan.index')->with('success','Karyawan berhasil ditambahkan');
-}
+        User::create([
+            'name' => $request->name,
+            'username' => $request->username,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,       // simpan role dari form
+            'type' => 'karyawan',
+            'kategori' => $kategori,
+            'status' => $request->status ?? 'aktif',
+            'nickname' => $request->nickname,
+            'birth_place' => $request->birth_place,
+            'birth_date' => $request->birth_date,
+            'gender' => $request->gender,
+            'position' => $request->position,
+            'division' => $request->division,
+            'join_date' => $request->join_date,
+            'employment_status' => $request->employment_status,
+            'emergency_contact' => $request->emergency_contact,
+            'bank_account_name' => $request->bank_account_name,
+            'bank_account_number' => $request->bank_account_number,
+            'last_education' => $request->last_education,
+        ]);
+
+        return redirect()->route('karyawan.index')->with('success','Karyawan berhasil ditambahkan');
+    }
 
     public function edit(User $karyawan)
     {
@@ -90,50 +100,60 @@ class KaryawanController extends Controller
     }
 
     public function update(Request $request, User $karyawan)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'username' => 'required|string|unique:users,username,'.$karyawan->id,
-        'email' => 'required|email|unique:users,email,'.$karyawan->id,
-        'phone' => 'required|string|max:15',
-        'role' => 'required|in:owner,admin,karyawan', // validasi role
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|unique:users,username,'.$karyawan->id,
+            'email' => 'required|email|unique:users,email,'.$karyawan->id,
+            'phone' => 'required|string|max:15',
+            'role' => 'required|in:owner,admin,karyawan', // validasi role
 
-        'nickname' => 'nullable|string|max:255',
-        'birth_place' => 'nullable|string|max:255',
-        'birth_date' => 'nullable|date',
-        'gender' => 'nullable|string|max:50',
-        'position' => 'nullable|string|max:255',
-        'division' => 'nullable|string|max:255',
-        'join_date' => 'nullable|date',
-        'employment_status' => 'nullable|string|max:100',
-        'emergency_contact' => 'nullable|string|max:50',
-        'bank_account_name' => 'nullable|string|max:255',
-        'bank_account_number' => 'nullable|string|max:50',
-        'last_education' => 'nullable|string|max:255',
-    ]);
+            'nickname' => 'nullable|string|max:255',
+            'birth_place' => 'nullable|string|max:255',
+            'birth_date' => 'nullable|date',
+            'gender' => 'nullable|string|max:50',
+            'position' => 'nullable|string|max:255',
+            'division' => 'nullable|string|max:255',
+            'join_date' => 'nullable|date',
+            'employment_status' => 'nullable|string|max:100',
+            'emergency_contact' => 'nullable|string|max:50',
+            'bank_account_name' => 'nullable|string|max:255',
+            'bank_account_number' => 'nullable|string|max:50',
+            'last_education' => 'nullable|string|max:255',
+        ]);
 
-    $karyawan->update([
-        'name' => $request->name,
-        'username' => $request->username,
-        'email' => $request->email,
-        'phone' => $request->phone,
-        'role' => $request->role,   
-        'kategori' => null,
-        'type' => 'karyawan',    // update role
-        'status' => $request->status ?? 'aktif',
-        'nickname' => $request->nickname,
-        'birth_place' => $request->birth_place,
-        'birth_date' => $request->birth_date,
-        'gender' => $request->gender,
-        'position' => $request->position,
-        'division' => $request->division,
-        'join_date' => $request->join_date,
-        'employment_status' => $request->employment_status,
-        'emergency_contact' => $request->emergency_contact,
-        'bank_account_name' => $request->bank_account_name,
-        'bank_account_number' => $request->bank_account_number,
-        'last_education' => $request->last_education,
-    ]);
+        $kategori = null;
+        if ($request->filled('position')) {
+            $pos = strtolower($request->position);
+            if (str_contains($pos, 'senior') || str_contains($pos, 'creative')) {
+                $kategori = 'senior';
+            } elseif (str_contains($pos, 'junior')) {
+                $kategori = 'junior';
+            }
+        }
+
+        $karyawan->update([
+            'name' => $request->name,
+            'username' => $request->username,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'role' => $request->role,   
+            'kategori' => $kategori,
+            'type' => 'karyawan',    // update role
+            'status' => $request->status ?? 'aktif',
+            'nickname' => $request->nickname,
+            'birth_place' => $request->birth_place,
+            'birth_date' => $request->birth_date,
+            'gender' => $request->gender,
+            'position' => $request->position,
+            'division' => $request->division,
+            'join_date' => $request->join_date,
+            'employment_status' => $request->employment_status,
+            'emergency_contact' => $request->emergency_contact,
+            'bank_account_name' => $request->bank_account_name,
+            'bank_account_number' => $request->bank_account_number,
+            'last_education' => $request->last_education,
+        ]);
 
     return redirect()->route('karyawan.index')->with('success','Karyawan berhasil diupdate');
 }

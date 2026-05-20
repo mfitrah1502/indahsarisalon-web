@@ -141,6 +141,99 @@
                 </div>
             </div>
         </div>
+
+        <!-- ARUNIVA HOLISTIC BEAUTY CLINIC PARTNER -->
+        <div class="col-12 mt-2">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden position-relative aruniva-partner-card" 
+                 style="border-left: 5px solid #EA8290 !important;">
+                
+                <!-- Subtle decorative background light/sunlight elements -->
+                <div class="position-absolute top-0 end-0 rounded-circle opacity-10" style="width: 150px; height: 150px; background: #FFC107; transform: translate(30%, -30%); filter: blur(40px); pointer-events: none;"></div>
+                <div class="position-absolute bottom-0 start-0 rounded-circle opacity-10" style="width: 100px; height: 100px; background: #EA8290; transform: translate(-30%, 30%); filter: blur(30px); pointer-events: none;"></div>
+
+                <div class="card-body p-4 p-md-5 position-relative" style="z-index: 2;">
+                    <div class="row align-items-center g-4">
+                        <div class="col-lg-7">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <span class="badge px-3 py-2 rounded-pill shadow-sm" style="background: rgba(234, 130, 144, 0.15); color: #EA8290; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.5px;">
+                                    <i class="ti ti-heart-handshake me-1"></i> PARTNER CLINIC
+                                </span>
+                                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill shadow-sm" style="font-weight: 600; font-size: 0.75rem;">
+                                    <i class="ti ti-sparkles me-1"></i> KONSULTASI GRATIS
+                                </span>
+                            </div>
+                            <h2 class="fw-bold text-dark mb-3" style="font-size: 1.85rem; letter-spacing: -0.5px; line-height: 1.2;">
+                                Perawatan Kulit Holistik <br class="d-none d-md-block">Bersama <span class="text-primary" style="color: #EA8290 !important; position: relative;">Aruniva <span style="position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background: #EA8290; border-radius: 2px; opacity: 0.3;"></span></span>
+                            </h2>
+                            <p class="text-muted mb-4 fs-6" style="line-height: 1.6;">
+                                Terinspirasi dari cahaya matahari pagi, <strong>Aruniva</strong> memberikan perawatan kulit terpersonalisasi untuk wanita dan remaja dengan pendekatan medis, estetika, alami, dan modern yang diawasi langsung oleh dokter spesialis kulit berpengalaman.
+                            </p>
+                            
+                            <!-- 3 Pillars List -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-sm-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="d-flex align-items-center justify-content-center rounded-circle bg-white shadow-sm" style="width: 32px; height: 32px; border: 1px solid rgba(234,130,144,0.15);">
+                                            <i class="ti ti-shield-check text-primary" style="color: #EA8290;"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">Dermatologi</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="d-flex align-items-center justify-content-center rounded-circle bg-white shadow-sm" style="width: 32px; height: 32px; border: 1px solid rgba(234,130,144,0.15);">
+                                            <i class="ti ti-activity text-primary" style="color: #EA8290;"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">Estetika Medis</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="d-flex align-items-center justify-content-center rounded-circle bg-white shadow-sm" style="width: 32px; height: 32px; border: 1px solid rgba(234,130,144,0.15);">
+                                            <i class="ti ti-lock-square text-primary" style="color: #EA8290;"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">Venereologi</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-3">
+                                <a href="https://www.konsultasikulitku.com/kuisioner" target="_blank" class="btn btn-primary fw-bold px-4 py-2.5 rounded-pill shadow-sm" style="background: #EA8290; border-color: #EA8290;">
+                                    <i class="ti ti-file-text me-2"></i>Mulai Konsultasi Gratis
+                                </a>
+                                <a href="https://www.konsultasikulitku.com/" target="_blank" class="btn btn-outline-dark fw-bold px-4 py-2.5 rounded-pill border-dark">
+                                    <i class="ti ti-world me-2"></i>Kunjungi Website
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-lg-5 d-none d-lg-block text-center position-relative">
+                            <div class="position-relative d-inline-block">
+                                <div class="position-absolute top-0 start-0 w-100 h-100 rounded-4 bg-primary opacity-10" style="transform: rotate(-3deg); z-index: 1;"></div>
+                                <div class="position-absolute top-0 start-0 w-100 h-100 rounded-4 bg-warning opacity-10" style="transform: rotate(3deg); z-index: 1;"></div>
+                                <div class="card border-0 shadow-sm overflow-hidden position-relative rounded-4" style="width: 340px; z-index: 2; border: 1px solid rgba(255,255,255,0.8) !important;">
+                                    <div class="bg-white p-3 text-center aruniva-doctor-card">
+                                        <div class="rounded-3 overflow-hidden mb-3 position-relative" style="height: 240px; background: #FFF5F6;">
+                                            <img src="{{ asset('assets/images/dr-agnes-nauli.jpg') }}" alt="Dr. Agnes Nauli, M.Ked (DV), Sp. DVE" class="w-100 h-100" style="object-fit: cover;">
+                                            <div class="position-absolute bottom-0 start-0 end-0 p-2 text-white bg-dark bg-opacity-50 small">
+                                                <i class="ti ti-circle-check text-success me-1"></i> Penanganan Medis Berbasis Bukti
+                                            </div>
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-0">Dr. Agnes Nauli, M.Ked (DV), Sp. DVE</h6>
+                                        <small class="text-muted d-block mt-0.5" style="font-size: 0.75rem;">Spesialis Kulit, Kelamin, dan Estetika</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
  
         <!-- PROMO SECTION -->
         @if(isset($promoTreatments) && $promoTreatments->count() > 0)
@@ -157,16 +250,7 @@
                             <div class="card treatment-card border-0 shadow-sm h-100 overflow-hidden border-top border-danger border-4">
                                 <div class="position-relative">
                                     @php
-                                        if (!$promo->image) {
-                                            $imageUrl = asset('assets/images/no-image.jpg');
-                                        } elseif (strpos($promo->image, 'http') === 0) {
-                                            $imageUrl = $promo->image;
-                                        } else {
-                                            $bucket = ($promo->is_promo && env('SUPABASE_PROMO_BUCKET')) 
-                                                ? env('SUPABASE_PROMO_BUCKET') 
-                                                : env('SUPABASE_BUCKET');
-                                            $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $promo->image;
-                                        }
+                                        $imageUrl = $promo->main_image_url;
                                     @endphp
                                     <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $promo->name }}"
                                         style="height: 180px; object-fit: cover;">
@@ -234,16 +318,7 @@
                                 <div class="card treatment-card border-0 shadow-sm h-100 overflow-hidden">
                                     <div class="position-relative">
                                         @php
-                                            if (!$treatment->image) {
-                                                $imageUrl = asset('assets/images/no-image.jpg');
-                                            } elseif (strpos($treatment->image, 'http') === 0) {
-                                                $imageUrl = $treatment->image;
-                                            } else {
-                                                $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) 
-                                                    ? env('SUPABASE_PROMO_BUCKET') 
-                                                    : env('SUPABASE_BUCKET');
-                                                $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
-                                            }
+                                            $imageUrl = $treatment->main_image_url;
                                         @endphp
                                         <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $treatment->name }}"
                                             style="height: 200px; object-fit: cover;">
@@ -301,6 +376,26 @@
 
         .bg-blur {
             border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Aruniva Partner Card styling */
+        .aruniva-partner-card {
+            background: linear-gradient(135deg, #FFF5F6 0%, #FFF9F3 100%);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .aruniva-partner-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(234, 130, 144, 0.15) !important;
+        }
+
+        [data-bs-theme="dark"] .aruniva-partner-card {
+            background: linear-gradient(135deg, #251b1c 0%, #1e1c18 100%) !important;
+            border-left-color: #EA8290 !important;
+        }
+
+        [data-bs-theme="dark"] .aruniva-doctor-card {
+            background-color: #1e1e1e !important;
         }
     </style>
 @endsection

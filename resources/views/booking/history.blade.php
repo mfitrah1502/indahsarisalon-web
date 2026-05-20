@@ -68,7 +68,9 @@
                                     </div>
                                 @empty
                                     <div class="col-12 text-center py-5">
-                                        <img src="{{ asset('assets/images/widget/empty-cart.svg') }}" alt="Empty" style="width: 120px; opacity: 0.5;">
+                                        <div class="mb-3">
+                                            <i class="ti ti-calendar-off text-muted" style="font-size: 4rem; opacity: 0.6;"></i>
+                                        </div>
                                         <p class="text-muted mt-3">Tidak ada pemesanan yang sedang diproses.</p>
                                     </div>
                                 @endforelse

@@ -103,7 +103,16 @@
 
                             <div class="col-md-6 mb-3">
                                 <label>Posisi / Jabatan</label>
-                                <input type="text" name="position" class="form-control" value="{{ old('position') }}" placeholder="Contoh: Hairstylist">
+                                <select name="position" class="form-select" required>
+                                    <option value="">-- Pilih Posisi --</option>
+                                    <option value="Client Relationship Manager" {{ old('position') == 'Client Relationship Manager' ? 'selected' : '' }}>Client Relationship Manager</option>
+                                    <option value="Senior Hair Technician Specialist" {{ old('position') == 'Senior Hair Technician Specialist' ? 'selected' : '' }}>Senior Hair Technician Specialist</option>
+                                    <option value="Senior Beautician" {{ old('position') == 'Senior Beautician' ? 'selected' : '' }}>Senior Beautician</option>
+                                    <option value="Creative Stylist" {{ old('position') == 'Creative Stylist' ? 'selected' : '' }}>Creative Stylist</option>
+                                    <option value="Senior Therapist" {{ old('position') == 'Senior Therapist' ? 'selected' : '' }}>Senior Therapist</option>
+                                    <option value="Relationship Client" {{ old('position') == 'Relationship Client' ? 'selected' : '' }}>Relationship Client</option>
+                                    <option value="Junior Therapist" {{ old('position') == 'Junior Therapist' ? 'selected' : '' }}>Junior Therapist</option>
+                                </select>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label>Divisi</label>

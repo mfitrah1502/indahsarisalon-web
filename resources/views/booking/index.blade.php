@@ -2,7 +2,19 @@
 
 @section('title', 'Book an Appointment')
 
+@push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
+    /* Styling Flatpickr agar senada dengan UI Pink */
+    .flatpickr-day.selected {
+        background: #EA8290 !important;
+        border-color: #EA8290 !important;
+    }
+    .flatpickr-day.disabled {
+        color: #dcdcdc !important;
+        background: #f8f9fa !important;
+    }
+
     .treatment-card {
         transition: all 0.3s ease;
         border-radius: 12px;
@@ -114,8 +126,32 @@
         align-items: center;
         justify-content: center;
     }
-    .stylist-card-modern.active .check-mark {
-        display: flex;
+    .stylist-card-modern.disabled {
+        opacity: 0.45;
+        background: #f8f9fa;
+        border-color: #dee2e6;
+        cursor: not-allowed;
+        pointer-events: none !important;
+        position: relative;
+    }
+    .stylist-card-modern.disabled::after {
+        content: 'Penuh';
+        position: absolute;
+        bottom: 2px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 0.55rem;
+        background: #dc3545;
+        color: #fff;
+        padding: 1px 4px;
+        border-radius: 4px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .stylist-card-modern.disabled.off-work::after {
+        content: 'Libur';
+        background: #6c757d;
     }
 
     /* Dimmed/Disabled Treatment Styles */
@@ -162,6 +198,7 @@
         font-size: 0.7rem;
     }
 </style>
+@endpush
 @section('content')
     <div class="row">
         <div class="col-12">
@@ -184,35 +221,56 @@
                         </div>
                     @endif
 
-                    <!-- Pemilihan Stylist Terlebih Dahulu (Premium Layout) -->
-                    <div class="col-md-12 mb-4">
-                        <div class="p-3 bg-white border rounded-3 shadow-sm">
-                            <label class="form-label fw-bold mb-2"><i class="ti ti-heart-handshake me-1 text-primary"></i>Pilih Stylist Pilihan Anda</label>
-                            <p class="small text-muted mb-3">Silakan pilih stylist terlebih dahulu. Kategori treatment akan disesuaikan dengan posisi keahlian stylist yang dipilih.</p>
-                            <div class="stylist-grid" id="main_stylist_grid">
-                                <div class="stylist-card-modern active" data-stylist-id="" data-position="" onclick="selectMainStylist(null, this)">
-                                    <div class="check-mark"><i class="ti ti-check"></i></div>
-                                    <div class="avatar-container d-flex align-items-center justify-content-center bg-light">
-                                        <i class="ti ti-minus text-muted" style="font-size: 1.5rem;"></i>
-                                    </div>
-                                    <span class="stylist-name">Semua</span>
-                                    <span class="stylist-cat">Default</span>
+                    <!-- Pemilihan Waktu & Stylist (Premium Side-by-Side Layout) -->
+                    <div class="row g-3 mb-4">
+                        <!-- Pilih Tanggal Reservasi -->
+                        <div class="col-md-4">
+                            <div class="p-3 bg-white border rounded-3 shadow-sm h-100 d-flex flex-column justify-content-between">
+                                <div>
+                                    <label class="form-label fw-bold mb-2"><i class="ti ti-calendar me-1 text-primary"></i>Pilih Tanggal Reservasi</label>
+                                    <p class="small text-muted mb-3">Tentukan tanggal kunjungan Anda ke salon terlebih dahulu.</p>
                                 </div>
-                                @forelse($stylists as $stylist)
-                                    <div class="stylist-card-modern" 
-                                         data-stylist-id="{{ $stylist->id }}" 
-                                         data-stylist-name="{{ $stylist->name }}"
-                                         data-position="{{ strtolower($stylist->position) }}"
-                                         onclick="selectMainStylist({{ $stylist->id }}, this)">
+                                @php
+                                    $now = \Carbon\Carbon::now();
+                                    $cutoff = \Carbon\Carbon::today()->setHour(10)->setMinute(30);
+                                    $initialDate = $now->greaterThan($cutoff) ? \Carbon\Carbon::tomorrow()->toDateString() : \Carbon\Carbon::today()->toDateString();
+                                @endphp
+                                <div class="position-relative mt-2">
+                                    <input type="text" id="main_reservation_date" class="form-control form-control-lg border-2 border-primary border-opacity-25 rounded-3 fw-bold text-primary text-center bg-white cursor-pointer" readonly value="{{ $initialDate }}" style="font-size: 1.1rem; height: 50px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pemilihan Stylist Terlebih Dahulu (Premium Layout) -->
+                        <div class="col-md-8">
+                            <div class="p-3 bg-white border rounded-3 shadow-sm h-100">
+                                <label class="form-label fw-bold mb-2"><i class="ti ti-heart-handshake me-1 text-primary"></i>Pilih Stylist Pilihan Anda</label>
+                                <p class="small text-muted mb-3">Silakan pilih stylist terlebih dahulu. Kategori treatment akan disesuaikan dengan posisi keahlian stylist yang dipilih.</p>
+                                <div class="stylist-grid" id="main_stylist_grid">
+                                    <div class="stylist-card-modern active" data-stylist-id="" data-position="" onclick="selectMainStylist(null, this)">
                                         <div class="check-mark"><i class="ti ti-check"></i></div>
-                                        <div class="avatar-container">
-                                            <img src="{{ $stylist->avatar_url }}" alt="{{ $stylist->name }}">
+                                        <div class="avatar-container d-flex align-items-center justify-content-center bg-light">
+                                            <i class="ti ti-minus text-muted" style="font-size: 1.5rem;"></i>
                                         </div>
-                                        <span class="stylist-name">{{ explode(' ', $stylist->name)[0] }}</span>
-                                        <span class="stylist-cat">{{ ucwords(strtolower($stylist->position)) }}</span>
+                                        <span class="stylist-name">Semua</span>
+                                        <span class="stylist-cat">Default</span>
                                     </div>
-                                @empty
-                                @endforelse
+                                    @forelse($stylists as $stylist)
+                                        <div class="stylist-card-modern" 
+                                             data-stylist-id="{{ $stylist->id }}" 
+                                             data-stylist-name="{{ $stylist->name }}"
+                                             data-position="{{ strtolower($stylist->position) }}"
+                                             onclick="selectMainStylist({{ $stylist->id }}, this)">
+                                            <div class="check-mark"><i class="ti ti-check"></i></div>
+                                            <div class="avatar-container">
+                                                <img src="{{ $stylist->avatar_url }}" alt="{{ $stylist->name }}">
+                                            </div>
+                                            <span class="stylist-name">{{ explode(' ', $stylist->name)[0] }}</span>
+                                            <span class="stylist-cat">{{ ucwords(strtolower($stylist->position)) }}</span>
+                                        </div>
+                                    @empty
+                                    @endforelse
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -261,6 +319,9 @@
     @push('scripts')
         <!-- SweetAlert2 -->
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <!-- Flatpickr JS -->
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/id.js"></script>
         <script>
             $(document).ready(function () {
                 // Theme Config (Safe Check) - only if functions exist
@@ -273,48 +334,138 @@
                     preset_change('preset-1');
                 }
 
-                let searchTimer;
+                // Global selected stylist tracker
+                let selectedStylist = null;
 
-                function loadTreatments() {
-                    let category = $('#categoryFilter').val();
-                    let search = $('#searchInput').val();
-
-                    console.log('Loading treatments...', { category, search });
-
-                    // Show a subtle loading state
-                    $('#treatmentList').css('opacity', '0.5');
+                // Flatpickr Initialization
+                const holidayDates = {!! json_encode($holidays ?? []) !!};
+                const dateInput = document.getElementById('main_reservation_date');
+                
+                function updateBookedStylists() {
+                    const date = dateInput.value;
+                    if (!date) return;
 
                     $.ajax({
-                        url: "{{ route('booking.index') }}",
-                        type: 'GET',
+                        url: "{{ route('booking.check_booked_stylists') }}",
+                        method: 'POST',
                         data: {
-                            category: category,
-                            search: search,
-                            is_ajax: 1
+                            _token: "{{ csrf_token() }}",
+                            reservation_date: date
                         },
-                        success: function (html) {
-                            console.log('Treatments loaded successfully');
-                            $('#treatmentList').html(html).css('opacity', '1');
-                            applyStylistFilters(); // Re-apply stylist filters to newly loaded elements
-                            updateCartUI(); // Re-sync cart states
-                        },
-                        error: function (err) {
-                            console.error('AJAX Error:', err);
-                            $('#treatmentList').css('opacity', '1');
+                        success: function (response) {
+                            const bookedIds = response.booked_stylist_ids || [];
+                            const offWorkIds = response.off_work_ids || [];
+
+                            $('#main_stylist_grid .stylist-card-modern').each(function () {
+                                const card = $(this);
+                                const stylistId = parseInt(card.data('stylist-id'));
+                                if (!stylistId) return; // Skip "Semua" card
+
+                                const isBooked = bookedIds.includes(stylistId);
+                                const isOff = offWorkIds.includes(stylistId);
+
+                                card.removeClass('disabled busy off-work');
+                                card.css('pointer-events', '');
+                                card.css('opacity', '');
+                                
+                                if (isBooked) {
+                                    card.addClass('busy disabled');
+                                    card.css('pointer-events', 'none');
+                                    card.css('opacity', '0.5');
+                                    if (selectedStylist && selectedStylist.id === stylistId) {
+                                        selectMainStylist(null, $('#main_stylist_grid .stylist-card-modern[data-stylist-id=""]'));
+                                    }
+                                } else if (isOff) {
+                                    card.addClass('off-work disabled');
+                                    card.css('pointer-events', 'none');
+                                    card.css('opacity', '0.5');
+                                    if (selectedStylist && selectedStylist.id === stylistId) {
+                                        selectMainStylist(null, $('#main_stylist_grid .stylist-card-modern[data-stylist-id=""]'));
+                                    }
+                                }
+                            });
                         }
                     });
                 }
 
-                // Use 'input' event instead of 'keyup' to catch all changes (paste, clear, etc.)
+                const fp = flatpickr(dateInput, {
+                    locale: 'id',
+                    dateFormat: 'Y-m-d',
+                    minDate: 'today',
+                    disable: holidayDates,
+                    defaultDate: dateInput.value || 'today',
+                    onChange: function(selectedDates, dateStr) {
+                        updateBookedStylists();
+                    }
+                });
+
+                function findNextAvailableMain() {
+                    const now = new Date();
+                    const hour = now.getHours();
+                    const todayStr = now.toISOString().split('T')[0];
+
+                    if (hour >= 18 || holidayDates.includes(todayStr)) {
+                        now.setDate(now.getDate() + 1);
+                        while(holidayDates.includes(now.toISOString().split('T')[0])) {
+                            now.setDate(now.getDate() + 1);
+                        }
+                        fp.setDate(now);
+                    }
+                }
+                findNextAvailableMain();
+                updateBookedStylists();
+
+                function filterTreatmentsLocal() {
+                    let categoryId = $('#categoryFilter').val();
+                    let search = $('#searchInput').val().toLowerCase().trim();
+
+                    console.log('Filtering treatments locally:', { categoryId, search });
+
+                    let visibleCount = 0;
+
+                    $('.treatment-wrapper').each(function() {
+                        let wrapper = $(this);
+                        let wrapperCatId = wrapper.data('category-id') ? wrapper.data('category-id').toString() : '';
+                        let name = wrapper.data('treatment-name') ? wrapper.data('treatment-name').toString().toLowerCase() : '';
+
+                        let matchesCategory = !categoryId || wrapperCatId === categoryId;
+                        let matchesSearch = !search || name.includes(search);
+
+                        if (matchesCategory && matchesSearch) {
+                            wrapper.show();
+                            visibleCount++;
+                        } else {
+                            wrapper.hide();
+                        }
+                    });
+
+                    // Manage "no treatments found" placeholder
+                    if (visibleCount === 0) {
+                        if ($('#noTreatmentsPlaceholder').length === 0) {
+                            $('#treatmentList').append(`
+                                <div id="noTreatmentsPlaceholder" class="col-12 text-center py-5">
+                                    <div class="mb-3">
+                                        <i class="ti ti-search text-muted" style="font-size: 4rem;"></i>
+                                    </div>
+                                    <h5 class="text-muted">Tidak ada treatment ditemukan</h5>
+                                    <p class="small text-muted">Coba ubah kategori atau kata kunci pencarian Anda</p>
+                                </div>
+                            `);
+                        } else {
+                            $('#noTreatmentsPlaceholder').show();
+                        }
+                    } else {
+                        $('#noTreatmentsPlaceholder').hide();
+                    }
+                }
+
+                // Use 'input' event to catch all changes instantly
                 $('#searchInput').on('input', function () {
-                    console.log('Search input changed:', $(this).val());
-                    clearTimeout(searchTimer);
-                    searchTimer = setTimeout(loadTreatments, 500);
+                    filterTreatmentsLocal();
                 });
 
                 $('#categoryFilter').on('change', function() {
-                    console.log('Category filter changed:', $(this).val());
-                    loadTreatments();
+                    filterTreatmentsLocal();
                 });
 
                 // Cart Logic
@@ -322,12 +473,12 @@
 
                 // Stylist mapping to categories (all lowercased for match)
                 const stylistMapping = {
-                    'hairstylist': ['haircut', 'hair coloring', 'hair colouring', 'hair cut', 'promo'],
-                    'beautician': ['facial', 'promo'],
-                    'therapist': ['nail treatment', 'hair ritual', 'promo']
+                    'creative stylist': ['haircut', 'hair coloring', 'hair colouring', 'hair cut', 'promo'],
+                    'senior hair technician specialist': ['haircut', 'hair coloring', 'hair colouring', 'hair cut', 'promo'],
+                    'senior beautician': ['facial', 'promo'],
+                    'senior therapist': ['nail treatment', 'hair ritual', 'promo'],
+                    'junior therapist': ['nail treatment', 'hair ritual', 'promo']
                 };
-
-                let selectedStylist = null;
 
                 window.selectMainStylist = function(id, element) {
                     const card = $(element);
@@ -362,7 +513,7 @@
                                     <div class="text-start text-muted small">
                                         Memilih stylist ini akan membatalkan treatment tersebut. Lanjutkan?
                                     </div>
-                                `,
+                                  `,
                                 icon: 'warning',
                                 showCancelButton: true,
                                 confirmButtonColor: '#EA8290',
@@ -532,9 +683,23 @@
                         return;
                     }
 
+                    const reservationDate = $('#main_reservation_date').val();
+                    if (!reservationDate) {
+                        Swal.fire({
+                            title: 'Pilih Tanggal Dahulu',
+                            text: 'Silakan pilih tanggal reservasi terlebih dahulu.',
+                            icon: 'warning',
+                            confirmButtonColor: '#EA8290',
+                            customClass: {
+                                popup: 'rounded-4 border-0 shadow-lg'
+                            }
+                        });
+                        return;
+                    }
+
                     const ids = selectedDetails.map(d => d.id).join(',');
-                    // Redirect to select page with multiple IDs and selected stylist_id
-                    window.location.href = "{{ route('booking.select', ['treatmentId' => ':id']) }}".replace(':id', selectedDetails[0].treatmentId) + '?details=' + ids + '&stylist_id=' + selectedStylist.id;
+                    // Redirect to select page with multiple IDs, selected stylist_id, and reservation_date
+                    window.location.href = "{{ route('booking.select', ['treatmentId' => ':id']) }}".replace(':id', selectedDetails[0].treatmentId) + '?details=' + ids + '&stylist_id=' + selectedStylist.id + '&reservation_date=' + reservationDate;
                 });
             });
         </script>

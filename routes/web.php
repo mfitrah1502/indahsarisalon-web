@@ -74,7 +74,7 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         Route::put('/{pelanggan}', [PelangganController::class, 'update'])->name('update');
         Route::delete('/{pelanggan}', [PelangganController::class, 'destroy'])->name('destroy');
         Route::get('/{pelanggan}', [PelangganController::class, 'show'])->name('show');
-        Route::get('/{pelanggan}/history', [PelangganController::class, 'history'])->name('history');
+        Route::get('/{id}/history', [PelangganController::class, 'history'])->name('history');
     });
 
     Route::resource('categories', CategoryController::class);
@@ -91,6 +91,7 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         Route::get('/admin/bookings', [BookingController::class, 'adminIndex'])->name('admin.bookings.index');
         Route::get('/admin/bookings/{id}', [BookingController::class, 'show'])->name('admin.bookings.show');
         Route::patch('/admin/bookings/{booking}/status', [BookingController::class, 'updateStatus'])->name('admin.bookings.updateStatus');
+        Route::post('/admin/bookings/{id}/pay-cash', [BookingController::class, 'payCash'])->name('admin.bookings.payCash');
         Route::patch('/admin/bookings/{booking}/reschedule', [BookingController::class, 'reschedule'])->name('admin.bookings.reschedule');
         Route::get('/admin/bookings/{id}/print', [BookingController::class, 'printReceipt'])->name('admin.bookings.print');
 
@@ -130,6 +131,8 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         Route::get('/admin/keuangan/pemasukan', [App\Http\Controllers\KeuanganController::class, 'pemasukan'])->name('keuangan.pemasukan');
         Route::get('/admin/keuangan/pengeluaran', [App\Http\Controllers\KeuanganController::class, 'pengeluaran'])->name('keuangan.pengeluaran');
         Route::post('/admin/keuangan/pengeluaran', [App\Http\Controllers\KeuanganController::class, 'storePengeluaran'])->name('keuangan.pengeluaran.store');
+        Route::delete('/admin/keuangan/pengeluaran/{id}', [App\Http\Controllers\KeuanganController::class, 'destroyPengeluaran'])->name('keuangan.pengeluaran.destroy');
+        Route::post('/admin/keuangan/pengeluaran/reset', [App\Http\Controllers\KeuanganController::class, 'resetPengeluaran'])->name('keuangan.pengeluaran.reset');
         Route::get('/admin/keuangan/profit/export', [App\Http\Controllers\KeuanganController::class, 'exportProfitPdf'])->name('keuangan.profit.export');
     });
 
@@ -141,6 +144,7 @@ Route::middleware(['auth', 'session.timeout', 'prevent-back'])->group(function (
         Route::get('/booking/select/{treatmentId?}', [BookingController::class, 'select'])->name('booking.select'); 
         Route::post('/booking/store', [BookingController::class, 'store'])->name('booking.store'); 
         Route::post('/booking/check-stylist-availability', [BookingController::class, 'checkStylistAvailability'])->name('booking.check_stylist_availability');
+        Route::post('/booking/check-booked-stylists', [BookingController::class, 'checkBookedStylists'])->name('booking.check_booked_stylists');
         Route::get('/booking/summary/{bookingId}', [BookingController::class, 'summary'])->name('booking.summary'); 
         Route::post('/booking/pay/{bookingId}', [BookingController::class, 'pay'])->name('booking.pay'); 
         Route::get('/booking/history', [BookingController::class, 'history'])->name('booking.history'); 

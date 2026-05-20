@@ -1,5 +1,8 @@
 @foreach($treatments as $treatment)
-    <div class="col-md-4 mb-4 treatment-wrapper" data-category="{{ strtolower($treatment->category->name ?? '') }}">
+    <div class="col-md-4 mb-4 treatment-wrapper" 
+         data-category="{{ strtolower($treatment->category->name ?? '') }}" 
+         data-category-id="{{ $treatment->category_id }}" 
+         data-treatment-name="{{ strtolower($treatment->name) }}">
         <div class="card treatment-card h-100 border-0 shadow-sm">
             @php
                 $images = $treatment->all_images;

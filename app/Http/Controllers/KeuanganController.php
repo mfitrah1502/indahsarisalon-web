@@ -227,4 +227,19 @@ class KeuanganController extends Controller
 
         return redirect()->back()->with('success', 'Data pengeluaran berhasil ditambahkan.');
     }
+
+    public function destroyPengeluaran($id)
+    {
+        $expense = Expense::findOrFail($id);
+        $expense->delete();
+
+        return redirect()->back()->with('success', 'Data pengeluaran berhasil dihapus.');
+    }
+
+    public function resetPengeluaran()
+    {
+        Expense::query()->delete();
+
+        return redirect()->back()->with('success', 'Semua data pengeluaran berhasil di-reset.');
+    }
 }

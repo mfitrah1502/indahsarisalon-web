@@ -40,6 +40,24 @@ class Treatment extends Model
     public function getMainImageUrlAttribute()
     {
         if (!$this->image) {
+            $firstDetailImage = \Illuminate\Support\Facades\DB::table('treatment_details')
+                ->where('treatment_id', $this->id)
+                ->whereNotNull('image_url')
+                ->where('image_url', '!=', '')
+                ->value('image_url');
+
+            if ($firstDetailImage) {
+                if (strpos($firstDetailImage, 'http') === 0) {
+                    return $firstDetailImage;
+                }
+                
+                $bucket = env('SUPABASE_BUCKET');
+                $baseUrl = env('SUPABASE_URL');
+                if ($baseUrl) {
+                    return $baseUrl . '/storage/v1/object/public/' . $bucket . '/' . $firstDetailImage;
+                }
+            }
+
             return asset('assets/images/no-image.jpg');
         }
 

@@ -181,12 +181,37 @@ class PelangganController extends Controller
         return view('pelanggan.table', compact('pelanggans'));
     }
 
-    public function history(User $pelanggan)
+    public function history($id)
     {
-        $bookings = $pelanggan->getAllBookingsQuery()
-            ->where('status', 'berhasil')
-            ->orderBy('reservation_datetime', 'desc')
-            ->get();
+        if (strpos($id, 'guest-') === 0) {
+            $bookingId = str_replace('guest-', '', $id);
+            $originBooking = \App\Models\Booking::find($bookingId);
+            
+            if (!$originBooking) {
+                $bookings = collect();
+            } else {
+                $bookings = \App\Models\Booking::where(function($q) use ($originBooking) {
+                    if (!empty($originBooking->customer_email)) {
+                        $q->orWhere('customer_email', $originBooking->customer_email);
+                    }
+                    if (!empty($originBooking->customer_phone)) {
+                        $q->orWhere('customer_phone', $originBooking->customer_phone);
+                    }
+                    if (!empty($originBooking->customer_name)) {
+                        $q->orWhere('customer_name', $originBooking->customer_name);
+                    }
+                })
+                ->where('status', 'berhasil')
+                ->orderBy('reservation_datetime', 'desc')
+                ->get();
+            }
+        } else {
+            $pelanggan = User::findOrFail($id);
+            $bookings = $pelanggan->getAllBookingsQuery()
+                ->where('status', 'berhasil')
+                ->orderBy('reservation_datetime', 'desc')
+                ->get();
+        }
             
         return view('pelanggan.history_table', compact('bookings'));
     }

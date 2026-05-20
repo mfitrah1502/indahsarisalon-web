@@ -70,7 +70,10 @@ class BookingController extends Controller
         $stylists = User::whereIn('role', ['admin', 'karyawan'])
             ->whereNotNull('position')
             ->where('position', '<>', '')
+            ->whereNotIn(\DB::raw('LOWER(TRIM(position))'), ['client relationship manager', 'relationship client'])
             ->get();
+
+        $holidays = \App\Models\Holiday::pluck('date')->toArray();
 
         if ($request->ajax() || $request->has('is_ajax') || $request->expectsJson() || $request->is('api/*')) {
             if ($request->expectsJson() || $request->is('api/*')) {
@@ -84,7 +87,7 @@ class BookingController extends Controller
             return view('booking.partials._treatment_list', compact('treatments'));
         }
 
-        return view('booking.index', compact('treatments', 'categories', 'isOpen', 'stylists'));
+        return view('booking.index', compact('treatments', 'categories', 'isOpen', 'stylists', 'holidays'));
     }
 
     // STEP 1: Pilih stylist & waktu
@@ -100,6 +103,7 @@ class BookingController extends Controller
         $stylists = User::whereIn('role', ['admin', 'karyawan'])
             ->whereNotNull('position')
             ->where('position', '<>', '')
+            ->whereNotIn(\DB::raw('LOWER(TRIM(position))'), ['client relationship manager', 'relationship client'])
             ->get();
         $allTreatments = Treatment::with(['details', 'category'])->get();
         
@@ -223,9 +227,9 @@ class BookingController extends Controller
         $requestedTime = $request->reservation_time;
         $startCheckpoint = \Carbon\Carbon::parse($requestedDate . ' ' . $requestedTime);
 
-        // Ambil semua booking yang aktif hari ini
+        // Ambil semua booking yang aktif hari ini (selain dibatalkan & selesai/berhasil)
         $existingBookings = \App\Models\Booking::whereDate('reservation_datetime', $requestedDate)
-            ->whereNotIn('status', ['dibatalkan'])
+            ->whereNotIn('status', ['dibatalkan', 'berhasil'])
             ->with(['details.treatmentDetail'])
             ->get();
 
@@ -397,7 +401,7 @@ class BookingController extends Controller
         ]);
         
         $paymentMethod = strtolower($request->payment_method);
-        $paymentStatus = ($isStaff && $paymentMethod === 'tunai') ? 'paid' : 'unpaid';
+        $paymentStatus = 'unpaid';
 
         // Log Debug untuk investigasi masalah 'unpaid'
         try {
@@ -732,7 +736,7 @@ class BookingController extends Controller
             'new_method' => $request->payment_method
         ]);
 
-        $paymentStatus = ($isStaff && strtolower($request->payment_method) === 'tunai') ? 'paid' : 'unpaid';
+        $paymentStatus = 'unpaid';
 
         $booking->update([
             'payment_method' => strtolower($request->payment_method) === 'tunai' ? 'Tunai' : $request->payment_method,
@@ -823,9 +827,9 @@ class BookingController extends Controller
             if ($time) {
                 $startTime = Carbon::parse($date . ' ' . $time);
                 
-                // 1. Get ALL bookings for that day (except dibatalkan)
+                // 1. Get ALL bookings for that day (except dibatalkan & selesai/berhasil)
                 $existingBookings = Booking::whereDate('reservation_datetime', $date)
-                    ->whereNotIn('status', ['dibatalkan'])
+                    ->whereNotIn('status', ['dibatalkan', 'berhasil'])
                     ->with(['details.treatmentDetail'])
                     ->get();
 
@@ -894,6 +898,97 @@ class BookingController extends Controller
 
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * AJAX: Check booked & off-work stylists for a given date (Step 1).
+     */
+    public function checkBookedStylists(Request $request)
+    {
+        $date = $request->get('reservation_date');
+        if (!$date) {
+            return response()->json(['booked_stylist_ids' => [], 'off_work_ids' => []]);
+        }
+
+        try {
+            // 1. Ambil stylist yang memiliki booking aktif pada tanggal tersebut (selain dibatalkan & selesai/berhasil)
+            $bookedStylistIds = \App\Models\BookingDetail::whereHas('booking', function ($query) use ($date) {
+                    $query->whereDate('reservation_datetime', $date)
+                          ->whereNotIn('status', ['dibatalkan', 'berhasil']);
+                })
+                ->whereNotNull('stylist_id')
+                ->pluck('stylist_id')
+                ->map(fn($id) => (int)$id)
+                ->unique()
+                ->values()
+                ->toArray();
+
+            // 2. Ambil stylist yang absen / libur pada tanggal tersebut
+            $offWorkIds = \App\Models\Absensi::whereDate('tanggal', $date)
+                ->whereIn('status', ['Off Work', 'Libur', 'libur', 'off work'])
+                ->pluck('user_id')
+                ->map(fn($id) => (int)$id)
+                ->unique()
+                ->values()
+                ->toArray();
+
+            return response()->json([
+                'booked_stylist_ids' => $bookedStylistIds,
+                'off_work_ids' => $offWorkIds
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    // ADMIN: Process cash payment for a booking
+    public function payCash(Request $request, $id)
+    {
+        try {
+            $booking = Booking::findOrFail($id);
+
+            if (strtolower($booking->payment_method) !== 'tunai') {
+                return response()->json([
+                    'message' => 'Metode pembayaran bukan tunai!'
+                ], 400);
+            }
+
+            if ($booking->payment_status === 'paid') {
+                return response()->json([
+                    'message' => 'Pemesanan ini sudah lunas!'
+                ], 400);
+            }
+
+            $request->validate([
+                'cash_nominal' => 'required|numeric|min:0'
+            ]);
+
+            $cashNominal = (int) $request->cash_nominal;
+            if ($cashNominal < $booking->total_price) {
+                return response()->json([
+                    'message' => 'Nominal pembayaran kurang!'
+                ], 422);
+            }
+
+            $change = $cashNominal - $booking->total_price;
+
+            $booking->update([
+                'payment_status' => 'paid',
+                'cashier_id' => Auth::id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pembayaran tunai berhasil diproses.',
+                'change' => $change,
+                'formatted_change' => 'Rp ' . number_format($change, 0, ',', '.')
+            ]);
+        } catch (\Throwable $e) {
+            \Log::error("Error processing cash payment: " . $e->getMessage());
+            return response()->json([
+                'message' => 'Gagal memproses pembayaran: ' . $e->getMessage()
+            ], 500);
         }
     }
 

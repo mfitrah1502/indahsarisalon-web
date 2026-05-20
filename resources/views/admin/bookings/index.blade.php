@@ -239,13 +239,14 @@
                                         @php
                                             $payBadge = [
                                                 'paid' => 'bg-success',
+                                                'unpaid' => 'bg-danger text-white',
                                                 'pending' => 'bg-warning text-dark',
                                                 'failed' => 'bg-danger'
                                             ][$booking->payment_status] ?? 'bg-secondary';
                                         @endphp
                                         <div class="d-flex flex-column align-items-center">
                                             <span class="badge {{ $payBadge }} rounded-pill px-3 mb-1" style="font-size: 0.7rem;">
-                                                {{ strtoupper($booking->payment_status) }}
+                                                {{ $booking->payment_status === 'unpaid' ? 'BELUM BAYAR' : strtoupper($booking->payment_status) }}
                                             </span>
                                             <small class="text-muted" style="font-size: 0.65rem;">
                                                 <i class="ti ti-{{ strtolower($booking->payment_method) == 'transfer' ? 'credit-card' : (strtolower($booking->payment_method) == 'qris' ? 'qrcode' : 'wallet') }} me-1"></i>{{ ucfirst($booking->payment_method) }}
@@ -341,6 +342,23 @@
                                     <span id="mdl_transaction_time" class="fw-bold small text-muted"></span>
                                 </div>
                             </div>
+                            
+                            <!-- CASH PAYMENT SECTION -->
+                            <div id="cash_payment_section" style="display:none;" class="mt-3 p-3 bg-white rounded border border-success shadow-sm">
+                                <label class="small fw-bold text-success mb-1">💸 Pembayaran Tunai:</label>
+                                <div class="input-group input-group-sm mb-2">
+                                    <span class="input-group-text bg-light text-success fw-bold">Rp</span>
+                                    <input type="text" id="cash_nominal" class="form-control fw-bold text-success" placeholder="Masukkan nominal...">
+                                </div>
+                                <div id="cash_change_container" class="small text-muted mb-2 d-none d-flex justify-content-between">
+                                    <span>Kembalian:</span>
+                                    <span id="cash_change" class="fw-bold text-success">Rp 0</span>
+                                </div>
+                                <button class="btn btn-sm btn-success w-100 fw-bold" id="btn_process_cash_payment">
+                                    <i class="ti ti-wallet me-1"></i> Bayar
+                                </button>
+                            </div>
+
                             <div id="reschedule_section" style="display:none;" class="mt-2 p-2 bg-white rounded border border-pink shadow-sm">
                                 <label class="small fw-bold text-pink mb-1">Ganti Jadwal:</label>
                                 <input type="datetime-local" id="reschedule_datetime" class="form-control form-control-sm mb-2 border-pink">
@@ -427,9 +445,10 @@
                         'dibatalkan': { label: '❌ Batal', class: 'bg-danger text-white' }
                     };
                     const payMap = {
-                        'paid': { label: 'LUNAS', class: 'bg-success' },
+                        'paid': { label: 'LUNAS', class: 'bg-success text-white' },
+                        'unpaid': { label: 'BELUM BAYAR', class: 'bg-danger text-white' },
                         'pending': { label: 'PENDING', class: 'bg-warning text-dark' },
-                        'failed': { label: 'GAGAL', class: 'bg-danger' }
+                        'failed': { label: 'GAGAL', class: 'bg-danger text-white' }
                     };
 
                     const s = statusMap[data.status] || { label: data.status, class: 'bg-secondary' };
@@ -437,6 +456,17 @@
                     
                     const ps = payMap[data.payment_status] || { label: data.payment_status, class: 'bg-secondary' };
                     $('#mdl_payment_status').text(ps.label).removeClass().addClass('badge-status ' + ps.class);
+
+                    // Cash Payment section visibility and initial state setup
+                    if (data.payment_method && data.payment_method.toLowerCase() === 'tunai' && data.payment_status === 'unpaid') {
+                        $('#cash_payment_section').show();
+                        $('#cash_nominal').val('');
+                        $('#cash_change_container').addClass('d-none');
+                        $('#btn_process_cash_payment').prop('disabled', true);
+                        $('#bookingDetailModal').data('total-price', data.total_price);
+                    } else {
+                        $('#cash_payment_section').hide();
+                    }
                     
                     $('#mdl_payment_method').text((data.payment_method || '-').toUpperCase());
                     const formatDatetime = (dtStr) => {
@@ -631,6 +661,71 @@
                 error: function() {
                     Swal.fire('Error!', 'Gagal mengubah jadwal.', 'error');
                     btn.prop('disabled', false).text('Simpan');
+                }
+            });
+        });
+
+        // Format cash nominal input with thousands separator and calculate change dynamically
+        $(document).on('input', '#cash_nominal', function() {
+            let val = $(this).val().replace(/\D/g, '');
+            if (val === '') {
+                $('#cash_change_container').addClass('d-none');
+                $('#btn_process_cash_payment').prop('disabled', true);
+                return;
+            }
+            
+            // Format input value beautifully with dot separators (e.g. 1.000.000)
+            let formatted = new Intl.NumberFormat('id-ID').format(val);
+            $(this).val(formatted);
+            
+            const totalPrice = $('#bookingDetailModal').data('total-price') || 0;
+            const nominal = parseInt(val);
+            
+            $('#cash_change_container').removeClass('d-none');
+            if (nominal >= totalPrice) {
+                const change = nominal - totalPrice;
+                $('#cash_change').text('Rp ' + new Intl.NumberFormat('id-ID').format(change)).removeClass('text-danger').addClass('text-success');
+                $('#btn_process_cash_payment').prop('disabled', false);
+            } else {
+                const lack = totalPrice - nominal;
+                $('#cash_change').text('Kurang Rp ' + new Intl.NumberFormat('id-ID').format(lack)).removeClass('text-success').addClass('text-danger');
+                $('#btn_process_cash_payment').prop('disabled', true);
+            }
+        });
+
+        // Click Handler to process Cash payment via AJAX
+        $('#btn_process_cash_payment').on('click', function() {
+            const id = $('#bookingDetailModal').data('id');
+            const nominalStr = $('#cash_nominal').val().replace(/\D/g, '');
+            const nominal = parseInt(nominalStr);
+            const btn = $(this);
+            
+            if (!nominal || isNaN(nominal)) {
+                return Swal.fire('Peringatan', 'Masukkan nominal yang valid.', 'warning');
+            }
+            
+            btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Memproses...');
+            
+            $.ajax({
+                url: `/admin/bookings/${id}/pay-cash`,
+                type: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    cash_nominal: nominal
+                },
+                success: function(res) {
+                    Swal.fire({
+                        title: 'Pembayaran Berhasil!',
+                        html: `Status pembayaran telah diperbarui menjadi <b>LUNAS</b>.<br>Kembalian: <b class="text-success">${res.formatted_change}</b>`,
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        location.reload();
+                    });
+                },
+                error: function(xhr) {
+                    Swal.fire('Error!', (xhr.responseJSON ? xhr.responseJSON.message : 'Gagal memproses pembayaran.'), 'error');
+                    btn.prop('disabled', false).html('<i class="ti ti-wallet me-1"></i> Bayar');
                 }
             });
         });

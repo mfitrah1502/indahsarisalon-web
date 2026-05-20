@@ -18,6 +18,9 @@
                                 {{ number_format($totalPengeluaran, 0, ',', '.') }}</h4>
                         </div>
                     </div>
+                    <button type="button" class="btn btn-outline-danger rounded-pill px-4 shadow-sm" id="btnResetPengeluaran">
+                        <i class="ti ti-trash me-1"></i> Reset Pengeluaran
+                    </button>
                     <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal"
                         data-bs-target="#modalTambahPengeluaran">
                         <i class="ti ti-plus me-1"></i> Tambah Pengeluaran
@@ -139,6 +142,7 @@
                                     <th class="border-0 py-3 text-muted small fw-bold">KATEGORI</th>
                                     <th class="border-0 py-3 text-muted small fw-bold">KETERANGAN</th>
                                     <th class="border-0 px-4 py-3 text-muted small fw-bold text-end">JUMLAH</th>
+                                    <th class="border-0 px-4 py-3 text-muted small fw-bold text-center">AKSI</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -160,10 +164,15 @@
                                                             <td class="px-4 text-end fw-bold text-danger">
                                                                 Rp {{ number_format($item->amount, 0, ',', '.') }}
                                                             </td>
+                                                            <td class="px-4 text-center">
+                                                                <button type="button" class="btn btn-light btn-sm text-danger btn-delete-expense" data-id="{{ $item->id }}" title="Hapus">
+                                                                    <i class="ti ti-trash fs-5"></i>
+                                                                </button>
+                                                            </td>
                                                         </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center py-5 text-muted">
+                                        <td colspan="5" class="text-center py-5 text-muted">
                                             <i class="ti ti-receipt-off fs-1 d-block mb-2"></i>
                                             Belum ada data pengeluaran.
                                         </td>
@@ -228,12 +237,72 @@
             </div>
         </div>
     </div>
+
+    <!-- Hidden Forms for Expense Management -->
+    <form id="delete-expense-form" method="POST" style="display: none;">
+        @csrf
+        @method('DELETE')
+    </form>
+
+    <form id="reset-expenses-form" action="{{ route('keuangan.pengeluaran.reset') }}" method="POST" style="display: none;">
+        @csrf
+    </form>
 @endsection
 
 @push('scripts')
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Handle Single Delete
+            $(document).on('click', '.btn-delete-expense', function () {
+                const id = $(this).data('id');
+                Swal.fire({
+                    title: 'Hapus Pengeluaran?',
+                    text: 'Apakah Anda yakin ingin menghapus data pengeluaran ini?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#D96A79',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        popup: 'rounded-4 border-0 shadow-lg'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const form = document.getElementById('delete-expense-form');
+                        form.action = "{{ route('keuangan.pengeluaran.destroy', ':id') }}".replace(':id', id);
+                        form.submit();
+                    }
+                });
+            });
+
+            // Handle Reset All
+            const btnReset = document.getElementById('btnResetPengeluaran');
+            if (btnReset) {
+                btnReset.addEventListener('click', function () {
+                    Swal.fire({
+                        title: 'Reset Semua Pengeluaran?',
+                        text: 'Apakah Anda yakin ingin menghapus SEMUA data pengeluaran? Tindakan ini tidak dapat dibatalkan!',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc3545',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Ya, Reset Semua',
+                        cancelButtonText: 'Batal',
+                        customClass: {
+                            popup: 'rounded-4 border-0 shadow-lg'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById('reset-expenses-form').submit();
+                        }
+                    });
+                });
+            }
+
             var options = {
                 series: [{
                     name: 'Total Akumulasi',

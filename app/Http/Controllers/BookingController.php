@@ -229,7 +229,7 @@ class BookingController extends Controller
 
         // Ambil semua booking yang aktif hari ini (selain dibatalkan & selesai/berhasil)
         $existingBookings = \App\Models\Booking::whereDate('reservation_datetime', $requestedDate)
-            ->whereNotIn('status', ['dibatalkan', 'berhasil'])
+            ->whereNotIn('status', ['dibatalkan', 'success'])
             ->with(['details.treatmentDetail'])
             ->get();
 
@@ -532,7 +532,7 @@ class BookingController extends Controller
 
         // Bagi data untuk Pelanggan (Proses vs Riwayat)
         $inProcess = $allBookings->whereIn('status', ['pending', 'confirmed']);
-        $history = $allBookings->whereIn('status', ['berhasil', 'dibatalkan']);
+        $history = $allBookings->whereIn('status', ['success', 'dibatalkan']);
 
         return view('booking.history', compact('inProcess', 'history', 'allBookings'));
     }
@@ -623,7 +623,7 @@ class BookingController extends Controller
         $stats = [
             'total' => Booking::count(),
             'pending' => Booking::where('status', 'pending')->count(),
-            'berhasil' => Booking::where('status', 'berhasil')->count(),
+            'success' => Booking::where('status', 'success')->count(),
             'dibatalkan' => Booking::where('status', 'dibatalkan')->count(),
         ];
 
@@ -640,7 +640,7 @@ class BookingController extends Controller
         $updateData = ['status' => $request->status];
 
         // Jika status diubah menjadi berhasil (Selesai), maka status pembayaran otomatis Paid
-        if ($request->status === 'berhasil') {
+        if ($request->status === 'success') {
             $updateData['payment_status'] = 'paid';
         }
 
@@ -829,7 +829,7 @@ class BookingController extends Controller
                 
                 // 1. Get ALL bookings for that day (except dibatalkan & selesai/berhasil)
                 $existingBookings = Booking::whereDate('reservation_datetime', $date)
-                    ->whereNotIn('status', ['dibatalkan', 'berhasil'])
+                    ->whereNotIn('status', ['dibatalkan', 'success'])
                     ->with(['details.treatmentDetail'])
                     ->get();
 
@@ -915,7 +915,7 @@ class BookingController extends Controller
             // 1. Ambil stylist yang memiliki booking aktif pada tanggal tersebut (selain dibatalkan & selesai/berhasil)
             $bookedStylistIds = \App\Models\BookingDetail::whereHas('booking', function ($query) use ($date) {
                     $query->whereDate('reservation_datetime', $date)
-                          ->whereNotIn('status', ['dibatalkan', 'berhasil']);
+                          ->whereNotIn('status', ['dibatalkan', 'success']);
                 })
                 ->whereNotNull('stylist_id')
                 ->pluck('stylist_id')

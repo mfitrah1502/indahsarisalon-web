@@ -85,7 +85,7 @@
                                 <div class="mb-2">
                                     @if($latestBooking->status === 'proses')
                                         <span class="badge bg-danger rounded-pill px-3 py-2">Sedang Diproses (Pending)</span>
-                                    @elseif($latestBooking->status === 'berhasil')
+                                    @elseif($latestBooking->status === 'success')
                                         <span class="badge bg-success rounded-pill px-3 py-2">Selesai ✅</span>
                                     @else
                                         <span

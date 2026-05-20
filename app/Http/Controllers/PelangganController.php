@@ -201,14 +201,14 @@ class PelangganController extends Controller
                         $q->orWhere('customer_name', $originBooking->customer_name);
                     }
                 })
-                ->where('status', 'berhasil')
+                ->where('status', 'success')
                 ->orderBy('reservation_datetime', 'desc')
                 ->get();
             }
         } else {
             $pelanggan = User::findOrFail($id);
             $bookings = $pelanggan->getAllBookingsQuery()
-                ->where('status', 'berhasil')
+                ->where('status', 'success')
                 ->orderBy('reservation_datetime', 'desc')
                 ->get();
         }

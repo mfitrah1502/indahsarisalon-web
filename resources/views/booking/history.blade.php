@@ -119,7 +119,7 @@
                                                 </td>
                                                 <td class="fw-bold text-dark">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</td>
                                                 <td>
-                                                    @if($booking->status === 'berhasil')
+                                                    @if($booking->status === 'success')
                                                         <span class="badge bg-light-success text-success rounded-pill px-3">Selesai</span>
                                                     @else
                                                         <span class="badge bg-light-danger text-danger rounded-pill px-3" data-bs-toggle="tooltip" title="Alasan: {{ $booking->cancel_reason }}">Dibatalkan</span>
@@ -211,7 +211,7 @@
                                             <td>
                                                 @php
                                                     $statusClass = 'bg-light-warning text-warning';
-                                                    if($booking->status == 'berhasil') $statusClass = 'bg-light-success text-success';
+                                                    if($booking->status == 'success') $statusClass = 'bg-light-success text-success';
                                                     if($booking->status == 'dibatalkan') $statusClass = 'bg-light-danger text-danger';
                                                 @endphp
                                                 <span class="badge {{ $statusClass }} rounded-pill px-3">{{ ucfirst($booking->status) }}</span>

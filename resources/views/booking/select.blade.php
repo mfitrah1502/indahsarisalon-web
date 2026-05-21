@@ -379,8 +379,8 @@
                                 </div>
                                 @php
                                     $now = \Carbon\Carbon::now();
-                                    $cutoff = \Carbon\Carbon::today()->setHour(10)->setMinute(30);
-                                    // Jika sudah lewat jam 10:30, minimal booking adalah besok
+                                    $cutoff = \Carbon\Carbon::today()->setHour(17)->setMinute(0);
+                                    // Jika sudah lewat jam 17:00, minimal booking adalah besok
                                     $initialDate = $now->greaterThan($cutoff) ? \Carbon\Carbon::tomorrow()->toDateString() : \Carbon\Carbon::today()->toDateString();
                                 @endphp
                                 <!-- TANGGAL -->
@@ -396,7 +396,7 @@
                                     <select name="reservation_time" id="reservation_time" class="form-select" required>
                                         <option value="">-- Pilih Jam --</option>
                                     </select>
-                                    <small class="text-muted extra-small">Batas reservasi: 09:00 - 10:30</small>
+                                    <small class="text-muted extra-small">Batas reservasi: 09:00 - 17:00</small>
                                 </div>
 
                             </div>
@@ -970,10 +970,10 @@
 
                 timeSelect.innerHTML = '<option value="">-- Pilih Jam --</option>';
 
-                for (let h = 9; h <= 10; h++) {
+                for (let h = 9; h <= 17; h++) {
                     for (let m = 0; m < 60; m += 15) {
-                        // Batasi jam booking maksimal jam 10:30 (Permintaan Client)
-                        if (h === 10 && m > 30) break;
+                        // Batasi jam booking maksimal jam (Permintaan Client)
+                        if (h === 17 && m > 0) break;
 
                         const timeVal = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 
@@ -1793,7 +1793,7 @@
                     showModalStatus(
                         'success',
                         'Booking Berhasil Dicatat! 📅',
-                        'Booking telah berhasil dicatat dengan status pembayaran BELUM BAYAR.',
+                        'Booking telah berhasil dicatat.',
                         actionHtml
                     );
                 } else {

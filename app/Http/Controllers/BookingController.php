@@ -212,9 +212,9 @@ class BookingController extends Controller
         $hour = $dateTime->hour;
         $minute = $dateTime->minute;
         
-        // Cek apakah lebih dari jam 10:30
-        if ($hour < 9 || $hour > 10 || ($hour === 10 && $minute > 30)) {
-            $errorMsg = 'Mohon maaf, jam reservasi maksimal adalah pukul 10:30.';
+        // Cek apakah lebih dari jam 17:00
+        if ($hour < 9 || $hour > 17 || ($hour === 17 && $minute > 0)) {
+            $errorMsg = 'Mohon maaf, jam reservasi maksimal adalah pukul 17:00.';
             if ($request->ajax()) {
                 return response()->json(['message' => $errorMsg], 400);
             }
@@ -403,7 +403,7 @@ class BookingController extends Controller
         ]);
         
         $paymentMethod = strtolower($request->payment_method);
-        $paymentStatus = 'unpaid';
+        $paymentStatus = ($paymentMethod === 'tunai') ? 'paid' : 'unpaid';
 
         // Log Debug untuk investigasi masalah 'unpaid'
         try {
@@ -804,11 +804,11 @@ class BookingController extends Controller
             $minute = $startTime->minute;
 
             // Validasi 10:30 di AJAX juga
-            if ($hour < 9 || $hour > 10 || ($hour === 10 && $minute > 30)) {
+            if ($hour < 9 || $hour > 10 || ($hour === 17 && $minute > 0)) {
                 return response()->json([
                     'conflicts' => [], 
                     'off_work_ids' => [],
-                    'message' => 'Maksimal booking jam 10:30'
+                    'message' => 'Maksimal booking jam 17:00'
                 ]);
             }
             
@@ -1006,8 +1006,7 @@ class BookingController extends Controller
         }
     }
 
-    // ADMIN: Print thermal/POS receipt for a booking
-    public function printReceipt($id)
+    public function printReceipt(Request $request, $id)
     {
         $booking = Booking::with([
             'user', 
@@ -1018,6 +1017,8 @@ class BookingController extends Controller
             'details.stylist'
         ])->findOrFail($id);
 
-        return view('admin.bookings.receipt', compact('booking'));
+        $nominal = $request->query('nominal');
+
+        return view('admin.bookings.receipt', compact('booking', 'nominal'));
     }
 }

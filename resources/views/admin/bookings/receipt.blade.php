@@ -289,6 +289,20 @@
                 <td class="label">TOTAL</td>
                 <td class="value">Rp {{ number_format($booking->total_price, 0, ',', '.') }}</td>
             </tr>
+            @if(isset($nominal) && $nominal !== null)
+            @php
+                $nominalVal = (int) $nominal;
+                $kembalian = $nominalVal - $booking->total_price;
+            @endphp
+            <tr>
+                <td class="label" style="padding-top: 8px;">Bayar</td>
+                <td class="value" style="padding-top: 8px;">Rp {{ number_format($nominalVal, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td class="label">Kembalian</td>
+                <td class="value">Rp {{ number_format(max(0, $kembalian), 0, ',', '.') }}</td>
+            </tr>
+            @endif
         </table>
 
         <div class="footer">

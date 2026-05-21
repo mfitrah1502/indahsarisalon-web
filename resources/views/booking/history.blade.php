@@ -217,9 +217,12 @@
                                                 <span class="badge {{ $statusClass }} rounded-pill px-3">{{ ucfirst($booking->status) }}</span>
                                             </td>
                                             <td>
-                                                <span class="badge {{ $booking->payment_status == 'paid' ? 'bg-light-success text-success' : 'bg-light-danger text-danger' }} rounded-pill px-3">
+                                                <!-- <span class="badge {{ $booking->payment_status == 'paid' ? 'bg-light-success text-success' : 'bg-light-danger text-danger' }} rounded-pill px-3">
                                                     {{ ucfirst($booking->payment_status) }}
-                                                </span>
+                                                </span> -->
+                                                <small class="text-muted" style="font-size: 0.65rem;">
+                                                <i class="ti ti-{{ strtolower($booking->payment_method) == 'transfer' ? 'credit-card' : (strtolower($booking->payment_method) == 'qris' ? 'qrcode' : 'wallet') }} me-1"></i>{{ ucfirst($booking->payment_method) }}
+                                            </small>
                                             </td>
                                         </tr>
                                     @empty

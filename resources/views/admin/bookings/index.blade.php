@@ -245,9 +245,9 @@
                                             ][$booking->payment_status] ?? 'bg-secondary';
                                         @endphp
                                         <div class="d-flex flex-column align-items-center">
-                                            <span class="badge {{ $payBadge }} rounded-pill px-3 mb-1" style="font-size: 0.7rem;">
+                                            <!-- <span class="badge {{ $payBadge }} rounded-pill px-3 mb-1" style="font-size: 0.7rem;">
                                                 {{ $booking->payment_status === 'unpaid' ? 'BELUM BAYAR' : strtoupper($booking->payment_status) }}
-                                            </span>
+                                            </span> -->
                                             <small class="text-muted" style="font-size: 0.65rem;">
                                                 <i class="ti ti-{{ strtolower($booking->payment_method) == 'transfer' ? 'credit-card' : (strtolower($booking->payment_method) == 'qris' ? 'qrcode' : 'wallet') }} me-1"></i>{{ ucfirst($booking->payment_method) }}
                                             </small>
@@ -323,10 +323,10 @@
                                 <span class="text-muted">Status Booking:</span>
                                 <span id="mdl_status" class="badge-status"></span>
                             </div>
-                            <div class="d-flex justify-content-between mb-2">
+                            <!-- <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Status Pembayaran:</span>
                                 <span id="mdl_payment_status" class="badge-status"></span>
-                            </div>
+                            </div> -->
                             <div class="d-flex justify-content-between mb-2">
                                 <span class="text-muted">Metode:</span>
                                 <span id="mdl_payment_method" class="fw-bold"></span>
@@ -445,8 +445,8 @@
                         'dibatalkan': { label: '❌ Batal', class: 'bg-danger text-white' }
                     };
                     const payMap = {
-                        'paid': { label: 'LUNAS', class: 'bg-success text-white' },
-                        'unpaid': { label: 'BELUM BAYAR', class: 'bg-danger text-white' },
+                        // 'paid': { label: 'LUNAS', class: 'bg-success text-white' },
+                        // 'unpaid': { label: 'BELUM BAYAR', class: 'bg-danger text-white' },
                         'pending': { label: 'PENDING', class: 'bg-warning text-dark' },
                         'failed': { label: 'GAGAL', class: 'bg-danger text-white' }
                     };
@@ -457,13 +457,15 @@
                     const ps = payMap[data.payment_status] || { label: data.payment_status, class: 'bg-secondary' };
                     $('#mdl_payment_status').text(ps.label).removeClass().addClass('badge-status ' + ps.class);
 
+                    // Store total price for receipt printing and cash payment
+                    $('#bookingDetailModal').data('total-price', data.total_price);
+
                     // Cash Payment section visibility and initial state setup
                     if (data.payment_method && data.payment_method.toLowerCase() === 'tunai' && data.payment_status === 'unpaid') {
                         $('#cash_payment_section').show();
                         $('#cash_nominal').val('');
                         $('#cash_change_container').addClass('d-none');
                         $('#btn_process_cash_payment').prop('disabled', true);
-                        $('#bookingDetailModal').data('total-price', data.total_price);
                     } else {
                         $('#cash_payment_section').hide();
                     }
@@ -513,13 +515,19 @@
                     $('#reschedule_section').hide();
                     $('#reschedule_datetime').val('');
 
-                    // Action buttons visibility
+                    // Action buttons & Cetak Struk visibility based on status
                     if(data.status === 'pending') {
                         $('#mdl_actions').removeClass('d-none').addClass('d-flex');
                         $('#mdl_status_info').addClass('d-none');
-                    } else {
+                        $('#btn_print_receipt').hide();
+                    } else if(data.status === 'success') {
                         $('#mdl_actions').removeClass('d-flex').addClass('d-none');
                         $('#mdl_status_info').removeClass('d-none');
+                        $('#btn_print_receipt').show();
+                    } else { // dibatalkan
+                        $('#mdl_actions').removeClass('d-flex').addClass('d-none');
+                        $('#mdl_status_info').removeClass('d-none');
+                        $('#btn_print_receipt').hide();
                     }
 
                     detailModal.show();
@@ -626,8 +634,53 @@
         $('#btn_print_receipt').on('click', function(e) {
             e.preventDefault();
             const id = $('#bookingDetailModal').data('id');
-            $('#bookingDetailModal').modal('hide');
-            window.open(`/admin/bookings/${id}/print`, '_blank');
+            const totalPrice = $('#bookingDetailModal').data('total-price') || 0;
+            
+            // Disable Bootstrap's focus trap temporarily to allow typing in SweetAlert2 input
+            $(document).off('focusin.bs.modal');
+            
+            Swal.fire({
+                title: 'Input Nominal Pembayaran',
+                text: `Total Pembayaran: Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}`,
+                input: 'text',
+                inputPlaceholder: 'Masukkan nominal pembayaran...',
+                inputAttributes: {
+                    autocapitalize: 'off',
+                    autocorrect: 'off'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Cetak Struk',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#EA8290',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'Nominal tidak boleh kosong!';
+                    }
+                    const nominal = parseInt(value.replace(/\D/g, ''));
+                    if (isNaN(nominal) || nominal < 0) {
+                        return 'Masukkan nominal yang valid!';
+                    }
+                    if (nominal < totalPrice) {
+                        return `Nominal kurang! Minimal Rp ${new Intl.NumberFormat('id-ID').format(totalPrice)}`;
+                    }
+                },
+                didOpen: () => {
+                    const input = Swal.getInput();
+                    
+                    // Format input on keyup
+                    $(input).on('input', function() {
+                        let val = $(this).val().replace(/\D/g, '');
+                        if (val !== '') {
+                            $(this).val(new Intl.NumberFormat('id-ID').format(val));
+                        }
+                    });
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const nominal = result.value.replace(/\D/g, '');
+                    window.open(`/admin/bookings/${id}/print?nominal=${nominal}`, '_blank');
+                }
+            });
         });
 
         $('#btn_show_reschedule').on('click', function() {
@@ -716,7 +769,7 @@
                 success: function(res) {
                     Swal.fire({
                         title: 'Pembayaran Berhasil!',
-                        html: `Status pembayaran telah diperbarui menjadi <b>LUNAS</b>.<br>Kembalian: <b class="text-success">${res.formatted_change}</b>`,
+                        html: `Kembalian: <b class="text-success">${res.formatted_change}</b>`,
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(() => {

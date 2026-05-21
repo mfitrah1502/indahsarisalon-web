@@ -28,6 +28,23 @@
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     }
 
+    .treatment-card-highlighted {
+        border: 2px solid #EA8290 !important;
+        box-shadow: 0 0 20px rgba(234, 130, 144, 0.6) !important;
+        animation: card-pulse 1.5s infinite alternate ease-in-out;
+    }
+
+    @keyframes card-pulse {
+        0% {
+            transform: scale(1.0);
+            box-shadow: 0 0 15px rgba(234, 130, 144, 0.4);
+        }
+        100% {
+            transform: scale(1.03);
+            box-shadow: 0 0 25px rgba(234, 130, 144, 0.8);
+        }
+    }
+
     /* 🔥 INI KUNCI PORTRAIT */
     .treatment-card img {
         width: 100%;
@@ -228,7 +245,7 @@
                             <div class="p-3 bg-white border rounded-3 shadow-sm h-100 d-flex flex-column justify-content-between">
                                 <div>
                                     <label class="form-label fw-bold mb-2"><i class="ti ti-calendar me-1 text-primary"></i>Pilih Tanggal Reservasi</label>
-                                    <p class="small text-muted mb-3">Tentukan tanggal kunjungan Anda ke salon terlebih dahulu. Batas waktu reservasi (09:00-10:30) </p>
+                                    <p class="small text-muted mb-3">Tentukan tanggal kunjungan Anda ke salon terlebih dahulu. Batas waktu reservasi (09:00-17:00) </p>
                                 </div>
                                 @php
                                     $now = \Carbon\Carbon::now();
@@ -701,6 +718,36 @@
                     // Redirect to select page with multiple IDs, selected stylist_id, and reservation_date
                     window.location.href = "{{ route('booking.select', ['treatmentId' => ':id']) }}".replace(':id', selectedDetails[0].treatmentId) + '?details=' + ids + '&stylist_id=' + selectedStylist.id + '&reservation_date=' + reservationDate;
                 });
+
+                // Auto-scroll and highlight logic for treatment_id query parameter
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetTreatmentId = urlParams.get('treatment_id');
+                if (targetTreatmentId) {
+                    const targetWrapper = $(`.treatment-wrapper[data-treatment-id="${targetTreatmentId}"]`);
+                    if (targetWrapper.length > 0) {
+                        // Highlight the card
+                        const card = targetWrapper.find('.treatment-card');
+                        card.addClass('treatment-card-highlighted');
+
+                        // Automatically expand variants/details collapse if it has one
+                        const detailsBtn = targetWrapper.find('[data-bs-toggle="collapse"]');
+                        if (detailsBtn.length > 0 && !$(`#details-${targetTreatmentId}`).hasClass('show')) {
+                            detailsBtn.trigger('click');
+                        }
+
+                        // Scroll to the card smoothly
+                        setTimeout(function() {
+                            $('html, body').animate({
+                                scrollTop: targetWrapper.offset().top - 100
+                            }, 800);
+                        }, 500);
+
+                        // Remove highlight when interacting with the card
+                        targetWrapper.on('click focusin change', function() {
+                            card.removeClass('treatment-card-highlighted');
+                        });
+                    }
+                }
             });
         </script>
     @endpush

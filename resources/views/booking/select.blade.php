@@ -999,6 +999,9 @@
 
                 const prevValue = timeSelect.value;
                 let hasValidPrevValue = false;
+                
+                const currentStylistId = typeof selectedDetails !== 'undefined' && selectedDetails.length > 0 ? selectedDetails[0].stylistId : null;
+                const busyWindows = (currentStylistId && window.bookedStylistWindows && window.bookedStylistWindows[currentStylistId]) ? window.bookedStylistWindows[currentStylistId] : [];
 
                 timeSelect.innerHTML = '<option value="">-- Pilih Jam --</option>';
 
@@ -1016,13 +1019,29 @@
                             }
                         }
 
+                        let isBusy = false;
+                        for (let bw of busyWindows) {
+                            if (timeVal >= bw.start && timeVal < bw.end) {
+                                isBusy = true;
+                                break;
+                            }
+                        }
+
                         const option = document.createElement('option');
                         option.value = timeVal;
                         option.textContent = timeVal;
-                        if (timeVal === prevValue) {
-                            option.selected = true;
-                            hasValidPrevValue = true;
+                        
+                        if (isBusy) {
+                            option.disabled = true;
+                            option.textContent += ' (Penuh)';
+                            option.style.color = '#ccc';
+                        } else {
+                            if (timeVal === prevValue) {
+                                option.selected = true;
+                                hasValidPrevValue = true;
+                            }
                         }
+                        
                         timeSelect.appendChild(option);
                     }
                 }
@@ -1298,7 +1317,11 @@
                     }
                     busyStylistsMap = response.conflicts;
                     offWorkStylists = response.off_work_ids || [];
+                    window.bookedStylistWindows = response.booked_windows || {};
                     applyBusyStylists();
+                    if (typeof window.updateTimeSlots === 'function') {
+                        window.updateTimeSlots();
+                    }
                 }
             });
         };

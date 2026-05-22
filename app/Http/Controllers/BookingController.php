@@ -858,43 +858,48 @@ class BookingController extends Controller
                 ->map(fn($id) => (int)$id)
                 ->toArray();
 
+            // 1. Get ALL bookings for that day (except dibatalkan & selesai/berhasil)
+            $startOfDay = $date . ' 00:00:00';
+            $endOfDay = $date . ' 23:59:59';
+            $existingBookings = Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
+                ->whereNotIn('status', ['dibatalkan', 'success'])
+                ->with(['details.treatmentDetail'])
+                ->get();
+
+            // 2. Map existing busy windows for each stylist
+            $stylistWindows = [];
+            $formattedWindows = [];
+            foreach ($existingBookings as $b) {
+                // Determine starting point for this booking
+                $currentStart = Carbon::parse($b->reservation_datetime);
+                
+                // Details are sequential
+                foreach ($b->details as $d) {
+                    if ($d->treatmentDetail) {
+                        // Blokir 7 jam untuk Coloring, selebihnya sesuai durasi
+                        $isCol = $d->treatmentDetail->treatment && $d->treatmentDetail->treatment->category && stripos($d->treatmentDetail->treatment->category->name, 'Coloring') !== false;
+                        $durationMins = $isCol ? 420 : ($d->treatmentDetail->duration ?? 60);
+                        $currentEnd = $currentStart->copy()->addMinutes($durationMins);
+                        
+                        if ($d->stylist_id) {
+                            $stylistWindows[$d->stylist_id][] = [
+                                'start' => $currentStart->copy(),
+                                'end' => $currentEnd->copy()
+                            ];
+                            $formattedWindows[$d->stylist_id][] = [
+                                'start' => $currentStart->format('H:i'),
+                                'end' => $currentEnd->format('H:i')
+                            ];
+                        }
+                        
+                        $currentStart = $currentEnd->copy();
+                    }
+                }
+            }
+
             $conflicts = [];
             if ($time) {
                 $startTime = Carbon::parse($date . ' ' . $time);
-                
-                // 1. Get ALL bookings for that day (except dibatalkan & selesai/berhasil)
-                $startOfDay = $date . ' 00:00:00';
-                $endOfDay = $date . ' 23:59:59';
-                $existingBookings = Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
-                    ->whereNotIn('status', ['dibatalkan', 'success'])
-                    ->with(['details.treatmentDetail'])
-                    ->get();
-
-                // 2. Map existing busy windows for each stylist
-                $stylistWindows = [];
-                foreach ($existingBookings as $b) {
-                    // Determine starting point for this booking
-                    $currentStart = Carbon::parse($b->reservation_datetime);
-                    
-                    // Details are sequential
-                    foreach ($b->details as $d) {
-                        if ($d->treatmentDetail) {
-                            // Blokir 7 jam untuk Coloring, selebihnya sesuai durasi
-                            $isCol = $d->treatmentDetail->treatment && $d->treatmentDetail->treatment->category && stripos($d->treatmentDetail->treatment->category->name, 'Coloring') !== false;
-                            $durationMins = $isCol ? 420 : ($d->treatmentDetail->duration ?? 60);
-                            $currentEnd = $currentStart->copy()->addMinutes($durationMins);
-                            
-                            if ($d->stylist_id) {
-                                $stylistWindows[$d->stylist_id][] = [
-                                    'start' => $currentStart->copy(),
-                                    'end' => $currentEnd->copy()
-                                ];
-                            }
-                            
-                            $currentStart = $currentEnd->copy();
-                        }
-                    }
-                }
 
                 // 3. Check requested selection window for each detail index
                 $currentRequestedStart = $startTime->copy();
@@ -934,7 +939,8 @@ class BookingController extends Controller
 
             return response()->json([
                 'conflicts' => $conflicts,
-                'off_work_ids' => $offWorkIds
+                'off_work_ids' => $offWorkIds,
+                'booked_windows' => $formattedWindows
             ]);
 
         } catch (\Exception $e) {

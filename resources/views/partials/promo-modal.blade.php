@@ -49,7 +49,7 @@
                                             @endforeach
                                         </div>
 
-                                        <a href="{{ route('booking.select', $promo->id) }}" class="btn btn-primary btn-lg rounded-pill shadow-sm">
+                                        <a href="{{ route('booking.index') }}?treatment_id={{ $promo->id }}" class="btn text-white btn-lg rounded-pill shadow-sm" style="background-color: #EA8290; border-color: #EA8290;">
                                             Booking Sekarang <i class="ti ti-arrow-right ms-2"></i>
                                         </a>
                                     </div>

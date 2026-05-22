@@ -15,6 +15,23 @@
         background: #f8f9fa !important;
     }
 
+    /* Styling Tanggal Reservasi agar Terang, Jelas, dan Interaktif */
+    #main_reservation_date {
+        background-color: #fff !important;
+        color: #EA8290 !important;
+        border: 2px solid #EA8290 !important;
+        opacity: 1 !important;
+        font-weight: 800 !important;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(234, 130, 144, 0.15) !important;
+    }
+    #main_reservation_date:hover {
+        background-color: #fff5f6 !important;
+        border-color: #d66877 !important;
+        box-shadow: 0 6px 16px rgba(234, 130, 144, 0.25) !important;
+        transform: translateY(-1px);
+    }
+
     .treatment-card {
         transition: all 0.3s ease;
         border-radius: 12px;
@@ -253,7 +270,13 @@
                                     $initialDate = $now->greaterThan($cutoff) ? \Carbon\Carbon::tomorrow()->toDateString() : \Carbon\Carbon::today()->toDateString();
                                 @endphp
                                 <div class="position-relative mt-2">
-                                    <input type="text" id="main_reservation_date" class="form-control form-control-lg border-2 border-primary border-opacity-25 rounded-3 fw-bold text-primary text-center bg-white cursor-pointer" readonly value="{{ $initialDate }}" style="font-size: 1.1rem; height: 50px;">
+                                    <input type="text" id="main_reservation_date" class="form-control form-control-lg rounded-3 text-center cursor-pointer" readonly value="{{ $initialDate }}" style="font-size: 1.1rem; height: 50px; padding-left: 45px; padding-right: 45px;">
+                                    <div class="position-absolute top-50 start-0 translate-middle-y ps-3 text-primary pointer-events-none" style="pointer-events: none; color: #EA8290 !important;">
+                                        <i class="ti ti-calendar fs-4"></i>
+                                    </div>
+                                    <div class="position-absolute top-50 end-0 translate-middle-y pe-3 text-primary pointer-events-none" style="pointer-events: none; color: #EA8290 !important;">
+                                        <i class="ti ti-chevron-down fs-5"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>

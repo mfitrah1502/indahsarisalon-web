@@ -15,6 +15,23 @@
         background: #f8f9fa !important;
     }
 
+    /* Styling Tanggal Reservasi agar Terang, Jelas, dan Interaktif */
+    #reservation_date {
+        background-color: #fff !important;
+        color: #EA8290 !important;
+        border: 2px solid #EA8290 !important;
+        opacity: 1 !important;
+        font-weight: 800 !important;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(234, 130, 144, 0.15) !important;
+    }
+    #reservation_date:hover {
+        background-color: #fff5f6 !important;
+        border-color: #d66877 !important;
+        box-shadow: 0 6px 16px rgba(234, 130, 144, 0.25) !important;
+        transform: translateY(-1px);
+    }
+
     /* Stylist Card Modern Styles */
     .stylist-grid {
         display: flex;
@@ -386,8 +403,16 @@
                                 <!-- TANGGAL -->
                                 <div class="col-md-3 mb-3" @if(request()->filled('reservation_date')) style="display: none;" @endif>
                                     <label class="form-label">📅 Tanggal</label>
-                                    <input type="date" name="reservation_date" id="reservation_date" class="form-control"
-                                        min="{{ $initialDate }}" value="{{ request()->input('reservation_date', $initialDate) }}" required>
+                                    <div class="position-relative">
+                                        <input type="text" name="reservation_date" id="reservation_date" class="form-control cursor-pointer"
+                                            min="{{ $initialDate }}" value="{{ request()->input('reservation_date', $initialDate) }}" required readonly style="padding-left: 40px; padding-right: 40px; font-weight: bold;">
+                                        <div class="position-absolute top-50 start-0 translate-middle-y ps-3 text-primary pointer-events-none" style="pointer-events: none; color: #EA8290 !important;">
+                                            <i class="ti ti-calendar fs-5"></i>
+                                        </div>
+                                        <div class="position-absolute top-50 end-0 translate-middle-y pe-3 text-primary pointer-events-none" style="pointer-events: none; color: #EA8290 !important;">
+                                            <i class="ti ti-chevron-down fs-6"></i>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- JAM -->

@@ -131,7 +131,7 @@ class Treatment extends Model
             return false;
         }
         
-        if (in_array($audience, ['komunitas (grup awal)', 'komunitas'])) {
+        if (in_array($audience, ['komunitas (grup awal)', 'komunitas', 'community'])) {
             return true;
         }
         

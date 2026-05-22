@@ -211,6 +211,7 @@
                                             <option value="silver" {{ $treatment->target_audience == 'silver' ? 'selected' : '' }}>Silver Member</option>
                                             <option value="gold" {{ $treatment->target_audience == 'gold' ? 'selected' : '' }}>Gold Member</option>
                                             <option value="platinum" {{ $treatment->target_audience == 'platinum' ? 'selected' : '' }}>Platinum Member</option>
+                                            <option value="community" {{ $treatment->target_audience == 'community' ? 'selected' : '' }}>Komunitas</option>
                                         </select>
                                     </div>
                                     <div class="mb-3">

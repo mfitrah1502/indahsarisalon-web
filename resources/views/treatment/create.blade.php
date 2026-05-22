@@ -188,6 +188,7 @@
                                             <option value="silver">Silver Member</option>
                                             <option value="gold">Gold Member</option>
                                             <option value="platinum">Platinum Member</option>
+                                            <option value="community">Komunitas</option>
                                         </select>
                                     </div>
                                     <div class="mb-3">

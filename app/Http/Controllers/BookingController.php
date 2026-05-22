@@ -813,31 +813,33 @@ class BookingController extends Controller
         }
 
         try {
-            $startTime = Carbon::parse($date . ' ' . $time);
-            $hour = $startTime->hour;
-            $minute = $startTime->minute;
+            // Validasi Dinamis di AJAX jika jam diisi
+            if ($time) {
+                $startTime = Carbon::parse($date . ' ' . $time);
+                $hour = $startTime->hour;
+                $minute = $startTime->minute;
 
-            // Validasi Dinamis di AJAX
-            $selIds = [];
-            foreach ($selection as $item) {
-                $selIds[] = is_array($item) ? $item['id'] : $item;
-            }
-            $isColoringBooking = \App\Models\TreatmentDetail::whereIn('treatment_details.id', $selIds)
-                ->join('treatments', 'treatment_details.treatment_id', '=', 'treatments.id')
-                ->join('categories', 'treatments.category_id', '=', 'categories.id')
-                ->where('categories.name', 'LIKE', '%Coloring%')
-                ->exists();
+                $selIds = [];
+                foreach ($selection as $item) {
+                    $selIds[] = is_array($item) ? $item['id'] : $item;
+                }
+                $isColoringBooking = \App\Models\TreatmentDetail::whereIn('treatment_details.id', $selIds)
+                    ->join('treatments', 'treatment_details.treatment_id', '=', 'treatments.id')
+                    ->join('categories', 'treatments.category_id', '=', 'categories.id')
+                    ->where('categories.name', 'LIKE', '%Coloring%')
+                    ->exists();
 
-            $maxHour = $isColoringBooking ? 10 : 17;
-            $maxMinute = $isColoringBooking ? 30 : 0;
+                $maxHour = $isColoringBooking ? 10 : 17;
+                $maxMinute = $isColoringBooking ? 30 : 0;
 
-            if ($hour < 9 || $hour > $maxHour || ($hour === $maxHour && $minute > $maxMinute)) {
-                $timeLimitStr = $isColoringBooking ? '10:30' : '17:00';
-                return response()->json([
-                    'conflicts' => [], 
-                    'off_work_ids' => [],
-                    'message' => "Maksimal booking jam $timeLimitStr"
-                ]);
+                if ($hour < 9 || $hour > $maxHour || ($hour === $maxHour && $minute > $maxMinute)) {
+                    $timeLimitStr = $isColoringBooking ? '10:30' : '17:00';
+                    return response()->json([
+                        'conflicts' => [], 
+                        'off_work_ids' => [],
+                        'message' => "Maksimal booking jam $timeLimitStr"
+                    ]);
+                }
             }
             
             // 0. Check if it's a holiday

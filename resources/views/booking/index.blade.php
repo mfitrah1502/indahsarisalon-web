@@ -408,14 +408,7 @@
                                 card.css('pointer-events', '');
                                 card.css('opacity', '');
                                 
-                                if (isBooked) {
-                                    card.addClass('busy disabled');
-                                    card.css('pointer-events', 'none');
-                                    card.css('opacity', '0.5');
-                                    if (selectedStylist && selectedStylist.id === stylistId) {
-                                        selectMainStylist(null, $('#main_stylist_grid .stylist-card-modern[data-stylist-id=""]'));
-                                    }
-                                } else if (isOff) {
+                                if (isOff) {
                                     card.addClass('off-work disabled');
                                     card.css('pointer-events', 'none');
                                     card.css('opacity', '0.5');

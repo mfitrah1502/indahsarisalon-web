@@ -254,8 +254,9 @@ class BookingController extends Controller
                     $isCol = $d->treatmentDetail->treatment && $d->treatmentDetail->treatment->category && stripos($d->treatmentDetail->treatment->category->name, 'Coloring') !== false;
                     $durationMins = $isCol ? 420 : ($d->treatmentDetail->duration ?? 60);
                     $currEnd = $currStart->copy()->addMinutes($durationMins);
-                    if ($d->stylist_id) {
-                        $stylistWindows[$d->stylist_id][] = ['start' => $currStart->copy(), 'end' => $currEnd->copy()];
+                    $stylistId = $d->stylist_id ?: $b->stylist_id;
+                    if ($stylistId) {
+                        $stylistWindows[$stylistId][] = ['start' => $currStart->copy(), 'end' => $currEnd->copy()];
                     }
                     $currStart = $currEnd->copy();
                 }
@@ -883,12 +884,13 @@ class BookingController extends Controller
                         $durationMins = $isCol ? 420 : ($d->treatmentDetail->duration ?? 60);
                         $currentEnd = $currentStart->copy()->addMinutes($durationMins);
                         
-                        if ($d->stylist_id) {
-                            $stylistWindows[$d->stylist_id][] = [
+                        $stylistId = $d->stylist_id ?: $b->stylist_id;
+                        if ($stylistId) {
+                            $stylistWindows[$stylistId][] = [
                                 'start' => $currentStart->copy(),
                                 'end' => $currentEnd->copy()
                             ];
-                            $formattedWindows[$d->stylist_id][] = [
+                            $formattedWindows[$stylistId][] = [
                                 'start' => $currentStart->format('H:i'),
                                 'end' => $currentEnd->format('H:i')
                             ];
@@ -970,9 +972,18 @@ class BookingController extends Controller
                 ->pluck('id');
 
             // 2. Ambil stylist yang memiliki booking aktif pada tanggal tersebut
-            $bookedStylistIds = \App\Models\BookingDetail::whereIn('booking_id', $bookingIds)
+            $parentStylistIds = \App\Models\Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
+                ->whereNotIn('status', ['dibatalkan', 'success'])
                 ->whereNotNull('stylist_id')
                 ->pluck('stylist_id')
+                ->toArray();
+
+            $detailStylistIds = \App\Models\BookingDetail::whereIn('booking_id', $bookingIds)
+                ->whereNotNull('stylist_id')
+                ->pluck('stylist_id')
+                ->toArray();
+
+            $bookedStylistIds = collect(array_merge($parentStylistIds, $detailStylistIds))
                 ->map(fn($id) => (int)$id)
                 ->unique()
                 ->values()

@@ -24,17 +24,21 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
+        try {
             if (Auth::attempt($credentials)) {
                 $request->session()->regenerate();
-                session()->put('show_promo_modal', true);
+                session()->flash('show_promo_modal', true);
                 
                 $user = Auth::user();
 
-            if ($user->role == 'owner' || $user->role == 'admin') {
-                return redirect()->intended(route('dashboard')); // Redirect ke tujuan awal atau dashboard
-            } else {
-                return redirect()->route('dashboard.user'); // dashboard pelanggan tetap ke dashboard user
+                if ($user->role == 'owner' || $user->role == 'admin') {
+                    return redirect()->intended(route('dashboard')); // Redirect ke tujuan awal atau dashboard
+                } else {
+                    return redirect()->route('dashboard.user'); // dashboard pelanggan tetap ke dashboard user
+                }
             }
+        } catch (\RuntimeException $e) {
+            return back()->with('error', 'Username atau password salah!');
         }
 
         return back()->with('error', 'Username atau password salah!');

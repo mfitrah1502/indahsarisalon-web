@@ -29,11 +29,7 @@ class PageController extends Controller
           })
           ->with(['details.treatment.category'])->get();
         
-        if ($user && $user->role === 'pelanggan') {
-            $promoTreatments = $promoTreatments->filter(function($t) use ($user) {
-                return $t->matchesUser($user);
-            });
-        }
+        
         
         if (in_array(strtolower($user->role), ['admin', 'karyawan'])) {
             $today = now()->format('Y-m-d');

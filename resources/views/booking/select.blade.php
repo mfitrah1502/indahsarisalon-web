@@ -790,6 +790,8 @@
         });
 
         // Initialize variables
+        const urlStylistId = {{ request()->query('stylist_id') ? (int) request()->query('stylist_id') : 'null' }};
+        const urlStylistKategori = {!! request()->query('stylist_id') && ($preSelStylist = \App\Models\User::find(request()->query('stylist_id'))) ? json_encode(strtolower($preSelStylist->kategori)) : 'null' !!};
         const isStaff = @json($isStaff);
         const customers = @json($customers);
         let hasColoringLoyalty = {{ Auth::user()->has_coloring_loyalty ? 'true' : 'false' }};
@@ -1105,8 +1107,8 @@
                         }
                     @endphp
                     image: {!! json_encode($initImg) !!},
-                    stylistId: {{ request()->query('stylist_id') ? (int) request()->query('stylist_id') : 'null' }},
-                    stylistKategori: {!! request()->query('stylist_id') && ($preSelStylist = \App\Models\User::find(request()->query('stylist_id'))) ? json_encode(strtolower($preSelStylist->kategori)) : 'null' !!}
+                    stylistId: urlStylistId,
+                    stylistKategori: urlStylistKategori
                 },
             @endforeach
             @if($preSelectedDetails->isEmpty() && $treatment->details->count() === 1)
@@ -1143,8 +1145,8 @@
                             }
                         @endphp
                         image: {!! json_encode($initImg) !!},
-                        stylistId: {{ request()->query('stylist_id') ? (int) request()->query('stylist_id') : 'null' }},
-                        stylistKategori: {!! request()->query('stylist_id') && ($preSelStylist = \App\Models\User::find(request()->query('stylist_id'))) ? json_encode(strtolower($preSelStylist->kategori)) : 'null' !!}
+                        stylistId: urlStylistId,
+                        stylistKategori: urlStylistKategori
                     },
                 @endforeach
             @endif
@@ -1211,7 +1213,9 @@
                         promoType: checkbox.getAttribute('data-promo-type'),
                         promoValue: parseInt(checkbox.getAttribute('data-promo-value') || 0),
                         isColoring: checkbox.getAttribute('data-is-coloring') === '1',
-                        image: checkbox.getAttribute('data-image')
+                        image: checkbox.getAttribute('data-image'),
+                        stylistId: urlStylistId,
+                        stylistKategori: urlStylistKategori
                     });
                 }
             } else {
@@ -1551,8 +1555,8 @@
                     promoValue: parseInt(this.getAttribute('data-promo-value') || 0),
                     isColoring: this.getAttribute('data-is-coloring') === '1',
                     image: this.getAttribute('data-image'),
-                    stylistId: selectedDetails.length > 0 ? selectedDetails[0].stylistId : null,
-                    stylistKategori: selectedDetails.length > 0 ? selectedDetails[0].stylistKategori : null
+                    stylistId: (selectedDetails.length > 0 && selectedDetails[0].stylistId) ? selectedDetails[0].stylistId : urlStylistId,
+                    stylistKategori: (selectedDetails.length > 0 && selectedDetails[0].stylistKategori) ? selectedDetails[0].stylistKategori : urlStylistKategori
                 });
 
                 renderSelectedTreatments();

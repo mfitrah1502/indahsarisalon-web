@@ -985,7 +985,7 @@
             findNextAvailable();
 
             // 2. Generate Time Slots
-            function updateTimeSlots() {
+            window.updateTimeSlots = function() {
                 const selectedDate = dateInput.value;
                 const now = new Date();
 
@@ -993,12 +993,19 @@
                 const selectedDateObj = new Date(selectedDate);
                 const isToday = now.toDateString() === selectedDateObj.toDateString();
 
+                const hasColoring = typeof selectedDetails !== 'undefined' && selectedDetails.some(d => d.isColoring);
+                const maxHour = hasColoring ? 10 : 17;
+                const maxMinute = hasColoring ? 30 : 0;
+
+                const prevValue = timeSelect.value;
+                let hasValidPrevValue = false;
+
                 timeSelect.innerHTML = '<option value="">-- Pilih Jam --</option>';
 
-                for (let h = 9; h <= 17; h++) {
+                for (let h = 9; h <= maxHour; h++) {
                     for (let m = 0; m < 60; m += 15) {
-                        // Batasi jam booking maksimal jam (Permintaan Client)
-                        if (h === 17 && m > 0) break;
+                        // Batasi jam booking maksimal jam
+                        if (h === maxHour && m > maxMinute) break;
 
                         const timeVal = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 
@@ -1012,8 +1019,16 @@
                         const option = document.createElement('option');
                         option.value = timeVal;
                         option.textContent = timeVal;
+                        if (timeVal === prevValue) {
+                            option.selected = true;
+                            hasValidPrevValue = true;
+                        }
                         timeSelect.appendChild(option);
                     }
+                }
+                
+                if (prevValue && !hasValidPrevValue) {
+                    timeSelect.value = '';
                 }
 
                 // Pastikan select tidak disabled
@@ -1023,7 +1038,6 @@
             // Jalankan pertama kali
             updateTimeSlots();
         }
-        initTimeSelection();
 
         let currentStep = 1;
         const totalSteps = 3;
@@ -1111,6 +1125,9 @@
             @endif
         ];
 
+        // Jalankan inisialisasi waktu setelah selectedDetails didefinisikan untuk mencegah ReferenceError (TDZ)
+        initTimeSelection();
+
         // Mark pre-selected items as checked in the variant list
         document.addEventListener('DOMContentLoaded', function() {
             selectedDetails.forEach(d => {
@@ -1182,6 +1199,9 @@
         };
 
         function renderSelectedTreatments() {
+            if (typeof window.updateTimeSlots === 'function') {
+                window.updateTimeSlots();
+            }
             const container = document.getElementById('selectedTreatmentsContainer');
             if (!container) return;
             container.innerHTML = '';

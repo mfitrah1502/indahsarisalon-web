@@ -207,14 +207,24 @@ class BookingController extends Controller
             return redirect()->back()->with('error', $msg);
         }
 
-        // Validasi Jam Operasional (09:00 - 17:00 sesuai permintaan client)
+        // Validasi Jam Operasional Dinamis
         $dateTime = Carbon::parse($request->reservation_date.' '.$request->reservation_time);
         $hour = $dateTime->hour;
         $minute = $dateTime->minute;
+
+        // Cek apakah ada treatment coloring untuk validasi jam 10:30
+        $isColoringBooking = \App\Models\TreatmentDetail::whereIn('treatment_details.id', $request->treatment_detail_ids)
+            ->join('treatments', 'treatment_details.treatment_id', '=', 'treatments.id')
+            ->join('categories', 'treatments.category_id', '=', 'categories.id')
+            ->where('categories.name', 'LIKE', '%Coloring%')
+            ->exists();
+
+        $maxHour = $isColoringBooking ? 10 : 17;
+        $maxMinute = $isColoringBooking ? 30 : 0;
         
-        // Cek apakah lebih dari jam 17:00
-        if ($hour < 9 || $hour > 17 || ($hour === 17 && $minute > 0)) {
-            $errorMsg = 'Mohon maaf, jam reservasi maksimal adalah pukul 17:00.';
+        if ($hour < 9 || $hour > $maxHour || ($hour === $maxHour && $minute > $maxMinute)) {
+            $timeLimitStr = $isColoringBooking ? '10:30' : '17:00';
+            $errorMsg = "Mohon maaf, jam reservasi maksimal adalah pukul $timeLimitStr.";
             if ($request->ajax()) {
                 return response()->json(['message' => $errorMsg], 400);
             }
@@ -240,8 +250,10 @@ class BookingController extends Controller
             $currStart = \Carbon\Carbon::parse($b->reservation_datetime);
             foreach ($b->details as $d) {
                 if ($d->treatmentDetail) {
-                    // Sistem otomatis memblokir 7 jam dari jam terpilih (permintaan client)
-                    $currEnd = $currStart->copy()->addHours(7);
+                    // Sistem otomatis memblokir 7 jam untuk Coloring, selebihnya sesuai durasi
+                    $isCol = $d->treatmentDetail->treatment && $d->treatmentDetail->treatment->category && stripos($d->treatmentDetail->treatment->category->name, 'Coloring') !== false;
+                    $durationMins = $isCol ? 420 : ($d->treatmentDetail->duration ?? 60);
+                    $currEnd = $currStart->copy()->addMinutes($durationMins);
                     if ($d->stylist_id) {
                         $stylistWindows[$d->stylist_id][] = ['start' => $currStart->copy(), 'end' => $currEnd->copy()];
                     }
@@ -264,8 +276,10 @@ class BookingController extends Controller
             $detail = $preloadedDetails->get($dId);
             if (!$detail) continue;
 
-            // Blokir 7 jam untuk pengecekan ketersediaan (permintaan client)
-            $tempRequestedEnd = $tempRequestedStart->copy()->addHours(7);
+            // Blokir 7 jam untuk Coloring, selebihnya sesuai durasi
+            $isCol = $detail->treatment && $detail->treatment->category && stripos($detail->treatment->category->name, 'Coloring') !== false;
+            $durationMins = $isCol ? 420 : ($detail->duration ?? 60);
+            $tempRequestedEnd = $tempRequestedStart->copy()->addMinutes($durationMins);
 
             if (isset($stylistWindows[$sId])) {
                 foreach ($stylistWindows[$sId] as $win) {
@@ -803,12 +817,26 @@ class BookingController extends Controller
             $hour = $startTime->hour;
             $minute = $startTime->minute;
 
-            // Validasi 17:00 di AJAX juga
-            if ($hour < 9 || $hour > 17 || ($hour === 17 && $minute > 0)) {
+            // Validasi Dinamis di AJAX
+            $selIds = [];
+            foreach ($selection as $item) {
+                $selIds[] = is_array($item) ? $item['id'] : $item;
+            }
+            $isColoringBooking = \App\Models\TreatmentDetail::whereIn('treatment_details.id', $selIds)
+                ->join('treatments', 'treatment_details.treatment_id', '=', 'treatments.id')
+                ->join('categories', 'treatments.category_id', '=', 'categories.id')
+                ->where('categories.name', 'LIKE', '%Coloring%')
+                ->exists();
+
+            $maxHour = $isColoringBooking ? 10 : 17;
+            $maxMinute = $isColoringBooking ? 30 : 0;
+
+            if ($hour < 9 || $hour > $maxHour || ($hour === $maxHour && $minute > $maxMinute)) {
+                $timeLimitStr = $isColoringBooking ? '10:30' : '17:00';
                 return response()->json([
                     'conflicts' => [], 
                     'off_work_ids' => [],
-                    'message' => 'Maksimal booking jam 17:00'
+                    'message' => "Maksimal booking jam $timeLimitStr"
                 ]);
             }
             
@@ -851,8 +879,10 @@ class BookingController extends Controller
                     // Details are sequential
                     foreach ($b->details as $d) {
                         if ($d->treatmentDetail) {
-                            // Blokir 7 jam (permintaan client)
-                            $currentEnd = $currentStart->copy()->addHours(7);
+                            // Blokir 7 jam untuk Coloring, selebihnya sesuai durasi
+                            $isCol = $d->treatmentDetail->treatment && $d->treatmentDetail->treatment->category && stripos($d->treatmentDetail->treatment->category->name, 'Coloring') !== false;
+                            $durationMins = $isCol ? 420 : ($d->treatmentDetail->duration ?? 60);
+                            $currentEnd = $currentStart->copy()->addMinutes($durationMins);
                             
                             if ($d->stylist_id) {
                                 $stylistWindows[$d->stylist_id][] = [
@@ -879,8 +909,10 @@ class BookingController extends Controller
                         continue;
                     }
 
-                    // Blokir 7 jam (permintaan client)
-                    $currentRequestedEnd = $currentRequestedStart->copy()->addHours(7);
+                    // Blokir 7 jam untuk Coloring, selebihnya sesuai durasi
+                    $isCol = $detail->treatment && $detail->treatment->category && stripos($detail->treatment->category->name, 'Coloring') !== false;
+                    $durationMins = $isCol ? 420 : ($detail->duration ?? 60);
+                    $currentRequestedEnd = $currentRequestedStart->copy()->addMinutes($durationMins);
 
                     $busyIds = [];
                     foreach ($stylistWindows as $stylistId => $windows) {

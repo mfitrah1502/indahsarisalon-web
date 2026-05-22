@@ -125,7 +125,23 @@ class TreatmentController extends Controller
         $treatment->is_active = $request->has('is_active') ? 1 : 0;
         $treatment->promo_start_date = $request->promo_start_date ?: null;
         $treatment->promo_end_date = $request->promo_end_date ?: null;
-        $treatment->target_audience = $request->target_audience ?: 'Semua (General)';
+        
+        // Normalize target audience
+        $targetAudienceInput = $request->target_audience ?: 'general';
+        $normalizedAudience = strtolower($targetAudienceInput);
+        if (in_array($normalizedAudience, ['general', 'semua (general)', 'semua'])) {
+            $normalizedAudience = 'general';
+        } elseif (in_array($normalizedAudience, ['silver', 'silver member'])) {
+            $normalizedAudience = 'silver';
+        } elseif (in_array($normalizedAudience, ['gold', 'gold member'])) {
+            $normalizedAudience = 'gold';
+        } elseif (in_array($normalizedAudience, ['platinum', 'platinum member'])) {
+            $normalizedAudience = 'platinum';
+        } elseif (in_array($normalizedAudience, ['community', 'komunitas', 'komunitas (grup awal)'])) {
+            $normalizedAudience = 'community';
+        }
+        $treatment->target_audience = $normalizedAudience;
+
         $treatment->allow_multi_select = $request->has('allow_multi_select') ? 1 : 0;
 
         if ($request->hasFile('image')) {
@@ -149,24 +165,144 @@ class TreatmentController extends Controller
             $treatment->details()->create($detail);
         }
 
+        // --- SYNCHRONIZE TO PROMOS TABLE ON CREATE ---
+        $promoCategory = Category::where('name', 'Promo')->first();
+        $isPromoCategory = $promoCategory && $treatment->category_id == $promoCategory->id;
+
+        if ($treatment->is_promo || $isPromoCategory) {
+            $firstDetail = $treatment->details()->first();
+            $price = $firstDetail ? $firstDetail->price : 0;
+            $description = $firstDetail ? $firstDetail->description : '';
+
+            DB::table('promos')->updateOrInsert(
+                ['title' => $treatment->name],
+                [
+                    'title' => $treatment->name,
+                    'start_at' => $treatment->promo_start_date,
+                    'end_at' => $treatment->promo_end_date,
+                    'target_audience' => $treatment->target_audience ?: 'general',
+                    'price' => $price,
+                    'is_active' => $treatment->is_active,
+                    'description' => $description,
+                    'image_url' => $treatment->main_image_url,
+                ]
+            );
+        }
+
         return redirect()->route('treatment.index')->with('success','Treatment berhasil ditambahkan');
     }
 
     public function edit(Treatment $treatment)
     {
         $categories = Category::all();
+
+        // Sync data from promos table to treatment for editing if a promo exists
+        $promo = DB::table('promos')->where('title', $treatment->name)->first();
+        if ($promo) {
+            $changed = false;
+            
+            // 1. Sync is_promo
+            if (!$treatment->is_promo) {
+                $treatment->is_promo = true;
+                $changed = true;
+            }
+            
+            // 2. Sync start date
+            if ($promo->start_at) {
+                $promoStart = \Carbon\Carbon::parse($promo->start_at)->startOfDay();
+                $treatmentStart = $treatment->promo_start_date ? \Carbon\Carbon::parse($treatment->promo_start_date)->startOfDay() : null;
+                if (!$treatmentStart || !$treatmentStart->equalTo($promoStart)) {
+                    $treatment->promo_start_date = $promoStart;
+                    $changed = true;
+                }
+            } elseif ($treatment->promo_start_date) {
+                $treatment->promo_start_date = null;
+                $changed = true;
+            }
+            
+            // 3. Sync end date
+            if ($promo->end_at) {
+                $promoEnd = \Carbon\Carbon::parse($promo->end_at)->startOfDay();
+                $treatmentEnd = $treatment->promo_end_date ? \Carbon\Carbon::parse($treatment->promo_end_date)->startOfDay() : null;
+                if (!$treatmentEnd || !$treatmentEnd->equalTo($promoEnd)) {
+                    $treatment->promo_end_date = $promoEnd;
+                    $changed = true;
+                }
+            } elseif ($treatment->promo_end_date) {
+                $treatment->promo_end_date = null;
+                $changed = true;
+            }
+            
+            // 4. Sync target audience
+            if ($promo->target_audience) {
+                // Normalize target audience
+                $promoAudience = strtolower($promo->target_audience);
+                if (in_array($promoAudience, ['general', 'semua (general)', 'semua'])) {
+                    $promoAudience = 'general';
+                } elseif (in_array($promoAudience, ['silver', 'silver member'])) {
+                    $promoAudience = 'silver';
+                } elseif (in_array($promoAudience, ['gold', 'gold member'])) {
+                    $promoAudience = 'gold';
+                } elseif (in_array($promoAudience, ['platinum', 'platinum member'])) {
+                    $promoAudience = 'platinum';
+                } elseif (in_array($promoAudience, ['community', 'komunitas', 'komunitas (grup awal)'])) {
+                    $promoAudience = 'community';
+                }
+                
+                $treatmentAudience = strtolower($treatment->target_audience ?: 'general');
+                if (in_array($treatmentAudience, ['general', 'semua (general)', 'semua'])) {
+                    $treatmentAudience = 'general';
+                } elseif (in_array($treatmentAudience, ['silver', 'silver member'])) {
+                    $treatmentAudience = 'silver';
+                } elseif (in_array($treatmentAudience, ['gold', 'gold member'])) {
+                    $treatmentAudience = 'gold';
+                } elseif (in_array($treatmentAudience, ['platinum', 'platinum member'])) {
+                    $treatmentAudience = 'platinum';
+                } elseif (in_array($treatmentAudience, ['community', 'komunitas', 'komunitas (grup awal)'])) {
+                    $treatmentAudience = 'community';
+                }
+                
+                if ($treatmentAudience !== $promoAudience) {
+                    $treatment->target_audience = $promoAudience;
+                    $changed = true;
+                }
+            }
+            
+            if ($changed) {
+                $treatment->save();
+            }
+        }
+
         return view('treatment.edit', compact('treatment','categories'));
     }
 
     public function update(Request $request, Treatment $treatment)
     {
+        $originalName = $treatment->getOriginal('name') ?: $treatment->name;
+
         $treatment->name = $request->name;
         $treatment->category_id = $request->category_id;
         $treatment->is_promo = $request->has('is_promo') ? 1 : 0;
         $treatment->is_active = $request->has('is_active') ? 1 : 0;
         $treatment->promo_start_date = $request->promo_start_date ?: null;
         $treatment->promo_end_date = $request->promo_end_date ?: null;
-        $treatment->target_audience = $request->target_audience ?: 'Semua (General)';
+        
+        // Normalize target audience
+        $targetAudienceInput = $request->target_audience ?: 'general';
+        $normalizedAudience = strtolower($targetAudienceInput);
+        if (in_array($normalizedAudience, ['general', 'semua (general)', 'semua'])) {
+            $normalizedAudience = 'general';
+        } elseif (in_array($normalizedAudience, ['silver', 'silver member'])) {
+            $normalizedAudience = 'silver';
+        } elseif (in_array($normalizedAudience, ['gold', 'gold member'])) {
+            $normalizedAudience = 'gold';
+        } elseif (in_array($normalizedAudience, ['platinum', 'platinum member'])) {
+            $normalizedAudience = 'platinum';
+        } elseif (in_array($normalizedAudience, ['community', 'komunitas', 'komunitas (grup awal)'])) {
+            $normalizedAudience = 'community';
+        }
+        $treatment->target_audience = $normalizedAudience;
+
         $treatment->allow_multi_select = $request->has('allow_multi_select') ? 1 : 0;
 
         if ($request->hasFile('image')) {
@@ -191,11 +327,38 @@ class TreatmentController extends Controller
             $treatment->details()->create($detail);
         }
 
+        // --- SYNCHRONIZE TO PROMOS TABLE ---
+        $promoCategory = Category::where('name', 'Promo')->first();
+        $isPromoCategory = $promoCategory && $treatment->category_id == $promoCategory->id;
+
+        if ($treatment->is_promo || $isPromoCategory) {
+            $firstDetail = $treatment->details()->first();
+            $price = $firstDetail ? $firstDetail->price : 0;
+            $description = $firstDetail ? $firstDetail->description : '';
+
+            DB::table('promos')->updateOrInsert(
+                ['title' => $originalName],
+                [
+                    'title' => $treatment->name,
+                    'start_at' => $treatment->promo_start_date,
+                    'end_at' => $treatment->promo_end_date,
+                    'target_audience' => $treatment->target_audience ?: 'general',
+                    'price' => $price,
+                    'is_active' => $treatment->is_active,
+                    'description' => $description,
+                    'image_url' => $treatment->main_image_url,
+                ]
+            );
+        } else {
+            DB::table('promos')->where('title', $originalName)->delete();
+        }
+
         return redirect()->route('treatment.index')->with('success', 'Treatment berhasil diperbarui!');
     }
 
     public function destroy(Treatment $treatment)
     {
+        DB::table('promos')->where('title', $treatment->name)->delete();
         $treatment->delete();
         return redirect()->route('treatment.index')->with('success','Treatment berhasil dihapus');
     }

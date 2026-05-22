@@ -266,7 +266,7 @@
                                 </div>
                                 @php
                                     $now = \Carbon\Carbon::now();
-                                    $cutoff = \Carbon\Carbon::today()->setHour(10)->setMinute(30);
+                                    $cutoff = \Carbon\Carbon::today()->setHour(17)->setMinute(0);
                                     $initialDate = $now->greaterThan($cutoff) ? \Carbon\Carbon::tomorrow()->toDateString() : \Carbon\Carbon::today()->toDateString();
                                 @endphp
                                 <div class="position-relative mt-2">

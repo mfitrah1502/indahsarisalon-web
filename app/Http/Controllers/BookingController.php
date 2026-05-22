@@ -242,7 +242,7 @@ class BookingController extends Controller
         $endOfDay = $requestedDate . ' 23:59:59';
         $existingBookings = \App\Models\Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
             ->whereNotIn('status', ['dibatalkan', 'success'])
-            ->with(['details.treatmentDetail'])
+            ->with(['details.treatmentDetail.treatment.category'])
             ->get();
 
         $stylistWindows = [];
@@ -866,7 +866,7 @@ class BookingController extends Controller
             $endOfDay = $date . ' 23:59:59';
             $existingBookings = Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
                 ->whereNotIn('status', ['dibatalkan', 'success'])
-                ->with(['details.treatmentDetail'])
+                ->with(['details.treatmentDetail.treatment.category'])
                 ->get();
 
             // 2. Map existing busy windows for each stylist

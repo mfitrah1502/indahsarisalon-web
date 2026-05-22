@@ -1019,27 +1019,33 @@
                             }
                         }
 
+                                                // Convert time strings to minutes for accurate comparison
+                        const timeParts = timeVal.split(':');
+                        const timeMinutes = parseInt(timeParts[0]) * 60 + parseInt(timeParts[1]);
                         let isBusy = false;
                         for (let bw of busyWindows) {
-                            if (timeVal >= bw.start && timeVal < bw.end) {
+                            // Assume bw.start and bw.end are "HH:MM" strings
+                            const startParts = bw.start.split(':');
+                            const endParts = bw.end.split(':');
+                            const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+                            const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+                            if (timeMinutes >= startMinutes && timeMinutes < endMinutes) {
                                 isBusy = true;
                                 break;
                             }
+                        }
+
+                        if (isBusy) {
+                            continue; // Jangan tampilkan jam yang sudah di booking user lain
                         }
 
                         const option = document.createElement('option');
                         option.value = timeVal;
                         option.textContent = timeVal;
                         
-                        if (isBusy) {
-                            option.disabled = true;
-                            option.textContent += ' (Penuh)';
-                            option.style.color = '#ccc';
-                        } else {
-                            if (timeVal === prevValue) {
-                                option.selected = true;
-                                hasValidPrevValue = true;
-                            }
+                        if (timeVal === prevValue) {
+                            option.selected = true;
+                            hasValidPrevValue = true;
                         }
                         
                         timeSelect.appendChild(option);
@@ -1468,6 +1474,11 @@
         // Render initial details if there is only 1 variant auto-selected
         if (selectedDetails.length > 0) {
             renderSelectedTreatments();
+        }
+
+        // Jalankan pengecekan ketersediaan stylist dan jam saat halaman dimuat
+        if (document.getElementById('reservation_date').value) {
+            checkStylistAvailability();
         }
 
         // Trigger availability check when date or time changes

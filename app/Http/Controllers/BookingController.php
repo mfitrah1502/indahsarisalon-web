@@ -31,6 +31,7 @@ class BookingController extends Controller
         $query = Treatment::with(['details', 'category'])
             ->join('categories', 'treatments.category_id', '=', 'categories.id')
             ->where('treatments.is_active', true)
+            ->whereHas('details')
             ->select('treatments.*');
 
         if ($request->filled('category')) {

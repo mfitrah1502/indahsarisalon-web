@@ -205,6 +205,16 @@
                                         <label class="form-check-label fw-bold extra-small" for="is_promo">Aktifkan Status Promo</label>
                                     </div>
                                     <div class="mb-3">
+                                        <label class="extra-small fw-bold mb-1">Target Audiens</label>
+                                        <select name="target_audience" class="form-select glass-input form-control-sm">
+                                            <option value="general" {{ in_array(strtolower($treatment->target_audience ?: 'general'), ['general', 'semua (general)', 'semua']) ? 'selected' : '' }}>Semua (General)</option>
+                                            <option value="silver" {{ in_array(strtolower($treatment->target_audience), ['silver', 'silver member']) ? 'selected' : '' }}>Silver Member</option>
+                                            <option value="gold" {{ in_array(strtolower($treatment->target_audience), ['gold', 'gold member']) ? 'selected' : '' }}>Gold Member</option>
+                                            <option value="platinum" {{ in_array(strtolower($treatment->target_audience), ['platinum', 'platinum member']) ? 'selected' : '' }}>Platinum Member</option>
+                                            <option value="community" {{ in_array(strtolower($treatment->target_audience), ['community', 'komunitas', 'komunitas (grup awal)']) ? 'selected' : '' }}>Komunitas</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
                                         <label class="extra-small fw-bold mb-1">Mulai</label>
                                         <input type="date" name="promo_start_date" class="form-control glass-input form-control-sm" value="{{ $treatment->promo_start_date ? $treatment->promo_start_date->format('Y-m-d') : '' }}">
                                     </div>

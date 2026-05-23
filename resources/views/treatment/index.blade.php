@@ -132,29 +132,14 @@
                             <tbody>
                                 @forelse($treatments as $treatment)
                                     @php
-                                        $detailImage = $treatment->details->whereNotNull('image_url')->first();
-                                        $hasImage = false;
-                                        
-                                        if ($detailImage && $detailImage->image_url) {
-                                            $imageUrl = $detailImage->image_url;
-                                            $hasImage = true;
-                                        } elseif (!$treatment->image) {
-                                            $imageUrl = asset('assets/images/no-image.jpg');
-                                        } elseif (strpos($treatment->image, 'http') === 0) {
-                                            $imageUrl = $treatment->image;
-                                            $hasImage = true;
-                                        } else {
-                                            $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
-                                            $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image;
-                                            $hasImage = true;
-                                        }
+                                        $imageUrl = $treatment->main_image_url;
+                                        $hasImage = $imageUrl && $imageUrl !== asset('assets/images/no-image.jpg');
                                     @endphp
                                     <tr class="treatment-row" 
                                         data-id="{{ $treatment->id }}"
                                         data-name="{{ $treatment->name }}"
                                         data-category="{{ $treatment->category->name ?? '-' }}"
                                         data-promo-end="{{ $treatment->promo_end_date ? \Carbon\Carbon::parse($treatment->promo_end_date)->format('d F Y') : '' }}"
-                                        data-details='@json($treatment->details)'
                                         data-image="{{ $imageUrl }}">
                                         <td class="px-3">
                                             <div class="d-flex align-items-center">
@@ -170,7 +155,7 @@
                                                 </div>
                                                 <div>
                                                     <h6 class="mb-0 fw-bold">{{ $treatment->name }}</h6>
-                                                    <small class="text-muted">{{ $treatment->details->count() }} Variasi</small>
+                                                    <small class="text-muted">{{ $treatment->details_count }} Variasi</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -207,8 +192,8 @@
                                         <td>
                                             <span class="fw-bold text-dark">
                                                 @php
-                                                    $minPrice = $treatment->details->min('price') ?? 0;
-                                                    $maxPrice = $treatment->details->max('price') ?? 0;
+                                                    $minPrice = $treatment->details_min_price ?? 0;
+                                                    $maxPrice = $treatment->details_max_price ?? 0;
                                                 @endphp
                                                 @if($minPrice != $maxPrice)
                                                     Rp {{ number_format($minPrice, 0, ',', '.') }} - Rp {{ number_format($maxPrice, 0, ',', '.') }}
@@ -227,7 +212,7 @@
                                                 </a>
                                                 <form action="{{ route('treatment.destroy', $treatment->id) }}" method="POST" class="d-inline">
                                                     @csrf @method('DELETE')
-                                                    <button type="submit" class="btn btn-light action-btn text-danger" title="Hapus" onclick="return confirm('Hapus treatment ini?')">
+                                                    <button type="button" class="btn btn-light action-btn text-danger btn-delete-treatment" title="Hapus">
                                                         <i class="ti ti-trash fs-5"></i>
                                                     </button>
                                                 </form>
@@ -428,7 +413,7 @@
                     </div>
                     <div class="customer-list-scrollable" style="max-height: 400px; overflow-y: auto;">
                         <div class="list-group list-group-flush" id="customerList">
-                            @foreach($customers as $customer)
+                            @foreach($customers->take(50) as $customer)
                                 <label class="list-group-item list-group-item-action d-flex align-items-center gap-3 p-3 border-0 border-bottom customer-item" data-search="{{ strtolower($customer->name) }} {{ $customer->phone }}">
                                     <input class="form-check-input flex-shrink-0" type="radio" name="selectedCustomer" value="{{ $customer->phone }}" data-name="{{ $customer->name }}">
                                     <div class="flex-grow-1">
@@ -468,6 +453,8 @@
 
 
 @push('scripts')
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         // Modal Instances
         const categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
@@ -494,86 +481,116 @@
             if (e.keyCode === 13) applyFilterSortSearch();
         });
 
-        // View Detail Modal
+        // View Detail Modal with AJAX
         $(document).on('click', '.view-detail', function () {
             let row = $(this).closest('tr');
-            let details = row.data('details');
-            let image = row.data('image');
+            let id = row.data('id');
+            
+            // Debugging: Cek ID di console (F12)
+            console.log('Memuat detail untuk ID:', id);
+
+            // Ambil gambar langsung dari atribut data-image yang sudah kita siapkan di HTML
+            let image = row.data('image') || "{{ asset('assets/images/no-image.jpg') }}";
+            console.log('Gambar Baris Ini:', image);
+            
+            // Reset modal state (penting agar tidak muncul gambar lama saat loading)
+            $('#popupImage').attr('src', image).show();
+            $('#popupImageCarousel').hide();
+            $('#popupImageCarouselInner').empty();
+            $('#popupPromoWrapper').hide();
             
             $('#popupName').text(row.data('name'));
             $('#popupCategory').text(row.data('category'));
+            $('#popupDetails').html('<div class="p-4 text-center"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">Memuat variasi...</p></div>');
             
-            // Image Carousel Logic
-            let carouselImages = [];
-            if (image) {
-                carouselImages.push(image);
-            }
-            if (details && details.length > 0) {
-                details.forEach(function(d) {
-                    if (d.image_url) {
-                        carouselImages.push(d.image_url);
-                    }
-                });
-            }
-
-            if (carouselImages.length > 1) {
-                $('#popupImage').hide();
-                let innerHtml = '';
-                carouselImages.forEach(function(img, idx) {
-                    let active = idx === 0 ? 'active' : '';
-                    innerHtml += `
-                        <div class="carousel-item ${active}">
-                            <img src="${img}" class="d-block w-100" style="max-height: 300px; object-fit: cover;">
-                        </div>
-                    `;
-                });
-                $('#popupImageCarouselInner').html(innerHtml);
-                $('#popupImageCarousel').show();
-            } else if (carouselImages.length === 1) {
-                $('#popupImageCarousel').hide();
-                $('#popupImage').attr('src', carouselImages[0]).show();
-            } else {
-                $('#popupImageCarousel').hide();
-                $('#popupImage').attr('src', '').hide();
-            }
-            
-            let isPromo = row.data('category') == 'Promo';
-
-            let html = '';
-            details.forEach(function (d) {
-                let currentPrice = d.price;
-                let priceHtml = `<span class="fw-bold text-primary">Rp ${new Intl.NumberFormat('id-ID').format(currentPrice)}</span>`;
-
-                if (isPromo) {
-                    $('#popupPromoWrapper').show();
-                }
-
-                html += `
-                    <div class="list-group-item p-3 border-0 border-bottom">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold">${d.name}</span>
-                            ${priceHtml}
-                        </div>
-                        <div class="d-flex gap-3 small text-muted">
-                            <span><i class="ti ti-clock me-1"></i>${d.duration} mnt</span>
-                            ${d.description ? `<span><i class="ti ti-info-circle me-1"></i>${d.description}</span>` : ''}
-                        </div>
-                    </div>`;
-            });
-
-            $('#popupDetails').html(html);
-            
-            // Store current treatment data for spreading
-            $('#btnSpreadPromo').data('treatment', {
-                id: row.data('id'),
-                name: row.data('name'),
-                category: row.data('category'),
-                promoEnd: row.data('promo-end'),
-                image: image,
-                details: details
-            });
-
             detailModal.show();
+
+            $.ajax({
+                url: `/admin/treatment/details/${id}?t=` + new Date().getTime(),
+                type: "GET",
+                success: function (res) {
+                    if (res.success) {
+                        let details = res.data;
+                        
+                        // Image Carousel Logic
+                        let carouselImages = [];
+                        
+                        // Prioritaskan gambar dari baris tabel (gambar utama)
+                        if (image && !image.includes('no-image.jpg')) {
+                            carouselImages.push(image);
+                        }
+                        
+                        // Tambahkan gambar-gambar dari variasi detail
+                        details.forEach(function(d) {
+                            if (d.image_url && !carouselImages.includes(d.image_url)) {
+                                carouselImages.push(d.image_url);
+                            }
+                        });
+
+                        if (carouselImages.length > 1) {
+                            $('#popupImage').hide();
+                            let innerHtml = '';
+                            carouselImages.forEach(function(img, idx) {
+                                let active = idx === 0 ? 'active' : '';
+                                innerHtml += `
+                                    <div class="carousel-item ${active}">
+                                        <img src="${img}" class="d-block w-100" style="max-height: 300px; object-fit: cover; border-radius: 12px;">
+                                    </div>`;
+                            });
+                            $('#popupImageCarouselInner').html(innerHtml);
+                            $('#popupImageCarousel').show();
+                        } else if (carouselImages.length === 1) {
+                            $('#popupImageCarousel').hide();
+                            $('#popupImage').attr('src', carouselImages[0]).show();
+                        } else {
+                            $('#popupImageCarousel').hide();
+                            $('#popupImage').attr('src', "{{ asset('assets/images/no-image.jpg') }}").show();
+                        }
+                        
+                        let isPromo = row.data('category') == 'Promo';
+                        let html = '';
+                        details.forEach(function (d) {
+                            let price = parseFloat(d.price) || 0;
+                            let priceHtml = `<span class="fw-bold text-primary">Rp ${new Intl.NumberFormat('id-ID').format(price)}</span>`;
+                            if (isPromo) $('#popupPromoWrapper').show();
+
+                            html += `
+                                <div class="list-group-item p-3 border-0 border-bottom">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <div class="d-flex align-items-center">
+                                            ${d.image_url ? `<img src="${d.image_url}" class="rounded me-2" width="30" height="30" style="object-fit:cover;">` : ''}
+                                            <span class="fw-bold">${d.name}</span>
+                                        </div>
+                                        ${priceHtml}
+                                    </div>
+                                    <div class="d-flex gap-3 small text-muted">
+                                        <span><i class="ti ti-clock me-1"></i>${d.duration} mnt</span>
+                                        ${d.description ? `<span><i class="ti ti-info-circle me-1"></i>${d.description}</span>` : ''}
+                                    </div>
+                                </div>`;
+                        });
+                        $('#popupDetails').html(html || '<div class="p-3 text-center text-muted">Tidak ada variasi</div>');
+
+                        // Store for spreading
+                        $('#btnSpreadPromo').data('treatment', {
+                            id: id,
+                            name: row.data('name'),
+                            category: row.data('category'),
+                            promoEnd: row.data('promo-end'),
+                            image: image,
+                            details: details
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Detail Error:', xhr.responseJSON);
+                    let errorMsg = 'Gagal memuat data (Error ' + xhr.status + ')';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg += ': <br><small class="fw-normal text-dark">' + xhr.responseJSON.message + '</small>';
+                    }
+                    $('#popupDetails').html('<div class="p-3 text-center text-danger fw-bold">' + errorMsg + '.</div>');
+                }
+            });
         });
 
         // Spread Promo Logic
@@ -599,7 +616,15 @@
         $('#btnConfirmSendCustomer').click(function() {
             const selected = $('input[name="selectedCustomer"]:checked');
             if (selected.length === 0) {
-                alert('Pilih pelanggan terlebih dahulu');
+                Swal.fire({
+                    title: 'Pilih Pelanggan',
+                    text: 'Silakan pilih pelanggan terlebih dahulu.',
+                    icon: 'warning',
+                    confirmButtonColor: '#EA8290',
+                    customClass: {
+                        popup: 'rounded-4 border-0 shadow-lg'
+                    }
+                });
                 return;
             }
 
@@ -660,7 +685,15 @@
                 if (treatment.image && !treatment.image.includes('no-image.jpg')) {
                     const copied = await copyImageToClipboard(treatment.image);
                     if (copied) {
-                        alert('Gambar promo telah di-copy otomatis! Silakan PASTE (Ctrl+V) saat WhatsApp terbuka.');
+                        Swal.fire({
+                            title: 'Gambar Disalin!',
+                            text: 'Gambar promo telah disalin otomatis. Silakan tempel / PASTE (Ctrl+V) saat WhatsApp terbuka.',
+                            icon: 'success',
+                            confirmButtonColor: '#EA8290',
+                            customClass: {
+                                popup: 'rounded-4 border-0 shadow-lg'
+                            }
+                        });
                     }
                 }
             } catch (e) {
@@ -692,9 +725,23 @@
                 const waWindow = window.open(waUrl, '_blank');
                 if (!waWindow) {
                     // Fallback: if blocked, use location.href or show a link
-                    if(confirm('Pop-up WhatsApp terblokir oleh browser. Klik OK untuk mencoba membuka di tab ini.')) {
-                        window.location.href = waUrl;
-                    }
+                    Swal.fire({
+                        title: 'Pop-up Terblokir',
+                        text: 'WhatsApp terblokir oleh browser. Klik Lanjutkan untuk mencoba membuka di tab ini.',
+                        icon: 'info',
+                        showCancelButton: true,
+                        confirmButtonColor: '#EA8290',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Lanjutkan',
+                        cancelButtonText: 'Batal',
+                        customClass: {
+                            popup: 'rounded-4 border-0 shadow-lg'
+                        }
+                    }).then((res) => {
+                        if (res.isConfirmed) {
+                            window.location.href = waUrl;
+                        }
+                    });
                 }
             }, 100);
         }
@@ -786,25 +833,94 @@
             });
         });
 
-        // Delete Category
-        $(document).on('click', '.btn-delete-category', function () {
-            if(!confirm('Hapus kategori ini?')) return;
-            let row = $(this).closest('tr');
-            let id = row.data('id');
+        // SweetAlert2 for Delete Confirmation
+        $(document).on('click', '.btn-delete-treatment', function (e) {
+            e.preventDefault();
+            const form = $(this).closest('form');
+            const name = $(this).closest('tr').data('name') || $(this).closest('tr').find('h6').text().trim();
 
-            $.ajax({
-                url: '/categories/' + id,
-                type: 'POST',
-                data: { _token: '{{ csrf_token() }}', _method: 'DELETE' },
-                success: () => row.remove()
+            Swal.fire({
+                title: 'Hapus Treatment?',
+                text: `Apakah Anda yakin ingin menghapus data treatment "${name}"? Tindakan ini tidak dapat dibatalkan.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    popup: 'rounded-4 border-0 shadow-lg'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
             });
         });
+
+        // Delete Category
+        $(document).on('click', '.btn-delete-category', function () {
+            let row = $(this).closest('tr');
+            let id = row.data('id');
+            let name = row.find('.editable-category').text().trim();
+
+            Swal.fire({
+                title: 'Hapus Kategori?',
+                text: `Apakah Anda yakin ingin menghapus kategori "${name}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    popup: 'rounded-4 border-0 shadow-lg'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '/categories/' + id,
+                        type: 'POST',
+                        data: { _token: '{{ csrf_token() }}', _method: 'DELETE' },
+                        success: () => {
+                            row.remove();
+                            Swal.fire({
+                                title: 'Terhapus!',
+                                text: 'Kategori berhasil dihapus.',
+                                icon: 'success',
+                                confirmButtonColor: '#EA8290',
+                                timer: 1500,
+                                showConfirmButton: false,
+                                customClass: {
+                                    popup: 'rounded-4 border-0 shadow-lg'
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
         function confirmBroadcast(btn) {
-            if (confirm('Apakah Anda yakin ingin mengirimkan pesan promo dan gambar-gambar ini ke SELURUH pelanggan? Proses ini mungkin memakan waktu.')) {
-                btn.disabled = true;
-                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim...';
-                document.getElementById('broadcastForm').submit();
-            }
+            Swal.fire({
+                title: 'Siarkan Promo?',
+                text: 'Apakah Anda yakin ingin mengirimkan pesan promo dan gambar-gambar ini ke SELURUH pelanggan? Proses ini mungkin memakan waktu.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Kirim',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    popup: 'rounded-4 border-0 shadow-lg'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengirim...';
+                    document.getElementById('broadcastForm').submit();
+                }
+            });
         }
     </script>
 @endpush

@@ -80,10 +80,10 @@
                                         <span class="text-muted">{{ $holiday->description ?? '-' }}</span>
                                     </td>
                                     <td class="text-end px-4 py-3">
-                                        <form action="{{ route('holidays.destroy', $holiday->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus hari libur ini?');">
+                                        <form action="{{ route('holidays.destroy', $holiday->id) }}" method="POST" class="d-inline">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-light-danger btn-sm rounded-pill px-3 border-0 shadow-sm">
+                                            <button type="button" class="btn btn-light-danger btn-sm rounded-pill px-3 border-0 shadow-sm btn-delete-holiday" data-date="{{ \Carbon\Carbon::parse($holiday->date)->translatedFormat('l, d F Y') }}">
                                                 <i class="ti ti-trash me-1"></i>Hapus
                                             </button>
                                         </form>
@@ -107,3 +107,33 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).on('click', '.btn-delete-holiday', function (e) {
+            e.preventDefault();
+            const form = $(this).closest('form');
+            const date = $(this).data('date');
+
+            Swal.fire({
+                title: 'Hapus Hari Libur?',
+                text: `Apakah Anda yakin ingin menghapus hari libur pada tanggal "${date}"?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal',
+                customClass: {
+                    popup: 'rounded-4 border-0 shadow-lg'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    </script>
+@endpush

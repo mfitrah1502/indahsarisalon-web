@@ -21,6 +21,7 @@ class Treatment extends Model
         'is_active',
         'promo_start_date',
         'promo_end_date',
+        'target_audience',
     ];
     
     protected $casts = [
@@ -39,6 +40,24 @@ class Treatment extends Model
     public function getMainImageUrlAttribute()
     {
         if (!$this->image) {
+            $firstDetailImage = \Illuminate\Support\Facades\DB::table('treatment_details')
+                ->where('treatment_id', $this->id)
+                ->whereNotNull('image_url')
+                ->where('image_url', '!=', '')
+                ->value('image_url');
+
+            if ($firstDetailImage) {
+                if (strpos($firstDetailImage, 'http') === 0) {
+                    return $firstDetailImage;
+                }
+                
+                $bucket = env('SUPABASE_BUCKET');
+                $baseUrl = env('SUPABASE_URL');
+                if ($baseUrl) {
+                    return $baseUrl . '/storage/v1/object/public/' . $bucket . '/' . $firstDetailImage;
+                }
+            }
+
             return asset('assets/images/no-image.jpg');
         }
 
@@ -63,10 +82,18 @@ class Treatment extends Model
     {
         $images = [];
 
-        // Collect from details
-        foreach ($this->details as $detail) {
-            if ($detail->image_url && !in_array($detail->image_url, $images)) {
-                $images[] = $detail->image_url;
+        // Use direct query to avoid loading models and causing infinite recursion
+        // when TreatmentDetails are serialized and try to access parent Treatment
+        $detailImages = \Illuminate\Support\Facades\DB::table('treatment_details')
+            ->where('treatment_id', $this->id)
+            ->whereNotNull('image_url')
+            ->where('image_url', '!=', '')
+            ->pluck('image_url')
+            ->toArray();
+
+        foreach ($detailImages as $url) {
+            if (!in_array($url, $images)) {
+                $images[] = $url;
             }
         }
 
@@ -88,4 +115,52 @@ class Treatment extends Model
         return $this->belongsTo(Category::class, 'category_id', 'id');
     }
 
+    /**
+     * Check if the promo matches the given user based on target audience.
+     * Strict matching: promo platinum → hanya untuk user platinum.
+     * Promo gold → hanya user gold. Promo silver → hanya user silver.
+     * Colour Circle adalah keanggotaan terpisah.
+     */
+    public function matchesUser($user = null)
+    {
+        $audience = strtolower($this->target_audience ?: 'general');
+
+        // General promos — tampil untuk semua user
+        if (in_array($audience, ['general', 'semua (general)', 'semua', ''])) {
+            return true;
+        }
+
+        $currentUser = $user ?? auth()->user();
+        if (!$currentUser) {
+            return false;
+        }
+
+        // Community — tampil untuk semua user yang login
+        if (in_array($audience, ['komunitas (grup awal)', 'komunitas', 'community'])) {
+            return true;
+        }
+
+        // Colour Circle — hanya untuk anggota colour circle
+        if (strpos($audience, 'colour circle') !== false) {
+            return (bool) $currentUser->is_colour_circle_member;
+        }
+
+        // Strict tier match: promo hanya tampil pada tier yang persis sama
+        $userTier = strtolower($currentUser->tier ?? 'regular');
+
+        if (strpos($audience, 'platinum') !== false) {
+            return $userTier === 'platinum';
+        }
+
+        if (strpos($audience, 'gold') !== false) {
+            return $userTier === 'gold';
+        }
+
+        if (strpos($audience, 'silver') !== false) {
+            return $userTier === 'silver';
+        }
+
+        // Default: regular
+        return $userTier === 'regular';
+    }
 }

@@ -11,8 +11,7 @@ class KaryawanController extends Controller
 {
     public function index(Request $request)
     {
-
-        $query = User::whereIn('role', ['owner', 'admin', 'karyawan']); // ambil owner & admin
+        $query = User::whereIn('role', ['admin', 'karyawan']);
 
 
         // Jika ada pencarian
@@ -42,24 +41,58 @@ class KaryawanController extends Controller
         'email' => 'required|email|unique:users',
         'phone' => 'required|string|max:15',
         'password' => 'required|string|min:6',
-        'role' => 'required|in:owner,admin', 
-        'kategori' => 'required_if:role,admin|in:senior,junior',
+        'role' => 'required|in:owner,admin,karyawan', 
+
+        'nickname' => 'nullable|string|max:255',
+        'birth_place' => 'nullable|string|max:255',
+        'birth_date' => 'nullable|date',
+        'gender' => 'nullable|string|max:50',
+        'position' => 'nullable|string|max:255',
+        'division' => 'nullable|string|max:255',
+        'join_date' => 'nullable|date',
+        'employment_status' => 'nullable|string|max:100',
+        'emergency_contact' => 'nullable|string|max:50',
+        'bank_account_name' => 'nullable|string|max:255',
+        'bank_account_number' => 'nullable|string|max:50',
+        'last_education' => 'nullable|string|max:255',
     ]);
 
-    User::create([
-        'name' => $request->name,
-        'username' => $request->username,
-        'email' => $request->email,
-        'phone' => $request->phone,
-        'password' => Hash::make($request->password),
-        'role' => $request->role,       // simpan role dari form
-        'type' => 'karyawan',
-         'kategori' => $request->role === 'admin' ? $request->kategori : null,
-        'status' => $request->status ?? 'aktif',
-    ]);
+        $kategori = null;
+        if ($request->filled('position')) {
+            $pos = strtolower($request->position);
+            if (str_contains($pos, 'senior') || str_contains($pos, 'creative')) {
+                $kategori = 'senior';
+            } elseif (str_contains($pos, 'junior')) {
+                $kategori = 'junior';
+            }
+        }
 
-    return redirect()->route('karyawan.index')->with('success','Karyawan berhasil ditambahkan');
-}
+        User::create([
+            'name' => $request->name,
+            'username' => $request->username,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,       // simpan role dari form
+            'type' => 'karyawan',
+            'kategori' => $kategori,
+            'status' => $request->status ?? 'aktif',
+            'nickname' => $request->nickname,
+            'birth_place' => $request->birth_place,
+            'birth_date' => $request->birth_date,
+            'gender' => $request->gender,
+            'position' => $request->position,
+            'division' => $request->division,
+            'join_date' => $request->join_date,
+            'employment_status' => $request->employment_status,
+            'emergency_contact' => $request->emergency_contact,
+            'bank_account_name' => $request->bank_account_name,
+            'bank_account_number' => $request->bank_account_number,
+            'last_education' => $request->last_education,
+        ]);
+
+        return redirect()->route('karyawan.index')->with('success','Karyawan berhasil ditambahkan');
+    }
 
     public function edit(User $karyawan)
     {
@@ -67,34 +100,85 @@ class KaryawanController extends Controller
     }
 
     public function update(Request $request, User $karyawan)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'username' => 'required|string|unique:users,username,'.$karyawan->id,
-        'email' => 'required|email|unique:users,email,'.$karyawan->id,
-        'phone' => 'required|string|max:15',
-        'role' => 'required|in:owner,admin', // validasi role
-        'kategori' => 'required_if:role,admin|in:senior,junior',
-    ]);
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|unique:users,username,'.$karyawan->id,
+            'email' => 'required|email|unique:users,email,'.$karyawan->id,
+            'phone' => 'required|string|max:15',
+            'role' => 'required|in:owner,admin,karyawan', // validasi role
 
-    $karyawan->update([
-        'name' => $request->name,
-        'username' => $request->username,
-        'email' => $request->email,
-        'phone' => $request->phone,
-        'role' => $request->role,   
-        'kategori' => $request->role === 'admin' ? $request->kategori : null,
-        'type' => 'karyawan',    // update role
-        'status' => $request->status ?? 'aktif',
-    ]);
+            'nickname' => 'nullable|string|max:255',
+            'birth_place' => 'nullable|string|max:255',
+            'birth_date' => 'nullable|date',
+            'gender' => 'nullable|string|max:50',
+            'position' => 'nullable|string|max:255',
+            'division' => 'nullable|string|max:255',
+            'join_date' => 'nullable|date',
+            'employment_status' => 'nullable|string|max:100',
+            'emergency_contact' => 'nullable|string|max:50',
+            'bank_account_name' => 'nullable|string|max:255',
+            'bank_account_number' => 'nullable|string|max:50',
+            'last_education' => 'nullable|string|max:255',
+        ]);
+
+        $kategori = null;
+        if ($request->filled('position')) {
+            $pos = strtolower($request->position);
+            if (str_contains($pos, 'senior') || str_contains($pos, 'creative')) {
+                $kategori = 'senior';
+            } elseif (str_contains($pos, 'junior')) {
+                $kategori = 'junior';
+            }
+        }
+
+        $karyawan->update([
+            'name' => $request->name,
+            'username' => $request->username,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'role' => $request->role,   
+            'kategori' => $kategori,
+            'type' => 'karyawan',    // update role
+            'status' => $request->status ?? 'aktif',
+            'nickname' => $request->nickname,
+            'birth_place' => $request->birth_place,
+            'birth_date' => $request->birth_date,
+            'gender' => $request->gender,
+            'position' => $request->position,
+            'division' => $request->division,
+            'join_date' => $request->join_date,
+            'employment_status' => $request->employment_status,
+            'emergency_contact' => $request->emergency_contact,
+            'bank_account_name' => $request->bank_account_name,
+            'bank_account_number' => $request->bank_account_number,
+            'last_education' => $request->last_education,
+        ]);
 
     return redirect()->route('karyawan.index')->with('success','Karyawan berhasil diupdate');
 }
 
     public function destroy(User $karyawan)
     {
-        $karyawan->delete();
-        return redirect()->route('karyawan.index')->with('success','Karyawan berhasil dihapus');
+        // 1. Cek riwayat booking sebagai stylist
+        $hasStylistBookings = \App\Models\Booking::where('stylist_id', $karyawan->id)->exists();
+        
+        // 2. Cek riwayat booking sebagai kasir
+        $hasCashierBookings = \App\Models\Booking::where('cashier_id', $karyawan->id)->exists();
+
+        // 3. Cek riwayat absensi
+        $hasAbsensi = $karyawan->absensi()->exists();
+
+        if ($hasStylistBookings || $hasCashierBookings || $hasAbsensi) {
+            return redirect()->route('karyawan.index')->with('error', 'Karyawan ini tidak dapat dihapus karena memiliki riwayat booking/transaksi atau absensi. Silakan ubah status karyawan menjadi "nonaktif" melalui menu edit.');
+        }
+
+        try {
+            $karyawan->delete();
+            return redirect()->route('karyawan.index')->with('success', 'Karyawan berhasil dihapus');
+        } catch (\Illuminate\Database\QueryException $e) {
+            return redirect()->route('karyawan.index')->with('error', 'Karyawan ini tidak dapat dihapus karena terikat dengan data lainnya di database. Anda dapat menonaktifkan statusnya saja.');
+        }
     }
     public function absensi($id)
     {
@@ -148,8 +232,7 @@ class KaryawanController extends Controller
     }
 
     public function filter(Request $request)
-    {
-        $query = User::whereIn('role', ['owner', 'admin']);
+    {        $query = User::whereIn('role', ['admin', 'karyawan']);
 
         if ($request->search) {
             $query->where(function($q) use ($request) {

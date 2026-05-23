@@ -21,6 +21,10 @@
                     <i class="ti ti-scissors"></i>
                 </li>
 
+                <li class="pc-item">
+                    <a href="https://www.konsultasikulitku.com/" target="_blank" class="pc-link"><span class="pc-micon"><i class="ti ti-heart"></i></span><span class="pc-mtext">Konsultasi Kulit (Aruniva)</span></a>
+                </li>
+
                 <li class="pc-item pc-hasmenu {{ request()->is('booking*') ? 'active pc-trigger' : '' }}">
                     <a class="pc-link">
                         <span class="pc-micon"><i class="ti ti-calendar"></i></span>

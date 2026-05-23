@@ -100,7 +100,7 @@
                     </div>
                     <div class="flex-grow-1 ms-3">
                         <h6 class="text-white mb-0 opacity-75 small">Selesai / Berhasil</h6>
-                        <h4 class="text-white mb-0 fw-bold">{{ $stats['berhasil'] }}</h4>
+                        <h4 class="text-white mb-0 fw-bold">{{ $stats['success'] }}</h4>
                     </div>
                 </div>
             </div>
@@ -129,7 +129,7 @@
             <div class="card-header bg-white border-bottom pt-4 pb-0">
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 px-2">
                     <div>
-                        <h4 class="fw-bold text-dark mb-1">📋 Panel Operasional Booking</h4>
+                        <h4 class="fw-bold text-dark mb-1"><i class="ti ti-calendar-event me-2 text-pink"></i>Panel Operasional Booking</h4>
                         <p class="text-muted small mb-0">Kelola pengerjaan treatment pelanggan secara efisien.</p>
                     </div>
                     
@@ -160,30 +160,29 @@
                     </form>
                 </div>
                 
-                <!-- TABS -->
                 <ul class="nav nav-tabs card-header-tabs px-3 border-bottom-0" role="tablist">
                     <li class="nav-item">
                         <a class="nav-link {{ $status == 'pending' ? 'active fw-bold' : '' }}" 
                            href="{{ route('admin.bookings.index', ['status' => 'pending']) }}">
-                            ⏳ Pending
+                            <i class="ti ti-clock me-1"></i> Pending
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ $status == 'berhasil' ? 'active fw-bold' : '' }}" 
-                           href="{{ route('admin.bookings.index', ['status' => 'berhasil']) }}">
-                            ✅ Selesai (Berhasil)
+                        <a class="nav-link {{ $status == 'success' ? 'active fw-bold' : '' }}" 
+                           href="{{ route('admin.bookings.index', ['status' => 'success']) }}">
+                            <i class="ti ti-circle-check me-1"></i> Selesai (Berhasil)
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ $status == 'dibatalkan' ? 'active fw-bold' : '' }}" 
                            href="{{ route('admin.bookings.index', ['status' => 'dibatalkan']) }}">
-                            ❌ Dibatalkan
+                            <i class="ti ti-circle-x me-1"></i> Dibatalkan
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ $status == 'all' ? 'active fw-bold' : '' }}" 
                            href="{{ route('admin.bookings.index', ['status' => 'all']) }}">
-                            Semua
+                            <i class="ti ti-layout-list me-1"></i> Semua
                         </a>
                     </li>
                 </ul>
@@ -222,7 +221,7 @@
                                     </td>
                                     <td class="text-center">
                                         <div class="d-flex flex-column">
-                                            <span class="text-dark fw-bold">{{ $booking->treatment->name }}</span>
+                                            <span class="text-dark fw-bold">{{ $booking->treatment->name ?? 'Layanan Tidak Diketahui' }}</span>
                                             <small class="text-muted">{{ $booking->details->count() }} Detail</small>
                                         </div>
                                     </td>
@@ -248,7 +247,7 @@
                                                 {{ strtoupper($booking->payment_status) }}
                                             </span>
                                             <small class="text-muted" style="font-size: 0.65rem;">
-                                                <i class="ti ti-{{ $booking->payment_method == 'transfer' ? 'credit-card' : 'wallet' }} me-1"></i>{{ ucfirst($booking->payment_method) }}
+                                                <i class="ti ti-{{ strtolower($booking->payment_method) == 'transfer' ? 'credit-card' : (strtolower($booking->payment_method) == 'qris' ? 'qrcode' : 'wallet') }} me-1"></i>{{ ucfirst($booking->payment_method) }}
                                             </small>
                                         </div>
                                     </td>
@@ -360,22 +359,26 @@
 
         $(document).on('click', '.btn-view-detail', function() {
             const id = $(this).data('id');
+            const btn = $(this);
             currentBookingId = id;
             
             $.ajax({
-                url: `/admin/bookings/${id}`,
+                url: "{{ url('admin/bookings') }}/" + id,
                 type: 'GET',
+                beforeSend: function() {
+                    btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span>');
+                },
                 success: function(data) {
                     $('#mdl_id').text('#' + data.id);
                     $('#mdl_customer').text(data.customer_name);
                     $('#mdl_customer_email').html('<i class="ti ti-mail me-1"></i>' + (data.customer_email || '-'));
                     $('#mdl_customer_phone').html('<i class="ti ti-brand-whatsapp me-1"></i>' + (data.customer_phone || '-'));
-                    $('#mdl_role_badge').text(data.user ? 'Pelanggan Online' : 'Pelanggan Offline');
+                    $('#mdl_role_badge').text(data.user_id ? 'Pelanggan Terdaftar' : 'Pelanggan Guest/Offline');
                     
                     const statusMap = {
-                        'pending': { label: '⏳ Pending', class: 'bg-warning text-dark' },
-                        'berhasil': { label: '✅ Selesai', class: 'bg-success text-white' },
-                        'dibatalkan': { label: '❌ Batal', class: 'bg-danger text-white' }
+                        'pending':    { label: '<i class="ti ti-clock me-1"></i> Pending',  class: 'bg-warning text-dark' },
+                        'success':    { label: '<i class="ti ti-circle-check me-1"></i> Selesai', class: 'bg-success text-white' },
+                        'dibatalkan': { label: '<i class="ti ti-circle-x me-1"></i> Batal',  class: 'bg-danger text-white' }
                     };
                     const payMap = {
                         'paid': { label: 'LUNAS', class: 'bg-success' },
@@ -384,7 +387,7 @@
                     };
 
                     const s = statusMap[data.status] || { label: data.status, class: 'bg-secondary' };
-                    $('#mdl_status').text(s.label).removeClass().addClass('badge-status ' + s.class);
+                    $('#mdl_status').html(s.label).removeClass().addClass('badge-status ' + s.class);
                     
                     const ps = payMap[data.payment_status] || { label: data.payment_status, class: 'bg-secondary' };
                     $('#mdl_payment_status').text(ps.label).removeClass().addClass('badge-status ' + ps.class);
@@ -394,13 +397,19 @@
 
                     let servicesHtml = '';
                     data.details.forEach(detail => {
+                        const detailName  = detail.treatment_detail ? detail.treatment_detail.name : 'Layanan Tidak Diketahui';
+                        const duration    = detail.treatment_detail ? detail.treatment_detail.duration : null;
+                        const stylistName = detail.stylist ? detail.stylist.name : 'Tanpa Stylist';
                         servicesHtml += `
                             <div class="list-group-item p-3 border-0 border-bottom">
                                 <div class="d-flex justify-content-between mb-1">
-                                    <span class="fw-bold text-dark">${detail.treatment_detail.name}</span>
+                                    <span class="fw-bold text-dark">${detailName}</span>
                                     <span class="fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(detail.price)}</span>
                                 </div>
-                                <small class="text-muted">Stylist: ${detail.stylist ? detail.stylist.name : 'None'}</small>
+                                <div class="d-flex gap-3 flex-wrap">
+                                    <small class="text-muted"><i class="ti ti-user me-1"></i>Stylist: ${stylistName}</small>
+                                    ${duration ? `<small class="text-muted"><i class="ti ti-clock me-1"></i>Durasi: ${duration} menit</small>` : ''}
+                                </div>
                             </div>
                         `;
                     });
@@ -415,24 +424,30 @@
                     }
 
                     detailModal.show();
+                },
+                error: function(xhr) {
+                    Swal.fire('Error!', 'Gagal mengambil data: ' + xhr.statusText, 'error');
+                },
+                complete: function() {
+                    btn.prop('disabled', false).html('<i class="ti ti-eye fs-5"></i>');
                 }
             });
         });
 
         function updateBookingStatus(status) {
             Swal.fire({
-                title: status === 'berhasil' ? 'Selesaikan Pesanan?' : 'Batalkan Pesanan?',
+                title: status === 'success' ? 'Selesaikan Pesanan?' : 'Batalkan Pesanan?',
                 text: "Status akan diperbarui secara permanen.",
                 icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: status === 'berhasil' ? '#2ecc71' : '#e74c3c',
+                confirmButtonColor: status === 'success' ? '#2ecc71' : '#e74c3c',
                 cancelButtonColor: '#95a5a6',
                 confirmButtonText: 'Ya, Lanjutkan!',
                 cancelButtonText: 'Kembali'
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: `/admin/bookings/${currentBookingId}/status`,
+                        url: "{{ url('admin/bookings') }}/" + currentBookingId + "/status",
                         type: 'PATCH',
                         data: {
                             _token: '{{ csrf_token() }}',
@@ -451,7 +466,7 @@
             });
         }
 
-        $('#btnMarkFinished').click(() => updateBookingStatus('berhasil'));
+        $('#btnMarkFinished').click(() => updateBookingStatus('success'));
         $('#btnCancelBooking').click(() => updateBookingStatus('dibatalkan'));
     });
 </script>

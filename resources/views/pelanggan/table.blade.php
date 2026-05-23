@@ -13,7 +13,22 @@
                     @endif
                 </div>
                 <div>
-                    <h6 class="mb-0 fw-bold">{{ $pelanggan->name }}</h6>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <h6 class="mb-0 fw-bold">{{ $pelanggan->name }}</h6>
+                        @php
+                            $tier = $pelanggan->tier;
+                            $tierStyle = match($tier) {
+                                'Platinum' => 'border: 1px solid #6c757d; color: #6c757d; background: transparent; padding: 0.15rem 0.4rem; font-size: 0.65rem;',
+                                'Gold' => 'border: 1px solid #ffc107; color: #ffc107; background: transparent; padding: 0.15rem 0.4rem; font-size: 0.65rem;',
+                                'Silver' => 'border: 1px solid #adb5bd; color: #adb5bd; background: transparent; padding: 0.15rem 0.4rem; font-size: 0.65rem;',
+                                default => 'display: none;',
+                            };
+                        @endphp
+                        <span class="badge rounded-pill" style="{{ $tierStyle }}">{{ $tier }}</span>
+                        @if($pelanggan->is_colour_circle_member)
+                            <span class="badge rounded-pill" style="border: 1px solid #e83e8c; color: #e83e8c; background: transparent; padding: 0.15rem 0.4rem; font-size: 0.65rem;">Colour Circle</span>
+                        @endif
+                    </div>
                     <small class="text-muted">@<span></span>{{ $pelanggan->username }}</small>
                 </div>
             </div>
@@ -25,18 +40,9 @@
             </div>
         </td>
         <td>
-            <div class="d-flex flex-column gap-1">
-                @php
-                    $tier = $pelanggan->tier;
-                    $tierClass = match($tier) {
-                        'Platinum' => 'bg-info text-white',
-                        'Gold' => 'bg-warning text-dark',
-                        'Silver' => 'bg-secondary text-white',
-                        default => 'bg-light text-muted',
-                    };
-                @endphp
-                <span class="badge {{ $tierClass }} rounded-pill px-3">{{ $tier }} Member</span>
-                <small class="text-muted fw-bold">Rp {{ number_format($pelanggan->total_spending, 0, ',', '.') }}</small>
+            <div class="d-flex flex-column">
+                <span class="text-uppercase text-muted" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">Lifetime Spend</span>
+                <span class="fw-bold" style="color: #e83e8c; font-size: 0.9rem;">Rp {{ number_format($pelanggan->total_spending, 0, ',', '.') }}</span>
             </div>
         </td>
         <td>
@@ -48,13 +54,16 @@
         <td class="text-end px-3">
             <div class="d-flex justify-content-end gap-2">
                 <button class="btn btn-light action-btn view-detail text-info" 
+                        data-id="{{ $pelanggan->id }}"
                         data-name="{{ $pelanggan->name }}"
                         data-username="{{ $pelanggan->username }}"
                         data-email="{{ $pelanggan->email }}"
                         data-phone="{{ $pelanggan->phone }}"
                         data-status="{{ $pelanggan->status }}"
-                        data-tier="{{ $pelanggan->tier }}"
-                        data-spending="{{ $pelanggan->total_spending }}"
+                        data-tier="{{ $pelanggan->tier ?? '-' }}"
+                        data-has-cc="{{ $pelanggan->is_colour_circle_member ? 'true' : 'false' }}"
+                        data-spending="{{ $pelanggan->total_spending ?? 0 }}"
+                        data-lasttrx="{{ $pelanggan->last_transaction_at ? date('d M Y, H:i', strtotime($pelanggan->last_transaction_at)) : '-' }}"
                         title="Lihat Detail">
                     <i class="ti ti-eye fs-5"></i>
                 </button>
@@ -63,7 +72,7 @@
                 </a>
                 <form action="{{ route('pelanggan.destroy', $pelanggan->id) }}" method="POST" class="d-inline">
                     @csrf @method('DELETE')
-                    <button type="submit" class="btn btn-light action-btn text-danger" title="Hapus" onclick="return confirm('Hapus pelanggan ini?')">
+                    <button type="button" class="btn btn-light action-btn text-danger btn-delete-customer" title="Hapus">
                         <i class="ti ti-trash fs-5"></i>
                     </button>
                 </form>

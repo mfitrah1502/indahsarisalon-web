@@ -33,7 +33,7 @@
                                 href="{{ route('booking.index') }}">Book An Appointment</a></li>
 
                         <li class="pc-item"><a class="pc-link {{ request()->is('admin/bookings*') ? 'active' : '' }}"
-                                href="{{ route('karyawan.bookings.index') }}">Status Pemesanan</a></li>
+                                href="{{ route('admin.bookings.index') }}">Status Pemesanan</a></li>
 
                         <li class="pc-item"><a class="pc-link {{ request()->is('booking/history') ? 'active' : '' }}"
                                 href="{{ route('booking.history') }}">Riwayat Pemesanan</a></li>

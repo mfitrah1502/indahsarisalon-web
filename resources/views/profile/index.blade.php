@@ -174,15 +174,85 @@
                                 </div>
                             </div>
                         </div>
+                        @if(Auth::user()->role != 'pelanggan')
+                        <div class="col-md-6 mb-4">
+                            <div class="info-box border">
+                                <span class="info-label">Nickname / Panggilan</span>
+                                <div class="fw-bold mt-1 fs-5 text-dark" id="display-nickname">{{ Auth::user()->nickname ?? '-' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="info-box border">
+                                <span class="info-label">Tempat, Tanggal Lahir</span>
+                                <div class="fw-bold mt-1 fs-5 text-dark" id="display-birth">
+                                    {{ Auth::user()->birth_place ?? '-' }}, {{ Auth::user()->birth_date ? \Carbon\Carbon::parse(Auth::user()->birth_date)->format('d/m/Y') : '-' }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="info-box border">
+                                <span class="info-label">Jenis Kelamin</span>
+                                <div class="fw-bold mt-1 fs-5 text-dark" id="display-gender">{{ Auth::user()->gender ?? '-' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="info-box border">
+                                <span class="info-label">Kontak Darurat</span>
+                                <div class="fw-bold mt-1 fs-5 text-dark" id="display-emergency">{{ Auth::user()->emergency_contact ?? '-' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="info-box border">
+                                <span class="info-label">Pendidikan Terakhir</span>
+                                <div class="fw-bold mt-1 fs-5 text-dark" id="display-education">{{ Auth::user()->last_education ?? '-' }}</div>
+                            </div>
+                        </div>
                         <div class="col-md-6 mb-4">
                             <div class="info-box border">
                                 <span class="info-label">Role Akun</span>
                                 <div>
-                                    <span
-                                        class="badge bg-light-success text-success fs-6 mt-1">{{ ucfirst(Auth::user()->role) }}</span>
+                                    <span class="badge bg-light-success text-success fs-6 mt-1">{{ ucfirst(Auth::user()->role) }}</span>
                                 </div>
                             </div>
                         </div>
+                        @endif
+
+                        <!-- Data Kepegawaian (Hanya muncul jika bukan Customer) -->
+                        @if(Auth::user()->role != 'pelanggan')
+                        <div class="col-12 mt-2">
+                            <h5 class="mb-3 border-bottom pb-2">💼 Data Kepegawaian & Rekening</h5>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="info-box border bg-light">
+                                <span class="info-label">Posisi / Jabatan</span>
+                                <div class="fw-bold mt-1 text-dark">{{ Auth::user()->position ?? '-' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="info-box border bg-light">
+                                <span class="info-label">Divisi</span>
+                                <div class="fw-bold mt-1 text-dark">{{ Auth::user()->division ?? '-' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="info-box border bg-light">
+                                <span class="info-label">Tanggal Bergabung</span>
+                                <div class="fw-bold mt-1 text-dark">{{ Auth::user()->join_date ? \Carbon\Carbon::parse(Auth::user()->join_date)->format('d M Y') : '-' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="info-box border">
+                                <span class="info-label">Nama Pemilik Rekening</span>
+                                <div class="fw-bold mt-1 fs-5 text-dark" id="display-bank-name">{{ Auth::user()->bank_account_name ?? '-' }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="info-box border">
+                                <span class="info-label">Nomor Rekening</span>
+                                <div class="fw-bold mt-1 fs-5 text-dark" id="display-bank-number">{{ Auth::user()->bank_account_number ?? '-' }}</div>
+                            </div>
+                        </div>
+                        @endif
                     </div>
 
                     <div class="mt-4 pt-3 border-top">
@@ -229,10 +299,60 @@
                             <label class="form-label">Email Address</label>
                             <input type="email" name="email" class="form-control" value="{{ Auth::user()->email }}" required>
                         </div>
+                        @if(Auth::user()->role == 'pelanggan')
                         <div class="mb-3">
                             <label class="form-label">Nomor Telepon</label>
                             <input type="text" name="phone" class="form-control" value="{{ Auth::user()->phone }}" required placeholder="08123456789">
                         </div>
+                        @else
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nomor Telepon</label>
+                                <input type="text" name="phone" class="form-control" value="{{ Auth::user()->phone }}" required placeholder="08123456789">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nama Panggilan</label>
+                                <input type="text" name="nickname" class="form-control" value="{{ Auth::user()->nickname }}" placeholder="Panggilan">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tempat Lahir</label>
+                                <input type="text" name="birth_place" class="form-control" value="{{ Auth::user()->birth_place }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Tanggal Lahir</label>
+                                <input type="date" name="birth_date" class="form-control" value="{{ Auth::user()->birth_date }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Jenis Kelamin</label>
+                                <select name="gender" class="form-select">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="Laki-laki" {{ Auth::user()->gender == 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                                    <option value="Perempuan" {{ Auth::user()->gender == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Kontak Darurat</label>
+                                <input type="text" name="emergency_contact" class="form-control" value="{{ Auth::user()->emergency_contact }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Pendidikan Terakhir</label>
+                                <input type="text" name="last_education" class="form-control" value="{{ Auth::user()->last_education }}">
+                            </div>
+                            
+                            <div class="col-12 mt-2">
+                                <hr>
+                                <label class="fw-bold mb-2">Informasi Perbankan</label>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted small">Nama Pemilik Rekening</label>
+                                <input type="text" name="bank_account_name" class="form-control" value="{{ Auth::user()->bank_account_name }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-muted small">Nomor Rekening</label>
+                                <input type="text" name="bank_account_number" class="form-control" value="{{ Auth::user()->bank_account_number }}">
+                            </div>
+                        </div>
+                        @endif
                         <div class="text-end mt-4">
                             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
                             <button type="submit" class="btn btn-pink px-4">Simpan Perubahan</button>
@@ -434,12 +554,24 @@
                         $('#modalEditProfile').modal('hide');
                         
                         // Update UI display
-                        $('#display-name').text(res.name);
-                        $('#display-username').text('@ ' + res.username);
-                        $('#display-phone').text(res.phone || '-');
-                        $('#display-email').text(res.email);
-                        $('.profile-card h3').text(res.name);
-                        $('.pc-header .small.text-muted').text(res.name);
+                        $('#display-name').text(res.data.name);
+                        $('#display-username').text('@ ' + res.data.username);
+                        $('#display-phone').text(res.data.phone || '-');
+                        $('#display-email').text(res.data.email);
+                        $('#display-nickname').text(res.data.nickname || '-');
+                        
+                        let birthDate = res.data.birth_date ? res.data.birth_date.split('-').reverse().join('/') : '-';
+                        $('#display-birth').text((res.data.birth_place || '-') + ', ' + birthDate);
+                        
+                        $('#display-gender').text(res.data.gender || '-');
+                        $('#display-emergency').text(res.data.emergency_contact || '-');
+                        $('#display-education').text(res.data.last_education || '-');
+                        
+                        if(res.data.bank_account_name) $('#display-bank-name').text(res.data.bank_account_name);
+                        if(res.data.bank_account_number) $('#display-bank-number').text(res.data.bank_account_number);
+
+                        $('.profile-card h3').text(res.data.name);
+                        $('.pc-header .small.text-muted').text(res.data.name);
 
                         Swal.fire({
                             icon: 'success',

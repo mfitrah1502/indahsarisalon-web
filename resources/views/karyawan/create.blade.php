@@ -34,52 +34,128 @@
 
                     <form action="{{ route('karyawan.store') }}" method="POST">
                         @csrf
-                        <div class="mb-3">
-                            <label>Nama</label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name') }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label>Username</label>
-                            <input type="text" name="username" class="form-control" value="{{ old('username') }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label>Email</label>
-                            <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
-                        </div>
-                        <div class="mb-3">
-                            <label>Nomor Telepon</label>
-                            <input type="text" name="phone" class="form-control" value="{{ old('phone') }}" required placeholder="Contoh: 08123456789">
-                        </div>
-                        <div class="mb-3">
-                            <label>Password</label>
-                            <input type="password" name="password" class="form-control" required>
-                        </div>
-                        <div class="mb-3">
-                            <label>Role</label>
-                            <select name="role" class="form-select" required id="roleSelect">
-                                <option value="owner">Owner</option>
-                                <option value="admin">Admin</option>
-                                <option value="karyawan">Karyawan</option>
-                            </select>
+                        
+                        <h5 class="mb-3 border-bottom pb-2">Informasi Akun</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>Nama Lengkap</label>
+                                <input type="text" name="name" class="form-control" value="{{ old('name') }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Username</label>
+                                <input type="text" name="username" class="form-control" value="{{ old('username') }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Email</label>
+                                <input type="email" name="email" class="form-control" value="{{ old('email') }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Password</label>
+                                <input type="password" name="password" class="form-control" required>
+                            </div>
                         </div>
 
-                        <div class="mb-3" id="kategoriDiv" style="display:none;">
-                            <label>Kategori</label>
-                            <select name="kategori" class="form-select" id="kategoriSelect">
-                                <option value="">-- Pilih Kategori --</option>
-                                <option value="senior" {{ old('kategori') == 'senior' ? 'selected' : '' }}>Senior</option>
-                                <option value="junior" {{ old('kategori') == 'junior' ? 'selected' : '' }}>Junior</option>
-                            </select>
+                        <h5 class="mb-3 border-bottom pb-2 mt-4">Informasi Pribadi</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>Nama Panggilan</label>
+                                <input type="text" name="nickname" class="form-control" value="{{ old('nickname') }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Jenis Kelamin</label>
+                                <select name="gender" class="form-select">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="Laki-laki" {{ old('gender') == 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                                    <option value="Perempuan" {{ old('gender') == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Tempat Lahir</label>
+                                <input type="text" name="birth_place" class="form-control" value="{{ old('birth_place') }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Tanggal Lahir</label>
+                                <input type="date" name="birth_date" class="form-control" value="{{ old('birth_date') }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Pendidikan Terakhir</label>
+                                <input type="text" name="last_education" class="form-control" value="{{ old('last_education') }}" placeholder="Contoh: SMA / S1">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Nomor Telepon Pribadi</label>
+                                <input type="text" name="phone" class="form-control" value="{{ old('phone') }}" required placeholder="Contoh: 08123456789">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Kontak Darurat (Emergency)</label>
+                                <input type="text" name="emergency_contact" class="form-control" value="{{ old('emergency_contact') }}" placeholder="Nama / Nomor Telepon">
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label>Status</label>
-                            <select name="status" class="form-select">
-                                <option value="aktif" selected>Aktif</option>
-                                <option value="tidak">Tidak Aktif</option>
-                            </select>
+
+                        <h5 class="mb-3 border-bottom pb-2 mt-4">Data Kepegawaian</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>Role Akun</label>
+                                <select name="role" class="form-select" required id="roleSelect">
+                                    <option value="admin">Admin</option>
+                                    <option value="karyawan">Karyawan</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label>Posisi / Jabatan</label>
+                                <select name="position" class="form-select" required>
+                                    <option value="">-- Pilih Posisi --</option>
+                                    <option value="Client Relationship Manager" {{ old('position') == 'Client Relationship Manager' ? 'selected' : '' }}>Client Relationship Manager</option>
+                                    <option value="Senior Hair Technician Specialist" {{ old('position') == 'Senior Hair Technician Specialist' ? 'selected' : '' }}>Senior Hair Technician Specialist</option>
+                                    <option value="Senior Beautician" {{ old('position') == 'Senior Beautician' ? 'selected' : '' }}>Senior Beautician</option>
+                                    <option value="Creative Stylist" {{ old('position') == 'Creative Stylist' ? 'selected' : '' }}>Creative Stylist</option>
+                                    <option value="Senior Therapist" {{ old('position') == 'Senior Therapist' ? 'selected' : '' }}>Senior Therapist</option>
+                                    <option value="Relationship Client" {{ old('position') == 'Relationship Client' ? 'selected' : '' }}>Relationship Client</option>
+                                    <option value="Junior Therapist" {{ old('position') == 'Junior Therapist' ? 'selected' : '' }}>Junior Therapist</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Divisi</label>
+                                <input type="text" name="division" class="form-control" value="{{ old('division') }}" placeholder="Contoh: Hair Treatment">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Tanggal Bergabung</label>
+                                <input type="date" name="join_date" class="form-control" value="{{ old('join_date') }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Status Karyawan (Kontrak/Tetap)</label>
+                                <select name="employment_status" class="form-select">
+                                    <option value="">-- Pilih --</option>
+                                    <option value="Tetap" {{ old('employment_status') == 'Tetap' ? 'selected' : '' }}>Karyawan Tetap</option>
+                                    <option value="Kontrak" {{ old('employment_status') == 'Kontrak' ? 'selected' : '' }}>Karyawan Kontrak</option>
+                                    <option value="Magang" {{ old('employment_status') == 'Magang' ? 'selected' : '' }}>Magang / Freelance</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Status Akun</label>
+                                <select name="status" class="form-select">
+                                    <option value="aktif" selected>Aktif</option>
+                                    <option value="tidak">Tidak Aktif</option>
+                                </select>
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-primary">Simpan</button>
-                        <a href="{{ route('karyawan.index') }}" class="btn btn-secondary">Batal</a>
+
+                        <h5 class="mb-3 border-bottom pb-2 mt-4">Informasi Rekening Bank</h5>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label>Nama Bank (Contoh: BCA / Mandiri)</label>
+                                <input type="text" name="bank_account_name" class="form-control" value="{{ old('bank_account_name') }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label>Nomor Rekening</label>
+                                <input type="text" name="bank_account_number" class="form-control" value="{{ old('bank_account_number') }}">
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary px-4">Simpan Karyawan</button>
+                            <a href="{{ route('karyawan.index') }}" class="btn btn-light border px-4 ms-2">Batal</a>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -102,22 +178,6 @@
         layout_rtl_change('false');
         preset_change('preset-1');
 
-        function toggleKategoriField() {
-            let role = document.getElementById('roleSelect').value;
-            let kategoriDiv = document.getElementById('kategoriDiv');
-            let kategoriSelect = document.getElementById('kategoriSelect');
 
-            if (role === 'admin') {
-                kategoriDiv.style.display = 'block';
-                kategoriSelect.setAttribute('required', 'required');
-            } else {
-                kategoriDiv.style.display = 'none';
-                kategoriSelect.removeAttribute('required');
-                kategoriSelect.value = ''; // kosongkan value
-            }
-        }
-
-        document.getElementById('roleSelect').addEventListener('change', toggleKategoriField);
-        toggleKategoriField(); // jalankan saat halaman load
     </script>
 @endsection

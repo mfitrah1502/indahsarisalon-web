@@ -25,6 +25,11 @@
                                  <span class="badge {{ $badgeClass }} px-3 py-2 rounded-pill shadow-sm animate__animated animate__fadeInDown">
                                      <i class="ti ti-crown me-1"></i> {{ $tier }} Member
                                  </span>
+                                 @if(Auth::user()->is_colour_circle_member)
+                                 <span class="badge bg-pink text-white px-3 py-2 rounded-pill shadow-sm animate__animated animate__fadeInDown">
+                                     <i class="ti ti-sparkles me-1"></i> Colour Circle Member
+                                 </span>
+                                 @endif
                              </div>
                              <p class="opacity-75 mb-4">Selamat datang kembali di Indah Sari Salon. Siap untuk tampil lebih menawan hari ini?</p>
                             <div class="d-flex flex-wrap gap-2">
@@ -80,7 +85,7 @@
                                 <div class="mb-2">
                                     @if($latestBooking->status === 'proses')
                                         <span class="badge bg-danger rounded-pill px-3 py-2">Sedang Diproses (Pending)</span>
-                                    @elseif($latestBooking->status === 'berhasil')
+                                    @elseif($latestBooking->status === 'success')
                                         <span class="badge bg-success rounded-pill px-3 py-2">Selesai ✅</span>
                                     @else
                                         <span
@@ -125,12 +130,105 @@
                                 <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" 
                                      style="width: {{ $nextTier['percent'] }}%" aria-valuenow="{{ $nextTier['percent'] }}" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
-                            @if(Auth::user()->has_coloring_loyalty)
+                            @if(Auth::user()->is_colour_circle_member)
                                 <div class="mt-3 p-2 bg-light-danger rounded-3 d-flex align-items-center animate__animated animate__pulse animate__infinite">
                                     <i class="ti ti-sparkles text-danger me-2 fs-5"></i>
                                     <span class="small fw-bold text-danger">Anda memiliki Loyalty Coloring (Diskon 35% Aktif!)</span>
                                 </div>
                             @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ARUNIVA HOLISTIC BEAUTY CLINIC PARTNER -->
+        <div class="col-12 mt-2">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden position-relative aruniva-partner-card" 
+                 style="border-left: 5px solid #EA8290 !important;">
+                
+                <!-- Subtle decorative background light/sunlight elements -->
+                <div class="position-absolute top-0 end-0 rounded-circle opacity-10" style="width: 150px; height: 150px; background: #FFC107; transform: translate(30%, -30%); filter: blur(40px); pointer-events: none;"></div>
+                <div class="position-absolute bottom-0 start-0 rounded-circle opacity-10" style="width: 100px; height: 100px; background: #EA8290; transform: translate(-30%, 30%); filter: blur(30px); pointer-events: none;"></div>
+
+                <div class="card-body p-4 p-md-5 position-relative" style="z-index: 2;">
+                    <div class="row align-items-center g-4">
+                        <div class="col-lg-7">
+                            <div class="d-flex align-items-center gap-2 mb-3">
+                                <span class="badge px-3 py-2 rounded-pill shadow-sm" style="background: rgba(234, 130, 144, 0.15); color: #EA8290; font-weight: 600; font-size: 0.75rem; letter-spacing: 0.5px;">
+                                    <i class="ti ti-heart-handshake me-1"></i> PARTNER CLINIC
+                                </span>
+                                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill shadow-sm" style="font-weight: 600; font-size: 0.75rem;">
+                                    <i class="ti ti-sparkles me-1"></i> KONSULTASI GRATIS
+                                </span>
+                            </div>
+                            <h2 class="fw-bold text-dark mb-3" style="font-size: 1.85rem; letter-spacing: -0.5px; line-height: 1.2;">
+                                Perawatan Kulit Holistik <br class="d-none d-md-block">Bersama <span class="text-primary" style="color: #EA8290 !important; position: relative;">Aruniva <span style="position: absolute; bottom: -2px; left: 0; width: 100%; height: 3px; background: #EA8290; border-radius: 2px; opacity: 0.3;"></span></span>
+                            </h2>
+                            <p class="text-muted mb-4 fs-6" style="line-height: 1.6;">
+                                Terinspirasi dari cahaya matahari pagi, <strong>Aruniva</strong> memberikan perawatan kulit terpersonalisasi untuk wanita dan remaja dengan pendekatan medis, estetika, alami, dan modern yang diawasi langsung oleh dokter spesialis kulit berpengalaman.
+                            </p>
+                            
+                            <!-- 3 Pillars List -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-sm-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="d-flex align-items-center justify-content-center rounded-circle bg-white shadow-sm" style="width: 32px; height: 32px; border: 1px solid rgba(234,130,144,0.15);">
+                                            <i class="ti ti-shield-check text-primary" style="color: #EA8290;"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">Dermatologi</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="d-flex align-items-center justify-content-center rounded-circle bg-white shadow-sm" style="width: 32px; height: 32px; border: 1px solid rgba(234,130,144,0.15);">
+                                            <i class="ti ti-activity text-primary" style="color: #EA8290;"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">Estetika Medis</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="d-flex align-items-center justify-content-center rounded-circle bg-white shadow-sm" style="width: 32px; height: 32px; border: 1px solid rgba(234,130,144,0.15);">
+                                            <i class="ti ti-lock-square text-primary" style="color: #EA8290;"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">Venereologi</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex flex-wrap gap-3">
+                                <a href="https://www.konsultasikulitku.com/kuisioner" target="_blank" class="btn btn-primary fw-bold px-4 py-2.5 rounded-pill shadow-sm" style="background: #EA8290; border-color: #EA8290;">
+                                    <i class="ti ti-file-text me-2"></i>Mulai Konsultasi Gratis
+                                </a>
+                                <a href="https://www.konsultasikulitku.com/" target="_blank" class="btn btn-outline-dark fw-bold px-4 py-2.5 rounded-pill border-dark">
+                                    <i class="ti ti-world me-2"></i>Kunjungi Website
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-lg-5 d-none d-lg-block text-center position-relative">
+                            <div class="position-relative d-inline-block">
+                                <div class="position-absolute top-0 start-0 w-100 h-100 rounded-4 bg-primary opacity-10" style="transform: rotate(-3deg); z-index: 1;"></div>
+                                <div class="position-absolute top-0 start-0 w-100 h-100 rounded-4 bg-warning opacity-10" style="transform: rotate(3deg); z-index: 1;"></div>
+                                <div class="card border-0 shadow-sm overflow-hidden position-relative rounded-4" style="width: 340px; z-index: 2; border: 1px solid rgba(255,255,255,0.8) !important;">
+                                    <div class="bg-white p-3 text-center aruniva-doctor-card">
+                                        <div class="rounded-3 overflow-hidden mb-3 position-relative" style="height: 240px; background: #FFF5F6;">
+                                            <img src="{{ asset('assets/images/dr-agnes-nauli.jpg') }}" alt="Dr. Agnes Nauli, M.Ked (DV), Sp. DVE" class="w-100 h-100" style="object-fit: cover;">
+                                            <div class="position-absolute bottom-0 start-0 end-0 p-2 text-white bg-dark bg-opacity-50 small">
+                                                <i class="ti ti-circle-check text-success me-1"></i> Penanganan Medis Berbasis Bukti
+                                            </div>
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-0">Dr. Agnes Nauli, M.Ked (DV), Sp. DVE</h6>
+                                        <small class="text-muted d-block mt-0.5" style="font-size: 0.75rem;">Spesialis Kulit, Kelamin, dan Estetika</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -152,29 +250,10 @@
                             <div class="card treatment-card border-0 shadow-sm h-100 overflow-hidden border-top border-danger border-4">
                                 <div class="position-relative">
                                     @php
-                                        $images = $promo->all_images;
+                                        $imageUrl = $promo->main_image_url;
                                     @endphp
-                                    
-                                    @if(count($images) > 1)
-                                        <div id="carouselPromo{{ $promo->id }}" class="carousel slide" data-bs-ride="carousel">
-                                            <div class="carousel-inner">
-                                                @foreach($images as $idx => $img)
-                                                    <div class="carousel-item {{ $idx == 0 ? 'active' : '' }}">
-                                                        <img src="{{ $img }}" class="card-img-top" alt="{{ $promo->name }}" style="height: 180px; object-fit: cover;">
-                                                    </div>
-                                                @endforeach
-                                            </div>
-                                            <button class="carousel-control-prev" type="button" data-bs-target="#carouselPromo{{ $promo->id }}" data-bs-slide="prev">
-                                                <span class="carousel-control-prev-icon" aria-hidden="true" style="width: 1.5rem; height: 1.5rem;"></span>
-                                            </button>
-                                            <button class="carousel-control-next" type="button" data-bs-target="#carouselPromo{{ $promo->id }}" data-bs-slide="next">
-                                                <span class="carousel-control-next-icon" aria-hidden="true" style="width: 1.5rem; height: 1.5rem;"></span>
-                                            </button>
-                                        </div>
-                                    @else
-                                        <img src="{{ $images[0] ?? asset('assets/images/no-image.jpg') }}" class="card-img-top" alt="{{ $promo->name }}" style="height: 180px; object-fit: cover;">
-                                    @endif
-
+                                    <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $promo->name }}"
+                                        style="height: 180px; object-fit: cover;">
                                     <div class="position-absolute top-0 end-0 m-2">
                                         <span class="badge bg-danger animate__animated animate__pulse animate__infinite px-3 py-2 rounded-pill shadow">
                                             PROMO
@@ -202,13 +281,10 @@
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
                                                 <small class="text-muted d-block">Harga Promo</small>
-                                                @php
-                                                    $minPrice = $promo->details->map(fn($d) => $d->getMinMaxCalculatedPrice()['min'])->min();
-                                                @endphp
                                                 <span class="fw-bold text-danger h5 mb-0">Rp
-                                                    {{ number_format($minPrice ?? 0, 0, ',', '.') }}</span>
+                                                    {{ number_format($promo->details->min('price') ?? 0, 0, ',', '.') }}</span>
                                             </div>
-                                            <a href="{{ route('booking.select', $promo->id) }}"
+                                            <a href="{{ route('booking.index', ['treatment_id' => $promo->id]) }}"
                                                 class="btn btn-danger rounded-pill px-4 shadow-sm">
                                                 Ambil Promo
                                             </a>
@@ -242,29 +318,10 @@
                                 <div class="card treatment-card border-0 shadow-sm h-100 overflow-hidden">
                                     <div class="position-relative">
                                         @php
-                                            $images = $treatment->all_images;
+                                            $imageUrl = $treatment->main_image_url;
                                         @endphp
-
-                                        @if(count($images) > 1)
-                                            <div id="carouselTreatment{{ $treatment->id }}" class="carousel slide" data-bs-ride="carousel">
-                                                <div class="carousel-inner">
-                                                    @foreach($images as $idx => $img)
-                                                        <div class="carousel-item {{ $idx == 0 ? 'active' : '' }}">
-                                                            <img src="{{ $img }}" class="card-img-top" alt="{{ $treatment->name }}" style="height: 200px; object-fit: cover;">
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                                <button class="carousel-control-prev" type="button" data-bs-target="#carouselTreatment{{ $treatment->id }}" data-bs-slide-to="prev">
-                                                    <span class="carousel-control-prev-icon" aria-hidden="true" style="width: 1.5rem; height: 1.5rem;"></span>
-                                                </button>
-                                                <button class="carousel-control-next" type="button" data-bs-target="#carouselTreatment{{ $treatment->id }}" data-bs-slide-to="next">
-                                                    <span class="carousel-control-next-icon" aria-hidden="true" style="width: 1.5rem; height: 1.5rem;"></span>
-                                                </button>
-                                            </div>
-                                        @else
-                                            <img src="{{ $images[0] ?? asset('assets/images/no-image.jpg') }}" class="card-img-top" alt="{{ $treatment->name }}" style="height: 200px; object-fit: cover;">
-                                        @endif
-                                        
+                                        <img src="{{ $imageUrl }}" class="card-img-top" alt="{{ $treatment->name }}"
+                                            style="height: 200px; object-fit: cover;">
                                         <div class="position-absolute top-0 start-0 m-3">
                                             <span class="badge bg-blur text-white px-3 py-2 rounded-pill shadow-sm"
                                                 style="background: rgba(255,255,255,0.2); backdrop-filter: blur(8px);">
@@ -281,13 +338,10 @@
                                         <div class="mt-auto d-flex justify-content-between align-items-center">
                                             <div>
                                                 <small class="text-muted d-block">Mulai dari</small>
-                                                @php
-                                                    $minPrice = $treatment->details->map(fn($d) => $d->getMinMaxCalculatedPrice()['min'])->min();
-                                                @endphp
                                                 <span class="fw-bold text-primary h5 mb-0">Rp
-                                                    {{ number_format($minPrice ?? 0, 0, ',', '.') }}</span>
+                                                    {{ number_format($treatment->details->min('price') ?? 0, 0, ',', '.') }}</span>
                                             </div>
-                                            <a href="{{ route('booking.select', $treatment->id) }}"
+                                            <a href="{{ route('booking.index', ['treatment_id' => $treatment->id]) }}"
                                                 class="btn btn-primary rounded-pill px-3">
                                                 Booking
                                             </a>
@@ -322,6 +376,26 @@
 
         .bg-blur {
             border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Aruniva Partner Card styling */
+        .aruniva-partner-card {
+            background: linear-gradient(135deg, #FFF5F6 0%, #FFF9F3 100%);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .aruniva-partner-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(234, 130, 144, 0.15) !important;
+        }
+
+        [data-bs-theme="dark"] .aruniva-partner-card {
+            background: linear-gradient(135deg, #251b1c 0%, #1e1c18 100%) !important;
+            border-left-color: #EA8290 !important;
+        }
+
+        [data-bs-theme="dark"] .aruniva-doctor-card {
+            background-color: #1e1e1e !important;
         }
     </style>
 @endsection

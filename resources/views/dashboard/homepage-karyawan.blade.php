@@ -95,7 +95,7 @@
                 <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0 text-dark"><i class="ti ti-calendar-event me-2 text-warning"></i>Dashboard Antrean Salon
                     </h5>
-                    <a href="{{ route('karyawan.bookings.index') }}" class="btn btn-link btn-sm text-primary p-0">Lihat
+                    <a href="{{ route('admin.bookings.index') }}" class="btn btn-link btn-sm text-primary p-0">Lihat
                         Semua <i class="ti ti-arrow-right"></i></a>
                 </div>
                 <div class="card-body p-0">

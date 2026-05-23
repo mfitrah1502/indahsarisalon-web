@@ -30,6 +30,21 @@ class User extends Authenticatable implements MustVerifyEmail
         'status',
         'avatar',
         'phone',
+        'nickname', 
+        'birth_place', 
+        'birth_date', 
+        'gender', 
+        'position', 
+        'division', 
+        'join_date', 
+        'employment_status', 
+        'emergency_contact', 
+        'bank_account_name', 
+        'bank_account_number', 
+        'last_education', 
+        'membership_tier', 
+        'total_spend', 
+        'last_transaction_at'
     ];
 
     /**
@@ -95,14 +110,54 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Get all bookings matching user ID, email, or phone (to handle disconnected bookings)
+     */
+    public function getAllBookingsQuery()
+    {
+        if (is_string($this->id) && strpos($this->id, 'guest-') === 0) {
+            return \App\Models\Booking::where(function ($q) {
+                $hasIdentifier = false;
+                if (!empty($this->email) && $this->email !== '-') {
+                    $q->orWhere('customer_email', $this->email);
+                    $hasIdentifier = true;
+                }
+                if (!empty($this->phone) && $this->phone !== '-') {
+                    $q->orWhere('customer_phone', $this->phone);
+                    $hasIdentifier = true;
+                }
+                if (!empty($this->name) && $this->name !== '-') {
+                    $q->orWhere('customer_name', $this->name);
+                    $hasIdentifier = true;
+                }
+                if (!$hasIdentifier) {
+                    $q->whereRaw('1=0');
+                }
+            });
+        }
+
+        return \App\Models\Booking::where(function ($q) {
+            $q->where('user_id', (int)$this->id);
+            if (!empty($this->email) && $this->email !== '-') {
+                $q->orWhere('customer_email', $this->email);
+            }
+            if (!empty($this->phone) && $this->phone !== '-') {
+                $q->orWhere('customer_phone', $this->phone);
+            }
+        });
+    }
+
+    /**
      * Get total successful spending
      */
     public function getTotalSpendingAttribute()
     {
-        return $this->bookings()
-            ->where('status', 'berhasil')
-            ->where('payment_status', 'paid')
-            ->sum('total_price');
+        if (!isset($this->attributes['cached_total_spending'])) {
+            $this->attributes['cached_total_spending'] = $this->getAllBookingsQuery()
+                ->where('status', 'success')
+                ->where('payment_status', 'paid')
+                ->sum('total_price');
+        }
+        return $this->attributes['cached_total_spending'];
     }
 
     /**
@@ -110,11 +165,15 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getTierAttribute()
     {
+        if (in_array(strtolower($this->role), ['admin', 'owner', 'karyawan'])) {
+            return 'Regular';
+        }
+
         $total = $this->total_spending;
 
-        if ($total > 3000000) return 'Platinum';
-        if ($total > 2000000) return 'Gold';
-        if ($total > 1000000) return 'Silver';
+        if ($total >= 3000000) return 'Platinum';
+        if ($total >= 2000000) return 'Gold';
+        if ($total >= 1000000) return 'Silver';
         
         return 'Regular';
     }
@@ -128,23 +187,53 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Check for Coloring Loyalty (Spend > 1.5M on Coloring in last 2 years)
+     * Get Last Transaction Date
+     */
+    public function getLastTransactionAtAttribute()
+    {
+        if (!isset($this->attributes['cached_last_transaction_at'])) {
+            $latestBooking = $this->getAllBookingsQuery()
+                ->where('status', 'success')
+                ->latest('reservation_datetime')
+                ->first();
+            $this->attributes['cached_last_transaction_at'] = $latestBooking ? $latestBooking->reservation_datetime : null;
+        }
+        return $this->attributes['cached_last_transaction_at'];
+    }
+
+    /**
+     * Get total spending in the last 2 years
+     */
+    public function getRecentSpendingAttribute()
+    {
+        if (!isset($this->attributes['cached_recent_spending'])) {
+            $this->attributes['cached_recent_spending'] = $this->getAllBookingsQuery()
+                ->where('status', 'success')
+                ->where('payment_status', 'paid')
+                ->where('reservation_datetime', '>=', now()->subYears(2))
+                ->sum('total_price');
+        }
+        return $this->attributes['cached_recent_spending'];
+    }
+
+    /**
+     * Check for Coloring Loyalty (Spend >= 1.5M in the last 2 years)
      */
     public function getHasColoringLoyaltyAttribute()
     {
-        // Hitung pengeluaran khusus kategori 'Coloring'
-        $coloringSpend = \App\Models\BookingDetail::whereHas('booking', function($q) {
-                $q->where('user_id', $this->id)
-                  ->where('status', 'berhasil')
-                  ->where('payment_status', 'paid')
-                  ->where('reservation_datetime', '>=', now()->subYears(2));
-            })
-            ->whereHas('treatmentDetail.treatment.category', function($q) {
-                $q->where('name', 'like', '%Coloring%');
-            })
-            ->sum('price');
+        if (in_array(strtolower($this->role), ['admin', 'owner', 'karyawan'])) {
+            return false;
+        }
 
-        return $coloringSpend >= 1500000;
+        return $this->recent_spending >= 1500000;
+    }
+
+    /**
+     * Check if user is a Colour Circle member (has coloring loyalty and active status)
+     */
+    public function getIsColourCircleMemberAttribute()
+    {
+        return $this->has_coloring_loyalty;
     }
 
     /**
@@ -154,17 +243,17 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         $total = $this->total_spending;
         
-        if ($total > 3000000) {
+        if ($total >= 3000000) {
             return ['next' => null, 'needed' => 0, 'percent' => 100];
         }
         
-        if ($total > 2000000) {
+        if ($total >= 2000000) {
             $needed = 3000000 - $total;
             $percent = (($total - 2000000) / 1000000) * 100;
             return ['next' => 'Platinum', 'needed' => $needed, 'percent' => $percent];
         }
         
-        if ($total > 1000000) {
+        if ($total >= 1000000) {
             $needed = 2000000 - $total;
             $percent = (($total - 1000000) / 1000000) * 100;
             return ['next' => 'Gold', 'needed' => $needed, 'percent' => $percent];

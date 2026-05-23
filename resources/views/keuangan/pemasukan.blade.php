@@ -121,9 +121,17 @@
                         <tbody>
                             @forelse($pemasukan as $item)
                                 <tr>
-                                    <td class="px-4 py-3">
-                                        <div class="fw-medium text-dark">{{ \Carbon\Carbon::parse($item->reservation_datetime)->format('d M Y') }}</div>
-                                        <small class="text-muted">{{ \Carbon\Carbon::parse($item->reservation_datetime)->format('H:i') }}</small>
+                                    <td class="px-4 py-3" style="min-width: 160px;">
+                                        <div class="d-flex flex-column gap-2">
+                                            <div class="small" title="Tanggal Reservasi">
+                                                <span class="badge bg-light-primary text-primary px-2 py-0.5" style="font-size: 0.65rem;"><i class="ti ti-calendar-event me-1"></i>Reservasi:</span>
+                                                <div class="fw-bold text-dark mt-0.5">{{ \Carbon\Carbon::parse($item->reservation_datetime)->format('d M Y') }} - {{ \Carbon\Carbon::parse($item->reservation_datetime)->format('H:i') }}</div>
+                                            </div>
+                                            <div class="small" title="Tanggal Transaksi">
+                                                <span class="badge bg-light-secondary text-secondary px-2 py-0.5" style="font-size: 0.65rem;"><i class="ti ti-receipt me-1"></i>Transaksi:</span>
+                                                <div class="text-muted mt-0.5">{{ \Carbon\Carbon::parse($item->created_at)->format('d M Y') }} - {{ \Carbon\Carbon::parse($item->created_at)->format('H:i') }}</div>
+                                            </div>
+                                        </div>
                                     </td>
                                     <td><span class="badge bg-light-primary text-primary">#{{ $item->id }}</span></td>
                                     <td>

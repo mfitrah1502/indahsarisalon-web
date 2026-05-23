@@ -1,5 +1,5 @@
 <!-- resources/views/partials/promo-modal.blade.php -->
-@if(session('show_promo_modal') && isset($promoTreatments) && $promoTreatments->count() > 0)
+@if(session('show_promo_modal') && Auth::check() && strtolower(Auth::user()->role) === 'pelanggan' && isset($promoTreatments) && $promoTreatments->count() > 0)
 <div class="modal fade" id="promoModal" tabindex="-1" aria-labelledby="promoModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
@@ -12,21 +12,12 @@
             <div class="modal-body p-0">
                 <div id="promoCarousel" class="carousel slide" data-bs-ride="carousel">
                     <div class="carousel-inner">
-                        @foreach($promoTreatments as $index => $promo)
-                            <div class="carousel-item {{ $index == 0 ? 'active' : '' }}">
+                        @foreach($promoTreatments as $promo)
+                            <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
                                 <div class="row g-0">
                                     <div class="col-md-6">
                                         @php
-                                            if (!$promo->image) {
-                                                $imageUrl = asset('assets/images/no-image.jpg');
-                                            } elseif (strpos($promo->image, 'http') === 0) {
-                                                $imageUrl = $promo->image;
-                                            } else {
-                                                $bucket = ($promo->is_promo && env('SUPABASE_PROMO_BUCKET')) 
-                                                    ? env('SUPABASE_PROMO_BUCKET') 
-                                                    : env('SUPABASE_BUCKET');
-                                                $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $promo->image;
-                                            }
+                                            $imageUrl = $promo->main_image_url;
                                         @endphp
                                         <img src="{{ $imageUrl }}" class="img-fluid h-100" style="object-fit: cover; min-height: 400px;" alt="{{ $promo->name }}">
                                     </div>
@@ -58,7 +49,7 @@
                                             @endforeach
                                         </div>
 
-                                        <a href="{{ route('booking.select', $promo->id) }}" class="btn btn-primary btn-lg rounded-pill shadow-sm">
+                                        <a href="{{ route('booking.index') }}?treatment_id={{ $promo->id }}" class="btn text-white btn-lg rounded-pill shadow-sm" style="background-color: #EA8290; border-color: #EA8290;">
                                             Booking Sekarang <i class="ti ti-arrow-right ms-2"></i>
                                         </a>
                                     </div>

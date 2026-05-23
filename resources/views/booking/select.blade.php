@@ -15,6 +15,23 @@
         background: #f8f9fa !important;
     }
 
+    /* Styling Tanggal Reservasi agar Terang, Jelas, dan Interaktif */
+    #reservation_date {
+        background-color: #fff !important;
+        color: #EA8290 !important;
+        border: 2px solid #EA8290 !important;
+        opacity: 1 !important;
+        font-weight: 800 !important;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(234, 130, 144, 0.15) !important;
+    }
+    #reservation_date:hover {
+        background-color: #fff5f6 !important;
+        border-color: #d66877 !important;
+        box-shadow: 0 6px 16px rgba(234, 130, 144, 0.25) !important;
+        transform: translateY(-1px);
+    }
+
     /* Stylist Card Modern Styles */
     .stylist-grid {
         display: flex;
@@ -170,6 +187,107 @@
     .cursor-pointer {
         cursor: pointer;
     }
+
+    /* === TIME SLOT BUTTONS === */
+    .time-slot-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+    }
+    .time-slot-btn {
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 2px solid #EA8290;
+        background: #fff;
+        color: #EA8290;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .time-slot-btn:hover {
+        background: #fce4e7;
+        border-color: #d6717e;
+    }
+    .time-slot-btn.selected {
+        background: #EA8290;
+        color: #fff;
+        box-shadow: 0 3px 10px rgba(234,130,144,0.35);
+        transform: scale(1.05);
+    }
+    #timeSlotEmpty {
+        font-size: 0.82rem;
+        color: #aaa;
+        font-style: italic;
+    }
+
+    /* === TIME PERIOD GROUP HEADERS === */
+    .time-group-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        margin-top: 8px;
+        position: relative;
+        overflow: hidden;
+    }
+    .time-group-header::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: 0.08;
+        border-radius: 12px;
+        background: currentColor;
+    }
+    .time-group-icon-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+        position: relative;
+        z-index: 1;
+    }
+    .time-group-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        position: relative;
+        z-index: 1;
+    }
+    .time-group-badge {
+        font-size: 0.65rem;
+        font-weight: 600;
+        padding: 2px 9px;
+        border-radius: 20px;
+        position: relative;
+        z-index: 1;
+        margin-left: auto;
+    }
+    .time-group-divider {
+        height: 2px;
+        border-radius: 2px;
+        margin-bottom: 10px;
+        opacity: 0.15;
+    }
+
+    /* Animation spin untuk loader icon */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .spin {
+        animation: spin 1.5s linear infinite;
+        display: inline-block;
+    }
 </style>
 @endpush
 
@@ -179,7 +297,12 @@
 
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white border-bottom">
-                    <h4 class="mb-1">📅 Booking Appointment</h4>
+                    <h4 class="mb-1 d-flex align-items-center gap-2">
+                        <span style="background: linear-gradient(135deg,#EA8290,#c4556a); border-radius:10px; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(234,130,144,0.4);">
+                            <i class="ti ti-calendar-event" style="color:#fff; font-size:18px;"></i>
+                        </span>
+                        Booking Appointment
+                    </h4>
                     <small class="text-muted">Ikuti langkah untuk menyelesaikan booking</small>
 
                     <!-- STEP INDICATOR -->
@@ -206,7 +329,7 @@
 
                         <!-- INFO TREATMENT -->
                         <!-- VARIANT CHECKLIST (Hanya muncul jika treatment utama punya banyak detail) -->
-                        @if($treatment->details->count() > 1)
+                        @if($treatment->details->count() > 1 && $preSelectedDetails->isEmpty())
                             <div class="p-3 mb-3 bg-light-warning rounded-3 border border-warning border-opacity-25 shadow-sm">
                                 <h6 class="fw-bold mb-3 text-dark"><i class="ti ti-list-check me-1"></i>Pilih Detail Layanan:
                                     <span class="text-primary">{{ $treatment->name }}</span></h6>
@@ -229,7 +352,9 @@
                                                     data-promo-type="{{ $treatment->promo_type }}"
                                                     data-promo-value="{{ $treatment->promo_value }}"
                                                     data-is-coloring="{{ (stripos($treatment->category->name ?? '', 'Coloring') !== false) ? '1' : '0' }}"
-                                                    data-duration="{{ $d->duration }}" onchange="togglePrimaryDetail(this)">
+                                                    data-duration="{{ $d->duration }}"
+                                                    data-image="{{ $d->image_url ? (strpos($d->image_url, 'http') === 0 ? $d->image_url : env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $d->image_url) : ( $treatment->image ? (strpos($treatment->image, 'http') === 0 ? $treatment->image : env('SUPABASE_URL') . '/storage/v1/object/public/' . (($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET')) . '/' . $treatment->image) : asset('assets/images/no-image.jpg') ) }}"
+                                                    onchange="togglePrimaryDetail(this)">
                                                 <label class="form-check-label p-2 w-100 border rounded cursor-pointer h-100"
                                                     for="detail_{{ $d->id }}">
                                                     <div class="d-flex justify-content-between align-items-center mb-1">
@@ -307,12 +432,7 @@
                             {{-- Will be populated by JS --}}
                         </div>
 
-                        <div class="mb-3">
-                            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill" data-bs-toggle="modal"
-                                data-bs-target="#modalAddTreatment">
-                                <i class="ti ti-plus me-1"></i>Tambah Treatment Lainnya
-                            </button>
-                        </div>
+
 
                         <div class="p-3 mb-4 rounded border-start border-primary border-4 bg-light">
                             <div class="d-flex justify-content-between align-items-center">
@@ -366,52 +486,47 @@
                                     $hasStylistPrice = $treatment->details->contains('has_stylist_price', true);
                                 @endphp
 
-                                {{-- Stylist selection will now be inside the treatment list --}}
-                                <div class="col-md-12 mb-4" id="globalStylistSection" style="{{ $hasStylistPrice ? '' : 'display: none;' }}">
-                                    <div class="p-4 bg-white border rounded shadow-sm">
-                                        <div class="d-flex flex-column mb-3">
-                                            <label class="form-label fw-bold mb-2"><i class="ti ti-heart-handshake me-1"></i>Pilih Stylist untuk Semua Layanan</label>
-                                            <p class="small text-muted mb-3">Atur semua layanan ke satu stylist yang sama secara otomatis.</p>
+                                {{-- Hidden placeholder container to prevent JS errors --}}
+                                <div id="globalStylistSection" style="display: none !important;">
+                                    <div id="global_stylist_grid"></div>
+                                </div>
+                                @php
+                                    $now = \Carbon\Carbon::now();
+                                    $cutoff = \Carbon\Carbon::today()->setHour(17)->setMinute(0);
+                                    // Jika sudah lewat jam 17:00, minimal booking adalah besok
+                                    $initialDate = $now->greaterThan($cutoff) ? \Carbon\Carbon::tomorrow()->toDateString() : \Carbon\Carbon::today()->toDateString();
+                                @endphp
+                                <!-- TANGGAL -->
+                                <div class="col-md-3 mb-3" @if(request()->filled('reservation_date')) style="display: none;" @endif>
+                                    <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                        <i class="ti ti-calendar-filled" style="color:#EA8290; font-size:16px;"></i>
+                                        Tanggal Reservasi
+                                    </label>
+                                    <div class="position-relative">
+                                        <input type="text" name="reservation_date" id="reservation_date" class="form-control cursor-pointer"
+                                            min="{{ $initialDate }}" value="{{ request()->input('reservation_date', $initialDate) }}" required readonly style="padding-left: 40px; padding-right: 40px; font-weight: bold;">
+                                        <div class="position-absolute top-50 start-0 translate-middle-y ps-3 text-primary pointer-events-none" style="pointer-events: none; color: #EA8290 !important;">
+                                            <i class="ti ti-calendar fs-5"></i>
                                         </div>
-                                        <div class="stylist-grid" id="global_stylist_grid">
-                                            <div class="stylist-card-modern active" data-stylist-id="" onclick="updateGlobalStylist(null, this)">
-                                                <div class="check-mark"><i class="ti ti-check"></i></div>
-                                                <div class="avatar-container d-flex align-items-center justify-content-center bg-light">
-                                                    <i class="ti ti-minus text-muted" style="font-size: 1.5rem;"></i>
-                                                </div>
-                                                <span class="stylist-name">Reset</span>
-                                                <span class="stylist-cat">Default</span>
-                                            </div>
-                                            @foreach($stylists as $stylist)
-                                                <div class="stylist-card-modern stylist-global-item-{{ $stylist->id }}" 
-                                                     data-stylist-id="{{ $stylist->id }}" 
-                                                     data-kategori="{{ strtolower($stylist->kategori) }}"
-                                                     onclick="updateGlobalStylist({{ $stylist->id }}, this)">
-                                                    <div class="check-mark"><i class="ti ti-check"></i></div>
-                                                    <div class="avatar-container">
-                                                        <img src="{{ $stylist->avatar_url }}" alt="{{ $stylist->name }}">
-                                                    </div>
-                                                    <span class="stylist-name">{{ explode(' ', $stylist->name)[0] }}</span>
-                                                    <span class="stylist-cat">{{ $stylist->kategori }}</span>
-                                                </div>
-                                            @endforeach
+                                        <div class="position-absolute top-50 end-0 translate-middle-y pe-3 text-primary pointer-events-none" style="pointer-events: none; color: #EA8290 !important;">
+                                            <i class="ti ti-chevron-down fs-6"></i>
                                         </div>
                                     </div>
                                 </div>
-                                <!-- TANGGAL -->
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">📅 Tanggal</label>
-                                    <input type="date" name="reservation_date" id="reservation_date" class="form-control"
-                                        required>
-                                </div>
 
                                 <!-- JAM -->
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">⏰ Jam Reservasi</label>
-                                    <select name="reservation_time" id="reservation_time" class="form-select" required>
-                                        <option value="">-- Pilih Jam --</option>
-                                    </select>
-                                    <small class="text-muted extra-small">Jam buka: 09:00 - 18:00</small>
+                                <div class="{{ request()->filled('reservation_date') ? 'col-md-6' : 'col-md-3' }} mb-3">
+                                    <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                        <i class="ti ti-clock-hour-4" style="color:#EA8290; font-size:16px;"></i>
+                                        Pilih Jam Reservasi
+                                    </label>
+                                    <!-- Hidden input yang dikirim ke server -->
+                                    <input type="hidden" name="reservation_time" id="reservation_time" required>
+                                    <!-- Grid tombol jam -->
+                                    <div class="time-slot-grid" id="timeSlotGrid">
+                                        <span id="timeSlotEmpty" class="text-muted small">Pilih tanggal terlebih dahulu...</span>
+                                    </div>
+                                    <!-- <small class="text-muted extra-small">Batas reservasi: 09:00 - 17:00</small> -->
                                 </div>
 
                             </div>
@@ -421,7 +536,12 @@
                     <!-- STEP 2 -->
                     <div class="tab-pane fade" id="step2">
                         <div class="p-3 rounded bg-light">
-                            <h5 class="mb-3">📋 Ringkasan Booking</h5>
+                            <h5 class="mb-3 d-flex align-items-center gap-2">
+                                <span style="background:linear-gradient(135deg,#4e73df,#224abe); border-radius:9px; width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(78,115,223,0.35);">
+                                    <i class="ti ti-clipboard-list" style="color:#fff; font-size:16px;"></i>
+                                </span>
+                                Ringkasan Booking
+                            </h5>
 
                             <p class="mb-1"><strong>Customer:</strong> <span id="summaryCustomer">{{ Auth::user()->name }}</span></p>
                             <p class="mb-1"><strong>No. HP:</strong> <span id="summaryPhone">{{ Auth::user()->phone ?? '-' }}</span></p>
@@ -443,7 +563,12 @@
                     <!-- STEP 3 -->
                     <div class="tab-pane fade" id="step3">
                         <div class="p-3 rounded bg-light">
-                            <h5 class="mb-3">💳 Pembayaran</h5>
+                            <h5 class="mb-3 d-flex align-items-center gap-2">
+                                <span style="background:linear-gradient(135deg,#1cc88a,#13855c); border-radius:9px; width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(28,200,138,0.35);">
+                                    <i class="ti ti-credit-card" style="color:#fff; font-size:16px;"></i>
+                                </span>
+                                Konfirmasi Pembayaran
+                            </h5>
 
                             <form method="POST" action="{{ route('booking.store') }}" id="finalBookingForm">
                                 @csrf
@@ -465,14 +590,16 @@
                                     <select name="payment_method" class="form-select" required>
                                         <option value="">-- Pilih Metode --</option>
                                         @if(in_array(strtolower(Auth::user()->role), ['owner', 'admin', 'karyawan']))
-                                            <option value="cash">Cash</option>
+                                            <option value="Tunai">Tunai</option>
                                         @endif
-                                        <option value="transfer">Transfer Bank (Midtrans)</option>
+                                        <option value="Transfer">Transfer Bank (Midtrans)</option>
+                                        <option value="QRIS">QRIS / E-Wallet (Midtrans)</option>
                                     </select>
                                 </div>
 
-                                <button type="submit" class="btn btn-success w-100">
-                                    ✅ Bayar & Konfirmasi
+                                <button type="submit" class="btn btn-success w-100 d-flex align-items-center justify-content-center gap-2" style="font-weight:700; font-size:1rem; padding:12px; border-radius:12px; box-shadow:0 4px 15px rgba(28,200,138,0.4);">
+                                    <i class="ti ti-circle-check-filled" style="font-size:20px;"></i>
+                                    Bayar & Konfirmasi Sekarang
                                 </button>
                             </form>
                         </div>
@@ -526,13 +653,32 @@
                     <div class="row g-4" id="treatmentList">
                         @foreach($allTreatments as $item)
                             @php
-                                if (!$item->image) {
-                                    $imageUrl = asset('assets/images/no-image.jpg');
-                                } elseif (strpos($item->image, 'http') === 0) {
-                                    $imageUrl = $item->image;
-                                } else {
-                                    $bucket = ($item->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
-                                    $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $item->image;
+                                $imageUrl = asset('assets/images/no-image.jpg');
+                                $hasImage = false;
+
+                                // 1. Cek gambar utama treatment
+                                if ($item->image) {
+                                    if (strpos($item->image, 'http') === 0) {
+                                        $imageUrl = $item->image;
+                                        $hasImage = true;
+                                    } else {
+                                        $bucket = ($item->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                                        $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $item->image;
+                                        $hasImage = true;
+                                    }
+                                }
+
+                                // 2. Jika gambar utama kosong, coba cari dari detail/variasi
+                                if (!$hasImage) {
+                                    $firstDetail = $item->details->first();
+                                    if ($firstDetail && $firstDetail->image_url) {
+                                        if (strpos($firstDetail->image_url, 'http') === 0) {
+                                            $imageUrl = $firstDetail->image_url;
+                                        } else {
+                                            $imageUrl = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $firstDetail->image_url;
+                                        }
+                                        $hasImage = true;
+                                    }
                                 }
                             @endphp
                             <div class="col-md-4 col-lg-3 treatment-item-container" data-category="{{ $item->category_id }}"
@@ -607,7 +753,8 @@
                                                             data-promo-type="{{ $item->promo_type }}"
                                                             data-promo-value="{{ $item->promo_value }}"
                                                             data-is-coloring="{{ (stripos($item->category->name ?? '', 'Coloring') !== false) ? '1' : '0' }}"
-                                                            data-duration="{{ $d->duration }}">
+                                                            data-duration="{{ $d->duration }}"
+                                                            data-image="{{ $imageUrl }}">
                                                             Pilih
                                                         </button>
                                                     </div>
@@ -630,7 +777,7 @@
             <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow-lg">
                     <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title text-white fw-bold"><i class="ti ti-users me-2"></i>Daftar Pelanggan Terdaftar</h5>
+                        <h5 class="modal-title text-white fw-bold"><i class="ti ti-users me-2"></i>Daftar Pelanggan</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body p-0">
@@ -654,7 +801,13 @@
                                         <tr class="customer-row" data-search="{{ strtolower($c->name . ' ' . $c->email . ' ' . $c->phone) }}">
                                             <td class="ps-3">
                                                 <div class="fw-bold text-dark">{{ $c->name }}</div>
-                                                <div class="small text-muted">ID: #{{ $c->id }}</div>
+                                                <div class="small text-muted">
+                                                    @if(isset($c->status) && $c->status === 'guest')
+                                                        <span class="badge bg-secondary opacity-50 px-2 rounded-pill">Guest</span>
+                                                    @else
+                                                        ID: #{{ $c->id }}
+                                                    @endif
+                                                </div>
                                             </td>
                                             <td>
                                                 <div class="small"><i class="ti ti-mail me-1"></i>{{ $c->email ?? '-' }}</div>
@@ -715,8 +868,8 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0">
                 <div class="modal-body text-center py-4" id="modalStatusContent">
-                    <div class="mb-3">
-                        <i class="ti ti-loader text-primary" style="font-size: 3rem;"></i>
+                    <div class="mb-3" id="modalStatusIconContainer">
+                        <i class="ti ti-loader text-primary spin" style="font-size: 3rem;"></i>
                     </div>
                     <h4 id="modalStatusTitle">Booking sedang diproses</h4>
                     <p id="modalStatusDesc" class="text-muted">Terima kasih telah melakukan booking. Silakan klik tombol di
@@ -732,8 +885,10 @@
         data-client-key="{{ config('services.midtrans.client_key') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
+        window.lastCreatedBookingId = null;
         const allStylists = @json($stylists);
         // Map avatars separately since we have an accessor but Laravel json encode might not include it by default
         allStylists.forEach(s => {
@@ -751,6 +906,8 @@
         });
 
         // Initialize variables
+        const urlStylistId = {{ request()->query('stylist_id') ? (int) request()->query('stylist_id') : 'null' }};
+        const urlStylistKategori = {!! request()->query('stylist_id') && ($preSelStylist = \App\Models\User::find(request()->query('stylist_id'))) ? json_encode(strtolower($preSelStylist->kategori)) : 'null' !!};
         const isStaff = @json($isStaff);
         const customers = @json($customers);
         let hasColoringLoyalty = {{ Auth::user()->has_coloring_loyalty ? 'true' : 'false' }};
@@ -787,6 +944,13 @@
                 const selectedCustomer = customers.find(c => c.id == id);
                 if (selectedCustomer) {
                     hasColoringLoyalty = selectedCustomer.has_coloring_loyalty;
+                    if (memberBadge) {
+                        if (selectedCustomer.status === 'guest') {
+                            memberBadge.innerHTML = '<span class="badge bg-secondary opacity-50 text-white"><i class="ti ti-user me-1"></i>Guest</span><button type="button" class="btn btn-link btn-sm text-danger p-0 ms-2" onclick="clearSelectedCustomer()">Hapus</button>';
+                        } else {
+                            memberBadge.innerHTML = '<span class="badge bg-soft-success text-success"><i class="ti ti-medal me-1"></i>Pelanggan Terdaftar</span><button type="button" class="btn btn-link btn-sm text-danger p-0 ms-2" onclick="clearSelectedCustomer()">Hapus</button>';
+                        }
+                    }
                     updateVariantLabels(); // Update selection grid labels
                     renderSelectedTreatments(); // Recalculate prices for selected list
                 }
@@ -906,20 +1070,23 @@
             const holidayDates = {!! json_encode($holidays) !!};
 
             // 1. Flatpickr Logic
+            const initialDateVal = dateInput.value || 'today';
             const fp = flatpickr(dateInput, {
                 locale: 'id',
                 dateFormat: 'Y-m-d',
                 minDate: 'today',
                 disable: holidayDates,
-                defaultDate: 'today',
+                defaultDate: initialDateVal,
                 onChange: function(selectedDates, dateStr) {
-                    updateTimeSlots();
-                    checkStylistAvailability();
+                    fetchDaySchedule(dateStr);
                 }
             });
 
             // If today is > 18:00 or a holiday, find next available date
             function findNextAvailable() {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('reservation_date')) return; // Skip if pre-selected in previous step
+
                 const now = new Date();
                 const hour = now.getHours();
                 const todayStr = now.toISOString().split('T')[0];
@@ -934,46 +1101,206 @@
             }
             findNextAvailable();
 
-            // 2. Generate Time Slots
-            function updateTimeSlots() {
+            // 2. Generate Time Slot BUTTONS
+            window.updateTimeSlots = function() {
                 const selectedDate = dateInput.value;
                 const now = new Date();
 
-                // Perbandingan tanggal lokal yang lebih akurat
                 const selectedDateObj = new Date(selectedDate);
                 const isToday = now.toDateString() === selectedDateObj.toDateString();
 
-                timeSelect.innerHTML = '<option value="">-- Pilih Jam --</option>';
+                const hasColoring = typeof selectedDetails !== 'undefined' && selectedDetails.some(d => d.isColoring);
+                const maxHour   = hasColoring ? 10 : 17;
+                const maxMinute = hasColoring ? 30 :  0;
 
-                for (let h = 9; h <= 18; h++) {
+                const currentStylistId = typeof selectedDetails !== 'undefined' && selectedDetails.length > 0
+                    ? selectedDetails[0].stylistId : null;
+                const busyWindows = (currentStylistId && window.bookedStylistWindows && window.bookedStylistWindows[currentStylistId])
+                    ? window.bookedStylistWindows[currentStylistId] : [];
+
+                const grid       = document.getElementById('timeSlotGrid');
+                const emptyNote  = document.getElementById('timeSlotEmpty');
+                const hiddenInput = document.getElementById('reservation_time');
+                const prevValue  = hiddenInput.value;
+
+                grid.innerHTML = '';
+                let hasSlots = false;
+
+                let morningSlots = [];
+                let afternoonSlots = [];
+                let eveningSlots = [];
+
+                for (let h = 9; h <= maxHour; h++) {
                     for (let m = 0; m < 60; m += 15) {
-                        // Max jam operasional adalah 18:00
-                        if (h === 18 && m > 0) break;
+                        if (h === maxHour && m > maxMinute) break;
 
-                        const timeVal = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                        const timeVal = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 
-                        // Jika tanggal yang dipilih adalah hari ini, sembunyikan jam yang sudah lewat
+                        // Sembunyikan jam yang sudah lewat jika hari ini
                         if (isToday) {
-                            if (h < now.getHours() || (h === now.getHours() && m <= now.getMinutes())) {
-                                continue;
+                            if (h < now.getHours() || (h === now.getHours() && m <= now.getMinutes())) continue;
+                        }
+
+                        // Cek apakah jam ini + total durasi overlap dengan window yang sudah dibooking
+                        const timeMins = h * 60 + m;
+                        let totalDuration = 0;
+                        if (typeof selectedDetails !== 'undefined') {
+                            selectedDetails.forEach(d => {
+                                const durationMins = d.isColoring ? 420 : (d.duration || 60);
+                                totalDuration += durationMins;
+                            });
+                        }
+                        const endTimeMins = timeMins + totalDuration;
+
+                        // Cek apakah jam ini + total durasi melebihi jam operasional (tutup pukul 18:00)
+                        if (endTimeMins > 18 * 60) {
+                            continue; // Jangan sediakan jam ini jika total durasi melewati jam operasional
+                        }
+
+                        let isBusy = false;
+                        for (let bw of busyWindows) {
+                            const [sh, sm] = bw.start.split(':').map(Number);
+                            const [eh, em] = bw.end.split(':').map(Number);
+                            const busyStartMins = sh * 60 + sm;
+                            const busyEndMins = eh * 60 + em;
+                            
+                            // Check overlap: newStart < busyEnd AND newEnd > busyStart
+                            if (timeMins < busyEndMins && endTimeMins > busyStartMins) {
+                                isBusy = true;
+                                break;
                             }
                         }
 
-                        const option = document.createElement('option');
-                        option.value = timeVal;
-                        option.textContent = timeVal;
-                        timeSelect.appendChild(option);
+                        // Jika busy, SKIP (jangan tampilkan tombol)
+                        if (isBusy) continue;
+
+                        hasSlots = true;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'time-slot-btn' + (timeVal === prevValue ? ' selected' : '');
+                        btn.textContent = timeVal;
+                        btn.setAttribute('data-time', timeVal);
+                        btn.addEventListener('click', function() {
+                            // Deselect all
+                            grid.querySelectorAll('.time-slot-btn').forEach(b => b.classList.remove('selected'));
+                            this.classList.add('selected');
+                            hiddenInput.value = timeVal;
+                            // Trigger availability check
+                            resetLastCreatedBookingId();
+                            checkStylistAvailability();
+                        });
+
+                        if (timeMins >= 9 * 60 && timeMins <= 11 * 60 + 45) {
+                            morningSlots.push(btn);
+                        } else if (timeMins >= 12 * 60 && timeMins <= 14 * 60 + 45) {
+                            afternoonSlots.push(btn);
+                        } else if (timeMins >= 15 * 60 && timeMins <= 17 * 60) {
+                            eveningSlots.push(btn);
+                        }
                     }
                 }
 
-                // Pastikan select tidak disabled
-                timeSelect.disabled = false;
+                // Append grouped slots with beautiful headers
+                function appendGroup(config, slots) {
+                    if (slots.length === 0) return;
+
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'mb-4 w-100';
+
+                    // Premium header
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'time-group-header';
+                    headerDiv.style.color = config.color;
+                    headerDiv.style.background = config.gradient;
+
+                    const iconBadge = document.createElement('div');
+                    iconBadge.className = 'time-group-icon-badge';
+                    iconBadge.style.background = config.iconBg;
+                    iconBadge.innerHTML = config.icon;
+
+                    const titleSpan = document.createElement('span');
+                    titleSpan.className = 'time-group-title';
+                    titleSpan.style.color = config.color;
+                    titleSpan.textContent = config.title;
+
+                    const countBadge = document.createElement('span');
+                    countBadge.className = 'time-group-badge';
+                    countBadge.style.background = config.badgeBg;
+                    countBadge.style.color = config.color;
+                    countBadge.textContent = config.range;
+
+                    headerDiv.appendChild(iconBadge);
+                    headerDiv.appendChild(titleSpan);
+                    headerDiv.appendChild(countBadge);
+
+                    const divider = document.createElement('div');
+                    divider.className = 'time-group-divider';
+                    divider.style.background = config.color;
+
+                    const flexContainer = document.createElement('div');
+                    flexContainer.className = 'time-slot-grid';
+                    slots.forEach(slot => flexContainer.appendChild(slot));
+
+                    groupDiv.appendChild(headerDiv);
+                    groupDiv.appendChild(divider);
+                    groupDiv.appendChild(flexContainer);
+                    grid.appendChild(groupDiv);
+                }
+
+                // SVG icons for each session (crisp, premium, not pixelated emoji)
+                const svgSun = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`;
+                const svgBright = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+                const svgSunset = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10a4 4 0 0 0-4 4"/><path d="M20 14a8 8 0 1 0-16 0"/><line x1="3" y1="14" x2="21" y2="14"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="19.78" y1="4.22" x2="18.36" y2="5.64"/><polyline points="16 5 12 9 8 5"/></svg>`;
+
+                appendGroup({
+                    title: 'Sesi Pagi',
+                    icon: svgSun,
+                    range: '09:00 – 11:45',
+                    color: '#c0392b',
+                    gradient: 'linear-gradient(135deg, #fff5f0 0%, #ffe8e0 100%)',
+                    iconBg: 'linear-gradient(135deg, #ff6b35, #f7931e)',
+                    badgeBg: 'rgba(192,57,43,0.1)'
+                }, morningSlots);
+
+                appendGroup({
+                    title: 'Sesi Siang',
+                    icon: svgBright,
+                    range: '12:00 – 14:45',
+                    color: '#b7860a',
+                    gradient: 'linear-gradient(135deg, #fffbf0 0%, #fff3d0 100%)',
+                    iconBg: 'linear-gradient(135deg, #f7ca18, #f39c12)',
+                    badgeBg: 'rgba(183,134,10,0.1)'
+                }, afternoonSlots);
+
+                appendGroup({
+                    title: 'Sesi Sore',
+                    icon: svgSunset,
+                    range: '15:00 – 17:00',
+                    color: '#6c3483',
+                    gradient: 'linear-gradient(135deg, #f9f0ff 0%, #efe0ff 100%)',
+                    iconBg: 'linear-gradient(135deg, #9b59b6, #6c3483)',
+                    badgeBg: 'rgba(108,52,131,0.1)'
+                }, eveningSlots);
+
+                // Jika tidak ada slot yang tersedia
+                if (!hasSlots) {
+                    const span = document.createElement('span');
+                    span.id = 'timeSlotEmpty';
+                    span.className = 'text-muted small fst-italic';
+                    span.textContent = selectedDate
+                        ? 'Tidak ada jam tersedia untuk stylist ini pada tanggal ini.'
+                        : 'Pilih tanggal terlebih dahulu...';
+                    grid.appendChild(span);
+                    hiddenInput.value = '';
+                } else if (prevValue && !grid.querySelector(`[data-time="${prevValue}"]`)) {
+                    // Jam yang sebelumnya dipilih sudah tidak tersedia
+                    hiddenInput.value = '';
+                }
             }
 
             // Jalankan pertama kali
             updateTimeSlots();
         }
-        initTimeSelection();
 
         let currentStep = 1;
         const totalSteps = 3;
@@ -983,7 +1310,44 @@
 
         // MULTIPLE TREATMENTS LOGIC (V3: Choice-based Primary)
         let selectedDetails = [
-            @if($treatment->details->count() === 1)
+            @foreach($preSelectedDetails as $d)
+                {
+                    id: {{ $d->id }},
+                    parentId: {{ $d->treatment_id }},
+                    name: {!! json_encode($d->name) !!},
+                    parentName: {!! json_encode($d->treatment->name) !!},
+                    price: {{ (int) $d->price }},
+                    priceSenior: {{ (int) ($d->price_senior ?: $d->price) }},
+                    priceJunior: {{ (int) ($d->price_junior ?: $d->price) }},
+                    hasStylistPrice: {{ $d->has_stylist_price ? 'true' : 'false' }},
+                    duration: {{ (int) $d->duration }},
+                    isPrimary: {{ $d->treatment_id == $treatment->id ? 'true' : 'false' }},
+                    isPromo: {{ $d->treatment->is_promo ? 'true' : 'false' }},
+                    promoType: {!! json_encode($d->treatment->promo_type) !!},
+                    promoValue: {{ (int) $d->treatment->promo_value }},
+                    isColoring: {{ (stripos($d->treatment->category->name ?? '', 'Coloring') !== false) ? 'true' : 'false' }},
+                    @php
+                        $initImg = asset('assets/images/no-image.jpg');
+                        $hasInitImg = false;
+                        if ($d->treatment->image) {
+                            if (strpos($d->treatment->image, 'http') === 0) { $initImg = $d->treatment->image; $hasInitImg = true; }
+                            else { 
+                                $bucket = ($d->treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                                $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $d->treatment->image; 
+                                $hasInitImg = true;
+                            }
+                        }
+                        if (!$hasInitImg && $d->image_url) {
+                            if (strpos($d->image_url, 'http') === 0) { $initImg = $d->image_url; }
+                            else { $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $d->image_url; }
+                        }
+                    @endphp
+                    image: {!! json_encode($initImg) !!},
+                    stylistId: urlStylistId,
+                    stylistKategori: urlStylistKategori
+                },
+            @endforeach
+            @if($preSelectedDetails->isEmpty() && $treatment->details->count() === 1)
                 @foreach($treatment->details as $d)
                     {
                         id: {{ $d->id }},
@@ -999,13 +1363,54 @@
                         isPromo: {{ $treatment->is_promo ? 'true' : 'false' }},
                         promoType: {!! json_encode($treatment->promo_type) !!},
                         promoValue: {{ (int) $treatment->promo_value }},
-                        isColoring: {{ (stripos($treatment->category->name ?? '', 'Coloring') !== false) ? 'true' : 'false' }}
+                        isColoring: {{ (stripos($treatment->category->name ?? '', 'Coloring') !== false) ? 'true' : 'false' }},
+                        @php
+                            $initImg = asset('assets/images/no-image.jpg');
+                            $hasInitImg = false;
+                            if ($treatment->image) {
+                                if (strpos($treatment->image, 'http') === 0) { $initImg = $treatment->image; $hasInitImg = true; }
+                                else { 
+                                    $bucket = ($treatment->is_promo && env('SUPABASE_PROMO_BUCKET')) ? env('SUPABASE_PROMO_BUCKET') : env('SUPABASE_BUCKET');
+                                    $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . $bucket . '/' . $treatment->image; 
+                                    $hasInitImg = true;
+                                }
+                            }
+                            if (!$hasInitImg && $d->image_url) {
+                                if (strpos($d->image_url, 'http') === 0) { $initImg = $d->image_url; }
+                                else { $initImg = env('SUPABASE_URL') . '/storage/v1/object/public/' . env('SUPABASE_BUCKET') . '/' . $d->image_url; }
+                            }
+                        @endphp
+                        image: {!! json_encode($initImg) !!},
+                        stylistId: urlStylistId,
+                        stylistKategori: urlStylistKategori
                     },
                 @endforeach
             @endif
         ];
 
+        // Jalankan inisialisasi waktu setelah selectedDetails didefinisikan untuk mencegah ReferenceError (TDZ)
+        initTimeSelection();
+
+        // Mark pre-selected items as checked in the variant list
+        document.addEventListener('DOMContentLoaded', function() {
+            selectedDetails.forEach(d => {
+                const checkbox = document.getElementById(`detail_${d.id}`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    // Trigger label update if any
+                    const label = checkbox.nextElementSibling;
+                    if (label && label.tagName === 'LABEL') {
+                        label.classList.add('bg-light-primary', 'border-primary', 'shadow-sm');
+                        const icon = label.querySelector('.check-icon');
+                        if (icon) icon.style.display = 'block';
+                    }
+                }
+            });
+            renderSelectedTreatments();
+        });
+
         window.togglePrimaryDetail = function (checkbox) {
+            resetLastCreatedBookingId();
             const isMulti = {{ $treatment->allow_multi_select ? 'true' : 'false' }};
             const id = parseInt(checkbox.value);
 
@@ -1043,7 +1448,10 @@
                         isPromo: checkbox.getAttribute('data-is-promo') === '1',
                         promoType: checkbox.getAttribute('data-promo-type'),
                         promoValue: parseInt(checkbox.getAttribute('data-promo-value') || 0),
-                        isColoring: checkbox.getAttribute('data-is-coloring') === '1'
+                        isColoring: checkbox.getAttribute('data-is-coloring') === '1',
+                        image: checkbox.getAttribute('data-image'),
+                        stylistId: urlStylistId,
+                        stylistKategori: urlStylistKategori
                     });
                 }
             } else {
@@ -1052,10 +1460,13 @@
                 selectedDetails = selectedDetails.filter(d => d.id !== id);
             }
             renderSelectedTreatments();
-            checkStylistAvailability();
+            fetchDaySchedule(document.getElementById('reservation_date').value);
         };
 
         function renderSelectedTreatments() {
+            if (typeof window.updateTimeSlots === 'function') {
+                window.updateTimeSlots();
+            }
             const container = document.getElementById('selectedTreatmentsContainer');
             if (!container) return;
             container.innerHTML = '';
@@ -1076,9 +1487,15 @@
                 const itemHtml = `
                         <div class="p-3 mb-3 rounded border-start border-3 border-primary bg-white shadow-sm">
                             <div class="d-flex justify-content-between align-items-start mb-2">
-                                <div>
-                                    <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">${d.parentName}</div>
-                                    <div class="fw-bold text-dark">${d.name} <small class="text-muted fw-normal">(${d.duration} mnt)</small></div>
+                                <div class="d-flex align-items-start">
+                                    <div class="me-3 position-relative" style="width: 60px; height: 60px;">
+                                        <img src="${d.image || '{{ asset('assets/images/no-image.jpg') }}'}" 
+                                             class="rounded shadow-sm w-100 h-100 object-fit-cover border" 
+                                             alt="${d.name}">
+                                    </div>
+                                    <div>
+                                        <div class="small text-muted text-uppercase fw-bold" style="font-size: 0.65rem;">${d.parentName}</div>
+                                        <div class="fw-bold text-dark">${d.name} <small class="text-muted fw-normal">(${d.duration} mnt)</small></div>
                                     @if($isStaff)
                                         <div class="input-group input-group-sm mt-1" style="max-width: 150px;" onclick="event.stopPropagation()">
                                             <span class="input-group-text bg-light">Rp</span>
@@ -1095,36 +1512,10 @@
                                     @endif
                                 </div>
                                 <div>
-                                    ${d.isPrimary ? '<span class="badge bg-light-primary text-primary rounded-pill">Utama</span>' : `<button type="button" class="btn btn-icon btn-link-danger btn-sm" onclick="removeDetail(${d.id})"><i class="ti ti-trash"></i></button>`}
+                                    <button type="button" class="btn btn-icon btn-link-danger btn-sm" onclick="removeDetail(${d.id})"><i class="ti ti-trash"></i></button>
                                 </div>
                             </div>
-                            ${d.hasStylistPrice ? `
-                            <div class="mt-3">
-                                <label class="extra-small text-muted mb-2"><i class="ti ti-hand-click me-1"></i>Pilih Stylist:</label>
-                                <div class="stylist-grid" data-detail-id="${d.id}">
-                                    ${allStylists.map(s => {
-                                        const isSelected = d.stylistId == s.id;
-                                        return `
-                                            <div class="stylist-card-modern ${isSelected ? 'active' : ''} stylist-item-${s.id}" 
-                                                 data-stylist-id="${s.id}" 
-                                                 data-kategori="${s.kategori ? s.kategori.toLowerCase() : ''}"
-                                                 onclick="updateItemStylistCards(${d.id}, ${s.id}, this)">
-                                                <div class="check-mark"><i class="ti ti-check"></i></div>
-                                                <div class="avatar-container">
-                                                    <img src="${s.avatar_url}" alt="${s.name}">
-                                                </div>
-                                                <span class="stylist-name">${s.name ? s.name.split(' ')[0] : ''}</span>
-                                                <span class="stylist-cat">${s.kategori || ''}</span>
-                                            </div>
-                                        `;
-                                    }).join('')}
-                                </div>
-                            </div>
-                            ` : `
-                            <div class="mt-3">
-                                <div class="extra-small text-muted mt-1"><i class="ti ti-info-circle me-1"></i>Harga tetap untuk layanan ini.</div>
-                            </div>
-                            `}
+                            ${d.hasStylistPrice ? '' : ''}
                         </div>
                     `;
                 container.insertAdjacentHTML('beforeend', itemHtml);
@@ -1135,11 +1526,10 @@
             document.getElementById('totalPriceDisplay2').innerText = formattedTotal;
             document.getElementById('paymentTreatmentInputs').innerHTML = hiddenInputs;
 
-            // Show or hide the global stylist section based on selection
-            const showGlobal = selectedDetails.some(d => d.hasStylistPrice);
+            // The global stylist section is kept hidden as the stylist is pre-selected in Step 1
             const globalSection = document.getElementById('globalStylistSection');
             if (globalSection) {
-                globalSection.style.display = showGlobal ? '' : 'none';
+                globalSection.style.display = 'none';
             }
 
             // Apply busy states if we have them
@@ -1148,84 +1538,153 @@
 
         let busyStylistsMap = {};
         let offWorkStylists = [];
+        let activeAvailabilityRequest = null;
 
-        window.checkStylistAvailability = function () {
-            const date = document.getElementById('reservation_date').value;
+        window.calculateConflictsLocally = function () {
             const time = document.getElementById('reservation_time').value;
+            if (!time || selectedDetails.length === 0) {
+                busyStylistsMap = {};
+                applyBusyStylists();
+                return;
+            }
 
-            if (!date || selectedDetails.length === 0) return;
+            const [startH, startM] = time.split(':').map(Number);
+            let currentStart = startH * 60 + startM;
 
-            $.ajax({
+            busyStylistsMap = {};
+
+            selectedDetails.forEach((detail, index) => {
+                const durationMins = detail.isColoring ? 420 : (detail.duration || 60);
+                const currentEnd = currentStart + durationMins;
+
+                const busyIds = [];
+                for (let stylistId in window.bookedStylistWindows || {}) {
+                    const windows = window.bookedStylistWindows[stylistId] || [];
+                    for (let win of windows) {
+                        const [sh, sm] = win.start.split(':').map(Number);
+                        const [eh, em] = win.end.split(':').map(Number);
+                        const busyStartMins = sh * 60 + sm;
+                        const busyEndMins = eh * 60 + em;
+
+                        // Check overlap
+                        if (currentStart < busyEndMins && currentEnd > busyStartMins) {
+                            busyIds.push(Number(stylistId));
+                            break;
+                        }
+                    }
+                }
+                busyStylistsMap[index] = busyIds;
+
+                currentStart = currentEnd;
+            });
+
+            applyBusyStylists();
+        };
+
+        let lastFetchedDate = '';
+        window.fetchDaySchedule = function (date) {
+            if (!date) return;
+
+            // If the date has not changed, we don't need to fetch from the server!
+            // Just recalculate everything locally instantly!
+            if (date === lastFetchedDate) {
+                window.updateTimeSlots();
+                calculateConflictsLocally();
+                return;
+            }
+
+            if (activeAvailabilityRequest) {
+                activeAvailabilityRequest.abort();
+            }
+
+            activeAvailabilityRequest = $.ajax({
                 url: "{{ route('booking.check_stylist_availability') }}",
                 method: 'POST',
                 data: {
                     _token: "{{ csrf_token() }}",
                     reservation_date: date,
-                    reservation_time: time,
+                    reservation_time: '', // empty to get all windows for the day
                     selected_details: selectedDetails.map(d => ({id: d.id}))
                 },
                 success: function (response) {
+                    activeAvailabilityRequest = null;
+                    lastFetchedDate = date;
+
                     if (response.is_holiday) {
                         alert(response.message || 'Salon tutup pada tanggal ini.');
                         busyStylistsMap = {};
-                        applyBusyStylists(); // Clear current
+                        offWorkStylists = [];
+                        window.bookedStylistWindows = {};
+                        applyBusyStylists();
+                        window.updateTimeSlots();
                         return;
                     }
-                    busyStylistsMap = response.conflicts;
+
                     offWorkStylists = response.off_work_ids || [];
-                    applyBusyStylists();
+                    window.bookedStylistWindows = response.booked_windows || {};
+                    
+                    // Recalculate everything locally instantly!
+                    window.updateTimeSlots();
+                    calculateConflictsLocally();
+                },
+                error: function (xhr, status, error) {
+                    if (status !== 'abort') {
+                        activeAvailabilityRequest = null;
+                    }
                 }
             });
         };
 
         function applyBusyStylists() {
-            selectedDetails.forEach((d, index) => {
-                const busyIds = busyStylistsMap[index] || [];
-                const container = document.querySelector(`.stylist-grid[data-detail-id="${d.id}"]`);
-                if (!container) return;
+            const globalGrid = document.getElementById('global_stylist_grid');
+            if (!globalGrid) return;
 
-                const cards = container.querySelectorAll('.stylist-card-modern');
-                cards.forEach(card => {
-                    const sid = parseInt(card.getAttribute('data-stylist-id'));
-                    const isOff = offWorkStylists.includes(sid);
-                    const isBusy = busyIds.includes(sid);
-
-                    // Reset special classes first
-                    card.classList.remove('busy', 'disabled');
-                    card.style.display = '';
-
-                    if (isOff) {
-                        card.style.display = 'none'; // Completely hide if off work
-                    } else if (isBusy) {
-                        card.classList.add('busy', 'disabled');
-                    } else {
-                        // Normal state
-                    }
-
-                    // If selected stylist becomes unavailable, reset
-                    if (d.stylistId == sid && (isOff || isBusy)) {
-                        card.classList.remove('active');
-                        d.stylistId = null;
-                        d.stylistKategori = null;
-                        renderSelectedTreatments(); // Refresh to show price reset
-                    }
-                });
+            // Collect all busy IDs across all selected treatments
+            const allBusyIds = new Set();
+            Object.values(busyStylistsMap).forEach(busyIds => {
+                busyIds.forEach(id => allBusyIds.add(id));
             });
 
-            // Also update the global stylist grid
-            const globalGrid = document.getElementById('global_stylist_grid');
-            if (globalGrid) {
-                const globalCards = globalGrid.querySelectorAll('.stylist-card-modern');
-                globalCards.forEach(card => {
-                    const sid = card.getAttribute('data-stylist-id');
-                    if (!sid) return; // Skip reset card
-                    const isOff = offWorkStylists.includes(parseInt(sid));
-                    card.style.display = isOff ? 'none' : '';
-                });
-            }
+            const cards = globalGrid.querySelectorAll('.stylist-card-modern');
+            cards.forEach(card => {
+                const sid = parseInt(card.getAttribute('data-stylist-id'));
+                if (!sid) return; // Skip "Reset" card
+
+                const isOff = offWorkStylists.includes(sid);
+                const isBusy = allBusyIds.has(sid);
+
+                card.classList.remove('busy', 'disabled');
+                
+                if (isOff) {
+                    card.classList.add('disabled');
+                    card.style.display = 'none'; // Optional: hide off-work
+                } else {
+                    card.style.display = '';
+                    if (isBusy) {
+                        card.classList.add('busy', 'disabled');
+                    }
+                }
+
+                // If currently selected stylist becomes unavailable, reset global selection
+                const currentStylistId = selectedDetails.length > 0 ? selectedDetails[0].stylistId : null;
+                if (currentStylistId == sid && (isOff || isBusy)) {
+                    const resetCard = globalGrid.querySelector('[data-stylist-id=""]');
+                    if (resetCard) {
+                        // Manually trigger reset state
+                        globalGrid.querySelectorAll('.stylist-card-modern').forEach(c => c.classList.remove('active'));
+                        resetCard.classList.add('active');
+                        selectedDetails.forEach(d => {
+                            d.stylistId = null;
+                            d.stylistKategori = null;
+                        });
+                        renderSelectedTreatments();
+                    }
+                }
+            });
         }
 
         window.updateItemStylistCards = function (detailId, stylistId, element) {
+            resetLastCreatedBookingId();
             const item = selectedDetails.find(d => d.id === detailId);
             if (!item) return;
 
@@ -1292,7 +1751,16 @@
             }
         };
 
+        function resetLastCreatedBookingId() {
+            window.lastCreatedBookingId = null;
+        }
+
         window.updateGlobalStylist = function (stylistId, element) {
+            // If the clicked card is disabled (off‑work or busy), ignore selection
+            if (element.classList.contains('disabled')) {
+                return;
+            }
+            resetLastCreatedBookingId();
             const kat = stylistId ? element.getAttribute('data-kategori') : null;
 
             // UI Update for Global
@@ -1300,11 +1768,8 @@
             element.classList.add('active');
 
             selectedDetails.forEach(d => {
-                // We only apply this to details that have stylist selection enabled
-                if (d.hasStylistPrice) {
-                    d.stylistId = stylistId;
-                    d.stylistKategori = kat;
-                }
+                d.stylistId = stylistId;
+                d.stylistKategori = kat;
             });
             renderSelectedTreatments();
         };
@@ -1314,19 +1779,42 @@
             renderSelectedTreatments();
         }
 
-        // Trigger availability check when date or time changes
-        document.getElementById('reservation_date').addEventListener('change', checkStylistAvailability);
-        document.getElementById('reservation_time').addEventListener('change', checkStylistAvailability);
+        // Jalankan pengecekan ketersediaan stylist dan jam saat halaman dimuat
+        if (document.getElementById('reservation_date').value) {
+            fetchDaySchedule(document.getElementById('reservation_date').value);
+        }
+
+        document.getElementById('reservation_date').addEventListener('change', function() {
+            resetLastCreatedBookingId();
+            fetchDaySchedule(this.value);
+        });
+        // Tidak ada event change pada reservation_time (hidden input),
+        // klik tombol jam sudah otomatis trigger checkStylistAvailability.
 
         window.removeDetail = function (id) {
+            resetLastCreatedBookingId();
             selectedDetails = selectedDetails.filter(d => d.id !== id);
+            
+            // Also uncheck the checkbox if it exists in the UI (catalog)
+            const checkbox = document.getElementById(`detail_${id}`);
+            if (checkbox) {
+                checkbox.checked = false;
+                const label = checkbox.nextElementSibling;
+                if (label) {
+                    label.classList.remove('bg-white', 'border-primary', 'shadow-sm', 'bg-light-primary');
+                    const icon = label.querySelector('.check-icon');
+                    if (icon) icon.style.display = 'none';
+                }
+            }
+            
             renderSelectedTreatments();
-            checkStylistAvailability();
+            fetchDaySchedule(document.getElementById('reservation_date').value);
         };
 
         // Modal Add Detail logic
         document.querySelectorAll('.add-detail-btn').forEach(btn => {
             btn.addEventListener('click', function () {
+                resetLastCreatedBookingId();
                 const id = parseInt(this.getAttribute('data-id'));
                 const parentId = parseInt(this.getAttribute('data-parent-id'));
                 const parentName = this.getAttribute('data-parent-name');
@@ -1336,10 +1824,15 @@
                     return;
                 }
 
-                // New logic: Check if another variant of the same treatment is already added
-                if (selectedDetails.some(d => d.parentId === parentId)) {
-                    alert(`Layanan dari kategori "${parentName}" sudah ditambahkan. \n\nMohon maaf, Anda hanya dapat memilih satu jenis layanan untuk setiap kategori treatment yang sama demi keamanan perawatan.`);
-                    return;
+                // If another variant of the same treatment is already added, ask to replace it
+                const existingIndex = selectedDetails.findIndex(d => d.parentId === parentId);
+                if (existingIndex !== -1) {
+                    if (confirm(`Kategori "${parentName}" sudah ada di daftar. Ganti dengan varian ini?`)) {
+                        // Remove the old one
+                        selectedDetails.splice(existingIndex, 1);
+                    } else {
+                        return;
+                    }
                 }
 
                 selectedDetails.push({
@@ -1356,11 +1849,14 @@
                     isPromo: this.getAttribute('data-is-promo') === '1',
                     promoType: this.getAttribute('data-promo-type'),
                     promoValue: parseInt(this.getAttribute('data-promo-value') || 0),
-                    isColoring: this.getAttribute('data-is-coloring') === '1'
+                    isColoring: this.getAttribute('data-is-coloring') === '1',
+                    image: this.getAttribute('data-image'),
+                    stylistId: (selectedDetails.length > 0 && selectedDetails[0].stylistId) ? selectedDetails[0].stylistId : urlStylistId,
+                    stylistKategori: (selectedDetails.length > 0 && selectedDetails[0].stylistKategori) ? selectedDetails[0].stylistKategori : urlStylistKategori
                 });
 
                 renderSelectedTreatments();
-                checkStylistAvailability();
+                fetchDaySchedule(document.getElementById('reservation_date').value);
                 // Feedback visual
                 this.classList.replace('btn-primary', 'btn-success');
                 this.innerText = 'Ditambah';
@@ -1451,14 +1947,6 @@
                     const currentPrice = detail.customPrice !== undefined ? detail.customPrice : basePrice;
 
                     let sNameText = '';
-                    if (detail.hasStylistPrice) {
-                        let sName = 'Belum dipilih';
-                        if (detail.stylistId) {
-                            const foundStylist = allStylists.find(s => s.id == detail.stylistId);
-                            if (foundStylist) sName = foundStylist.name;
-                        }
-                        sNameText = `<div class="extra-small text-muted">Stylist: ${sName}</div>`;
-                    }
 
                     let discountBadge = '';
                     if (hasColoringLoyalty && detail.isColoring) {
@@ -1481,7 +1969,21 @@
                 summaryHtml += '</div>';
                 document.getElementById('summaryTreatments').innerHTML = summaryHtml;
 
-                document.getElementById('summaryStylist').innerText = '(Per Layanan)';
+                // Update global summary stylist
+                let globalStylistName = 'Default';
+                if (selectedDetails.length > 0 && selectedDetails[0].stylistId) {
+                    const found = allStylists.find(s => s.id == selectedDetails[0].stylistId);
+                    if (found) {
+                        globalStylistName = found.name;
+                    }
+                } else {
+                    const activeGlobalCard = document.querySelector('#global_stylist_grid .stylist-card-modern.active');
+                    if (activeGlobalCard) {
+                        const nameText = activeGlobalCard.querySelector('.stylist-name').innerText;
+                        globalStylistName = (nameText === 'Reset' ? 'Default' : nameText);
+                    }
+                }
+                document.getElementById('summaryStylist').innerText = globalStylistName;
                 document.getElementById('summaryDatetime').innerText = dateInput.value + ' ' + timeInput.value;
 
                 const customName = document.getElementById('customer_name_input');
@@ -1520,7 +2022,7 @@
             const method = this.payment_method.value;
             if (!method) { alert('Pilih metode pembayaran.'); return; }
 
-            document.getElementById('confirmPaymentMethod').innerText = (method === 'cash' ? 'Bayar Tunai (Cash)' : 'Transfer Bank (Midtrans)');
+            document.getElementById('confirmPaymentMethod').innerText = (method === 'Tunai' ? 'Bayar Tunai' : (method === 'QRIS' ? 'QRIS / E-Wallet' : 'Transfer Bank (Midtrans)'));
             document.getElementById('confirmTotal').innerText = document.getElementById('totalPriceDisplay1').innerText;
 
             modalConfirm.show();
@@ -1531,31 +2033,75 @@
             submitBooking();
         });
 
+        function showModalStatus(state, title, desc, actionHtml) {
+            let iconHtml = '';
+            if (state === 'loading') {
+                iconHtml = '<i class="ti ti-loader text-primary spin" style="font-size: 3.5rem; display: inline-block;"></i>';
+            } else if (state === 'success') {
+                iconHtml = '<i class="ti ti-circle-check text-success" style="font-size: 3.5rem;"></i>';
+            } else if (state === 'pending') {
+                iconHtml = '<i class="ti ti-clock text-warning" style="font-size: 3.5rem;"></i>';
+            } else if (state === 'error') {
+                iconHtml = '<i class="ti ti-circle-x text-danger" style="font-size: 3.5rem;"></i>';
+            } else if (state === 'question') {
+                iconHtml = '<i class="ti ti-help-circle text-info" style="font-size: 3.5rem;"></i>';
+            }
+
+            $('#modalStatusIconContainer').html(iconHtml);
+            $('#modalStatusTitle').text(title);
+            if (desc.startsWith('<') || desc.includes('<strong>')) {
+                $('#modalStatusDesc').html(desc);
+            } else {
+                $('#modalStatusDesc').text(desc);
+            }
+            if (actionHtml !== undefined && actionHtml !== null) {
+                $('#modalStatusAction').html(actionHtml);
+            }
+            $('#modalProses').modal('show');
+        }
+
         function submitBooking() {
             const form = $(finalForm);
             const submitBtn = form.find('button[type="submit"]');
 
             submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...');
 
+            // Show loading modal immediately to guide user
+            showModalStatus('loading', 'Booking sedang diproses...', 'Mohon tunggu sebentar, data booking Anda sedang disimpan.', '');
+
+            const bookingId = window.lastCreatedBookingId;
+            const url = bookingId ? `/booking/${bookingId}/update-payment-method` : form.attr('action');
+
             $.ajax({
-                url: form.attr('action'),
+                url: url,
                 method: 'POST',
                 data: form.serialize(),
                 success: function (response) {
-                    if (response.payment_method === 'transfer' && response.snap_token) {
-                        handleMidtrans(response.snap_token, response.booking_id);
+                    if (response.booking_id) {
+                        window.lastCreatedBookingId = response.booking_id;
+                    }
+                    if ((response.payment_method === 'Transfer' || response.payment_method === 'QRIS' || response.payment_method === 'transfer') && response.snap_token) {
+                        handleMidtrans(response.snap_token, response.booking_id || bookingId);
                     } else {
                         showSuccessFinal(response.payment_method);
                     }
                 },
                 error: function (xhr) {
-                    alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || 'Gagal menyimpan booking'));
                     submitBtn.prop('disabled', false).text('✅ Bayar & Konfirmasi');
+                    showModalStatus(
+                        'error',
+                        'Booking Gagal ❌',
+                        xhr.responseJSON?.message || 'Terjadi kesalahan saat menyimpan data booking.',
+                        '<button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Tutup</button>'
+                    );
                 }
             });
         }
 
         function handleMidtrans(token, bookingId) {
+            // Hide loading modal first so Midtrans overlay opens correctly
+            $('#modalProses').modal('hide');
+
             snap.pay(token, {
                 onSuccess: function (result) {
                     // Update database secara frontend (karena webhook midtrans tidak jalan di localhost)
@@ -1574,54 +2120,95 @@
                     showSuccessFinal('transfer');
                 },
                 onError: function (result) {
-                    $('#modalStatusTitle').text('Pembayaran Gagal ❌');
-                    $('#modalStatusDesc').text('Mohon maaf, transaksi Anda gagal diproses.');
-                    $('#modalStatusAction').html('<a href="{{ route("booking.history") }}" class="btn btn-primary px-4">Lihat Riwayat Booking</a>');
-                    $('#modalProses').modal('show');
+                    const isStaff = {{ ($isStaff || strtolower(Auth::user()->role) === 'karyawan') ? 'true' : 'false' }};
+                    const historyUrl = isStaff ? "{{ route('admin.bookings.index') }}" : "{{ route('booking.history') }}";
+                    const btnText = isStaff ? 'Lihat Status Pemesanan' : 'Lihat Riwayat Booking';
+                    showModalStatus(
+                        'error',
+                        'Pembayaran Gagal ❌',
+                        'Mohon maaf, transaksi Anda gagal diproses.',
+                        `<a href="${historyUrl}" class="btn btn-primary px-4">${btnText}</a>`
+                    );
                 },
                 onClose: function () {
-                    showSuccessFinal('transfer'); // Menampilkan pesan 'Booking Menunggu Pembayaran'
+                    const isStaff = {{ ($isStaff || strtolower(Auth::user()->role) === 'karyawan') ? 'true' : 'false' }};
+                    const historyUrl = isStaff ? "{{ route('admin.bookings.index') }}" : "{{ route('booking.history') }}";
+                    Swal.fire({
+                        title: 'Pembayaran Belum Selesai ⏳',
+                        text: isStaff
+                            ? 'Apakah Anda ingin mencoba lagi/mengganti metode pembayaran, atau bayar nanti melalui Status Pemesanan?'
+                            : 'Apakah Anda ingin mencoba lagi/mengganti metode pembayaran, atau bayar nanti melalui Riwayat Pemesanan?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: '🔄 Coba Lagi / Ganti Metode',
+                        cancelButtonText: isStaff ? '📅 Bayar Nanti (Ke Status Pemesanan)' : '📅 Bayar Nanti (Ke Riwayat)',
+                        confirmButtonColor: '#EA8290',
+                        cancelButtonColor: '#6c757d',
+                        allowOutsideClick: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // User stays on page to change method or try again
+                            const form = $(finalForm);
+                            const submitBtn = form.find('button[type="submit"]');
+                            submitBtn.prop('disabled', false).text('✅ Bayar & Konfirmasi');
+                        } else {
+                            // Redirect to history/status
+                            window.location.href = historyUrl;
+                        }
+                    });
                 }
             });
         }
 
         function showSuccessFinal(method) {
             const isStaff = {{ ($isStaff || strtolower(Auth::user()->role) === 'karyawan') ? 'true' : 'false' }};
+            const historyUrl = isStaff ? "{{ route('admin.bookings.index') }}" : "{{ route('booking.history') }}";
+            const btnText = isStaff ? 'Lihat Status Pemesanan' : 'Lihat Riwayat Booking';
+            const actionHtml = `<a href="${historyUrl}" class="btn btn-primary px-4">${btnText}</a>`;
+            const m = method ? method.toLowerCase() : '';
 
-            if (method === 'cash') {
+            if (m === 'tunai') {
                 if (isStaff) {
-                    $('#modalStatusTitle').text('Pembayaran Berhasil! ✅');
-                    $('#modalStatusDesc').text('Booking telah berhasil dicatat dan status pembayaran ditandai sebagai LUNAS.');
+                    showModalStatus(
+                        'success',
+                        'Booking Berhasil Dicatat! 📅',
+                        'Booking telah berhasil dicatat.',
+                        actionHtml
+                    );
                 } else {
-                    $('#modalStatusTitle').text('Booking Berhasil! 📅');
-                    $('#modalStatusDesc').text('Booking Anda telah masuk ke sistem. Silakan lakukan pembayaran di lokasi (Cash).');
+                    showModalStatus(
+                        'success',
+                        'Booking Berhasil! 📅',
+                        'Booking Anda telah masuk ke sistem. Silakan lakukan pembayaran tunai di lokasi (salon) setelah treatment selesai.',
+                        actionHtml
+                    );
                 }
             } else {
-                $('#modalStatusTitle').text('Booking Menunggu Pembayaran ⏳');
-                $('#modalStatusDesc').text('Pesanan Anda telah dicatat. Mohon selesaikan pembayaran agar jadwal dapat dikonfirmasi.');
+                showModalStatus(
+                    'pending',
+                    'Booking Menunggu Pembayaran ⏳',
+                    'Pesanan Anda telah dicatat. Mohon selesaikan pembayaran agar jadwal dapat dikonfirmasi.',
+                    actionHtml
+                );
             }
-
-            $('#modalStatusAction').html('<a href="{{ route("booking.history") }}" class="btn btn-primary px-4">Lihat Riwayat Booking</a>');
-            $('#modalProses').modal('show');
         }
 
         function showPendingPayment(bookingId) {
-            $('#modalStatusTitle').text('Lanjutkan Pembayaran?');
-            $('#modalStatusDesc').html(`
-                    Pembayaran belum selesai. Anda bisa melanjutkan pembayaran melalui Riwayat Booking, 
-                    atau jika ingin <strong>bayar di tempat</strong>, Anda bisa mengganti metodenya sekarang.
-                `);
-
-            $('#modalStatusAction').html(`
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-outline-secondary" onclick="window.location.href='{{ route('booking.history') }}'">Nanti Saja</button>
-                        <button class="btn btn-success" onclick="switchPaymentToCash(${bookingId})">Ganti ke Bayar Tunai (Cash)</button>
-                    </div>
-                `);
-            $('#modalProses').modal('show');
+            const isStaff = {{ ($isStaff || strtolower(Auth::user()->role) === 'karyawan') ? 'true' : 'false' }};
+            const historyUrl = isStaff ? "{{ route('admin.bookings.index') }}" : "{{ route('booking.history') }}";
+            const desc = isStaff
+                ? `Pembayaran belum selesai. Anda bisa melanjutkan pembayaran melalui Status Pemesanan, atau jika ingin <strong>bayar di tempat</strong>, Anda bisa mengganti metodenya sekarang.`
+                : `Pembayaran belum selesai. Anda bisa melanjutkan pembayaran melalui Riwayat Booking, atau jika ingin <strong>bayar di tempat</strong>, Anda bisa mengganti metodenya sekarang.`;
+            const actionHtml = `
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-secondary" onclick="window.location.href='${historyUrl}'">Nanti Saja</button>
+                    <button class="btn btn-success" onclick="switchPaymentToTunai(${bookingId})">Ganti ke Bayar Tunai</button>
+                </div>
+            `;
+            showModalStatus('question', 'Lanjutkan Pembayaran?', desc, actionHtml);
         }
 
-        window.switchPaymentToCash = function (id) {
+        window.switchPaymentToTunai = function (id) {
             const btn = event.target;
             $(btn).prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-2"></span>Memproses...');
 
@@ -1630,14 +2217,19 @@
                 method: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',
-                    payment_method: 'cash'
+                    payment_method: 'tunai'
                 },
                 success: function (response) {
-                    showSuccessFinal('cash');
+                    showSuccessFinal('tunai');
                 },
                 error: function (xhr) {
-                    alert('Gagal mengubah metode: ' + (xhr.responseJSON?.message || 'Error'));
-                    $(btn).prop('disabled', false).text('Ganti ke Bayar Tunai (Cash)');
+                    $(btn).prop('disabled', false).text('Ganti ke Bayar Tunai');
+                    Swal.fire({
+                        title: 'Gagal Mengubah Metode ❌',
+                        text: xhr.responseJSON?.message || 'Terjadi kesalahan saat mengubah metode pembayaran.',
+                        icon: 'error',
+                        confirmButtonColor: '#EA8290'
+                    });
                 }
             });
         };

@@ -237,6 +237,15 @@
             color: var(--primary-color);
         }
 
+        .form-input.is-invalid {
+            border-color: #dc3545 !important;
+            background-color: #fff8f8;
+        }
+
+        .form-input.is-invalid+i {
+            color: #dc3545 !important;
+        }
+
         .btn-elegant {
             width: 100%;
             padding: 14px;
@@ -449,20 +458,26 @@
                                     <div class="form-group-custom">
                                         <label>Email</label>
                                         <div class="input-wrapper">
-                                            <input type="email" name="email" class="form-input"
+                                            <input type="email" name="email" class="form-input @error('email') is-invalid @enderror"
                                                 value="{{ old('email') }}" placeholder="email@example.com">
                                             <i class="ti ti-mail"></i>
                                         </div>
+                                        @error('email')
+                                            <div class="text-danger extra-small mt-1 px-1" style="font-size: 0.72rem; font-weight: 500;"><i class="ti ti-alert-circle me-1"></i>{{ $message }}</div>
+                                        @enderror
                                     </div>
                                 </div>
                                 <div class="col-6">
                                     <div class="form-group-custom">
                                         <label>Telepon</label>
                                         <div class="input-wrapper">
-                                            <input type="text" name="phone" class="form-input"
+                                            <input type="text" name="phone" class="form-input @error('phone') is-invalid @enderror"
                                                 value="{{ old('phone') }}" placeholder="08xxxxxxx">
                                             <i class="ti ti-phone"></i>
                                         </div>
+                                        @error('phone')
+                                            <div class="text-danger extra-small mt-1 px-1" style="font-size: 0.72rem; font-weight: 500;"><i class="ti ti-alert-circle me-1"></i>{{ $message }}</div>
+                                        @enderror
                                     </div>
                                 </div>
                             </div>
@@ -470,10 +485,13 @@
                             <div class="form-group-custom">
                                 <label>Username</label>
                                 <div class="input-wrapper">
-                                    <input type="text" name="username" class="form-input" value="{{ old('username') }}"
+                                    <input type="text" name="username" class="form-input @error('username') is-invalid @enderror" value="{{ old('username') }}"
                                         placeholder="username">
                                     <i class="ti ti-user-circle"></i>
                                 </div>
+                                @error('username')
+                                    <div class="text-danger extra-small mt-1 px-1" style="font-size: 0.72rem; font-weight: 500;"><i class="ti ti-alert-circle me-1"></i>{{ $message }}</div>
+                                @enderror
                             </div>
 
                             <div class="row g-2">
@@ -570,6 +588,31 @@
                 e.preventDefault();
                 registerAlert.innerHTML = `<div class="alert alert-danger border-0 small py-2 mb-3">Password konfirmasi tidak sesuai.</div>`;
             }
+        });
+
+        // Clear validation warnings on typing/focusing register fields
+        registerForm.querySelectorAll('.form-input').forEach(input => {
+            ['input', 'focus'].forEach(evt => {
+                input.addEventListener(evt, function() {
+                    // Hapus warna merah invalid dari input ini
+                    this.classList.remove('is-invalid');
+                    
+                    // Cari note error di bawah input ini dan hapus
+                    const group = this.closest('.form-group-custom');
+                    if (group) {
+                        const errorNote = group.querySelector('.text-danger');
+                        if (errorNote) {
+                            errorNote.remove();
+                        }
+                    }
+                    
+                    // Hapus alert notifikasi di atas register form jika ada
+                    const topAlert = document.querySelector('#registerView .alert-danger');
+                    if (topAlert) {
+                        topAlert.remove();
+                    }
+                });
+            });
         });
 
         @if(session('show_welcome_wa'))

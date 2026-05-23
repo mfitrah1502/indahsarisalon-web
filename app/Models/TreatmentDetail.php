@@ -50,9 +50,9 @@ class TreatmentDetail extends Model
     {
         $treatment = $this->treatment;
         $originalPrice = $this->price;
-        $isPromo = $treatment->is_promo;
-        $promoType = $treatment->promo_type;
-        $promoValue = $treatment->promo_value;
+        $isPromo = ($treatment && $treatment->is_promo) ? $treatment->matchesUser($user) : false;
+        $promoType = $treatment ? $treatment->promo_type : null;
+        $promoValue = $treatment ? $treatment->promo_value : 0;
 
         $finalPrice = (float)$originalPrice;
 
@@ -68,9 +68,9 @@ class TreatmentDetail extends Model
 
         // Apply Loyalty (Coloring 35%)
         $currentUser = $user ?? auth()->user();
-        if ($currentUser) {
-            $isColoring = $treatment->category && stripos($treatment->category->name, 'Coloring') !== false;
-            if ($isColoring && $currentUser->has_coloring_loyalty) {
+        if ($currentUser && $treatment) {
+            $isColoring = $treatment->category && $treatment->category->name && stripos($treatment->category->name, 'Coloring') !== false;
+            if ($isColoring && isset($currentUser->has_coloring_loyalty) && $currentUser->has_coloring_loyalty) {
                 $finalPrice -= ($finalPrice * 35 / 100);
             }
         }
@@ -89,10 +89,10 @@ class TreatmentDetail extends Model
         }
 
         $treatment = $this->treatment;
-        $isPromo = $treatment->is_promo;
-        $promoType = $treatment->promo_type;
-        $promoValue = $treatment->promo_value;
         $currentUser = $user ?? auth()->user();
+        $isPromo = ($treatment && $treatment->is_promo) ? $treatment->matchesUser($currentUser) : false;
+        $promoType = $treatment ? $treatment->promo_type : null;
+        $promoValue = $treatment ? $treatment->promo_value : 0;
 
         $prices = array_filter([(int)$this->price_senior, (int)$this->price_junior]);
         $min = count($prices) > 0 ? min($prices) : (int)$this->price;
@@ -108,9 +108,9 @@ class TreatmentDetail extends Model
                     $val = (float)$promoValue;
                 }
             }
-            if ($currentUser) {
-                $isColoring = $treatment->category && stripos($treatment->category->name, 'Coloring') !== false;
-                if ($isColoring && $currentUser->has_coloring_loyalty) {
+            if ($currentUser && $treatment) {
+                $isColoring = $treatment->category && $treatment->category->name && stripos($treatment->category->name, 'Coloring') !== false;
+                if ($isColoring && isset($currentUser->has_coloring_loyalty) && $currentUser->has_coloring_loyalty) {
                     $val -= ($val * 35 / 100);
                 }
             }

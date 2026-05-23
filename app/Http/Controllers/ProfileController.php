@@ -79,22 +79,46 @@ class ProfileController extends Controller
             'username' => 'required|string|max:255|unique:users,username,' . $user->id,
             'phone' => 'nullable|string|max:15',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'nickname' => 'nullable|string|max:255',
+            'birth_place' => 'nullable|string|max:255',
+            'birth_date' => 'nullable|date',
+            'gender' => 'nullable|string|max:50',
+            'emergency_contact' => 'nullable|string|max:50',
+            'bank_account_name' => 'nullable|string|max:255',
+            'bank_account_number' => 'nullable|string|max:50',
+            'last_education' => 'nullable|string|max:255',
         ]);
 
-        $user->update([
+        $data = [
             'name' => $request->name,
             'username' => $request->username,
             'phone' => $request->phone,
             'email' => $request->email,
-        ]);
+        ];
+
+        if ($user->role != 'pelanggan') {
+            $data = array_merge($data, [
+                'nickname' => $request->nickname,
+                'birth_place' => $request->birth_place,
+                'birth_date' => $request->birth_date,
+                'gender' => $request->gender,
+                'emergency_contact' => $request->emergency_contact,
+                'bank_account_name' => $request->bank_account_name,
+                'bank_account_number' => $request->bank_account_number,
+                'last_education' => $request->last_education,
+            ]);
+        }
+
+        $user->update($data);
 
         return response()->json([
             'success' => true, 
             'message' => 'Informasi profil berhasil diperbarui.',
-            'name' => $user->name,
-            'username' => $user->username,
-            'phone' => $user->phone,
-            'email' => $user->email
+            'data' => $user->only([
+                'name', 'username', 'phone', 'email', 'nickname', 'birth_place', 
+                'birth_date', 'gender', 'emergency_contact', 'bank_account_name', 
+                'bank_account_number', 'last_education'
+            ])
         ]);
     }
 

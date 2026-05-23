@@ -12,8 +12,8 @@
             <div class="modal-body p-0">
                 <div id="promoCarousel" class="carousel slide" data-bs-ride="carousel">
                     <div class="carousel-inner">
-                        @foreach($promoTreatments as $index => $promo)
-                            <div class="carousel-item {{ $index == 0 ? 'active' : '' }}">
+                        @foreach($promoTreatments as $promo)
+                            <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
                                 <div class="row g-0">
                                     <div class="col-md-6">
                                         @php
@@ -49,7 +49,7 @@
                                             @endforeach
                                         </div>
 
-                                        <a href="{{ route('booking.select', $promo->id) }}" class="btn btn-primary btn-lg rounded-pill shadow-sm">
+                                        <a href="{{ route('booking.index') }}?treatment_id={{ $promo->id }}" class="btn text-white btn-lg rounded-pill shadow-sm" style="background-color: #EA8290; border-color: #EA8290;">
                                             Booking Sekarang <i class="ti ti-arrow-right ms-2"></i>
                                         </a>
                                     </div>

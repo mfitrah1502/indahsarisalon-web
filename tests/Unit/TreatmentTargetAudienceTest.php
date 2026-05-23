@@ -62,5 +62,18 @@ class TreatmentTargetAudienceTest extends TestCase
         $this->assertFalse($tPlatinumNew->matchesUser($uGold), 'Gold user should NOT see new Platinum treatments');
         $this->assertTrue($tPlatinumLegacy->matchesUser($uPlatinum), 'Platinum user should see legacy Platinum treatments');
         $this->assertTrue($tPlatinumNew->matchesUser($uPlatinum), 'Platinum user should see new Platinum treatments');
+
+        // --- 5. COMMUNITY AUDIENCE ---
+        $tCommunityLegacy = new Treatment(['target_audience' => 'Komunitas (Grup Awal)']);
+        $tCommunityLegacy2 = new Treatment(['target_audience' => 'Komunitas']);
+        $tCommunityNew = new Treatment(['target_audience' => 'community']);
+
+        $this->assertFalse($tCommunityLegacy->matchesUser(null), 'Guest should NOT see legacy Komunitas (Grup Awal) treatments');
+        $this->assertFalse($tCommunityLegacy2->matchesUser(null), 'Guest should NOT see legacy Komunitas treatments');
+        $this->assertFalse($tCommunityNew->matchesUser(null), 'Guest should NOT see new community treatments');
+
+        $this->assertTrue($tCommunityLegacy->matchesUser($uRegular), 'Logged-in user should see legacy Komunitas (Grup Awal) treatments');
+        $this->assertTrue($tCommunityLegacy2->matchesUser($uRegular), 'Logged-in user should see legacy Komunitas treatments');
+        $this->assertTrue($tCommunityNew->matchesUser($uRegular), 'Logged-in user should see new community treatments');
     }
 }

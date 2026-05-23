@@ -15,6 +15,23 @@
         background: #f8f9fa !important;
     }
 
+    /* Styling Tanggal Reservasi agar Terang, Jelas, dan Interaktif */
+    #reservation_date {
+        background-color: #fff !important;
+        color: #EA8290 !important;
+        border: 2px solid #EA8290 !important;
+        opacity: 1 !important;
+        font-weight: 800 !important;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(234, 130, 144, 0.15) !important;
+    }
+    #reservation_date:hover {
+        background-color: #fff5f6 !important;
+        border-color: #d66877 !important;
+        box-shadow: 0 6px 16px rgba(234, 130, 144, 0.25) !important;
+        transform: translateY(-1px);
+    }
+
     /* Stylist Card Modern Styles */
     .stylist-grid {
         display: flex;
@@ -171,6 +188,97 @@
         cursor: pointer;
     }
 
+    /* === TIME SLOT BUTTONS === */
+    .time-slot-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+    }
+    .time-slot-btn {
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 2px solid #EA8290;
+        background: #fff;
+        color: #EA8290;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .time-slot-btn:hover {
+        background: #fce4e7;
+        border-color: #d6717e;
+    }
+    .time-slot-btn.selected {
+        background: #EA8290;
+        color: #fff;
+        box-shadow: 0 3px 10px rgba(234,130,144,0.35);
+        transform: scale(1.05);
+    }
+    #timeSlotEmpty {
+        font-size: 0.82rem;
+        color: #aaa;
+        font-style: italic;
+    }
+
+    /* === TIME PERIOD GROUP HEADERS === */
+    .time-group-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        margin-top: 8px;
+        position: relative;
+        overflow: hidden;
+    }
+    .time-group-header::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: 0.08;
+        border-radius: 12px;
+        background: currentColor;
+    }
+    .time-group-icon-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+        position: relative;
+        z-index: 1;
+    }
+    .time-group-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        position: relative;
+        z-index: 1;
+    }
+    .time-group-badge {
+        font-size: 0.65rem;
+        font-weight: 600;
+        padding: 2px 9px;
+        border-radius: 20px;
+        position: relative;
+        z-index: 1;
+        margin-left: auto;
+    }
+    .time-group-divider {
+        height: 2px;
+        border-radius: 2px;
+        margin-bottom: 10px;
+        opacity: 0.15;
+    }
+
     /* Animation spin untuk loader icon */
     @keyframes spin {
         0% { transform: rotate(0deg); }
@@ -189,7 +297,12 @@
 
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white border-bottom">
-                    <h4 class="mb-1">📅 Booking Appointment</h4>
+                    <h4 class="mb-1 d-flex align-items-center gap-2">
+                        <span style="background: linear-gradient(135deg,#EA8290,#c4556a); border-radius:10px; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(234,130,144,0.4);">
+                            <i class="ti ti-calendar-event" style="color:#fff; font-size:18px;"></i>
+                        </span>
+                        Booking Appointment
+                    </h4>
                     <small class="text-muted">Ikuti langkah untuk menyelesaikan booking</small>
 
                     <!-- STEP INDICATOR -->
@@ -385,18 +498,35 @@
                                 @endphp
                                 <!-- TANGGAL -->
                                 <div class="col-md-3 mb-3" @if(request()->filled('reservation_date')) style="display: none;" @endif>
-                                    <label class="form-label">📅 Tanggal</label>
-                                    <input type="date" name="reservation_date" id="reservation_date" class="form-control"
-                                        min="{{ $initialDate }}" value="{{ request()->input('reservation_date', $initialDate) }}" required>
+                                    <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                        <i class="ti ti-calendar-filled" style="color:#EA8290; font-size:16px;"></i>
+                                        Tanggal Reservasi
+                                    </label>
+                                    <div class="position-relative">
+                                        <input type="text" name="reservation_date" id="reservation_date" class="form-control cursor-pointer"
+                                            min="{{ $initialDate }}" value="{{ request()->input('reservation_date', $initialDate) }}" required readonly style="padding-left: 40px; padding-right: 40px; font-weight: bold;">
+                                        <div class="position-absolute top-50 start-0 translate-middle-y ps-3 text-primary pointer-events-none" style="pointer-events: none; color: #EA8290 !important;">
+                                            <i class="ti ti-calendar fs-5"></i>
+                                        </div>
+                                        <div class="position-absolute top-50 end-0 translate-middle-y pe-3 text-primary pointer-events-none" style="pointer-events: none; color: #EA8290 !important;">
+                                            <i class="ti ti-chevron-down fs-6"></i>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- JAM -->
                                 <div class="{{ request()->filled('reservation_date') ? 'col-md-6' : 'col-md-3' }} mb-3">
-                                    <label class="form-label">⏰ Jam Reservasi</label>
-                                    <select name="reservation_time" id="reservation_time" class="form-select" required>
-                                        <option value="">-- Pilih Jam --</option>
-                                    </select>
-                                    <small class="text-muted extra-small">Batas reservasi: 09:00 - 17:00</small>
+                                    <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                        <i class="ti ti-clock-hour-4" style="color:#EA8290; font-size:16px;"></i>
+                                        Pilih Jam Reservasi
+                                    </label>
+                                    <!-- Hidden input yang dikirim ke server -->
+                                    <input type="hidden" name="reservation_time" id="reservation_time" required>
+                                    <!-- Grid tombol jam -->
+                                    <div class="time-slot-grid" id="timeSlotGrid">
+                                        <span id="timeSlotEmpty" class="text-muted small">Pilih tanggal terlebih dahulu...</span>
+                                    </div>
+                                    <!-- <small class="text-muted extra-small">Batas reservasi: 09:00 - 17:00</small> -->
                                 </div>
 
                             </div>
@@ -406,7 +536,12 @@
                     <!-- STEP 2 -->
                     <div class="tab-pane fade" id="step2">
                         <div class="p-3 rounded bg-light">
-                            <h5 class="mb-3">📋 Ringkasan Booking</h5>
+                            <h5 class="mb-3 d-flex align-items-center gap-2">
+                                <span style="background:linear-gradient(135deg,#4e73df,#224abe); border-radius:9px; width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(78,115,223,0.35);">
+                                    <i class="ti ti-clipboard-list" style="color:#fff; font-size:16px;"></i>
+                                </span>
+                                Ringkasan Booking
+                            </h5>
 
                             <p class="mb-1"><strong>Customer:</strong> <span id="summaryCustomer">{{ Auth::user()->name }}</span></p>
                             <p class="mb-1"><strong>No. HP:</strong> <span id="summaryPhone">{{ Auth::user()->phone ?? '-' }}</span></p>
@@ -428,7 +563,12 @@
                     <!-- STEP 3 -->
                     <div class="tab-pane fade" id="step3">
                         <div class="p-3 rounded bg-light">
-                            <h5 class="mb-3">💳 Pembayaran</h5>
+                            <h5 class="mb-3 d-flex align-items-center gap-2">
+                                <span style="background:linear-gradient(135deg,#1cc88a,#13855c); border-radius:9px; width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(28,200,138,0.35);">
+                                    <i class="ti ti-credit-card" style="color:#fff; font-size:16px;"></i>
+                                </span>
+                                Konfirmasi Pembayaran
+                            </h5>
 
                             <form method="POST" action="{{ route('booking.store') }}" id="finalBookingForm">
                                 @csrf
@@ -457,8 +597,9 @@
                                     </select>
                                 </div>
 
-                                <button type="submit" class="btn btn-success w-100">
-                                    ✅ Bayar & Konfirmasi
+                                <button type="submit" class="btn btn-success w-100 d-flex align-items-center justify-content-center gap-2" style="font-weight:700; font-size:1rem; padding:12px; border-radius:12px; box-shadow:0 4px 15px rgba(28,200,138,0.4);">
+                                    <i class="ti ti-circle-check-filled" style="font-size:20px;"></i>
+                                    Bayar & Konfirmasi Sekarang
                                 </button>
                             </form>
                         </div>
@@ -765,6 +906,8 @@
         });
 
         // Initialize variables
+        const urlStylistId = {{ request()->query('stylist_id') ? (int) request()->query('stylist_id') : 'null' }};
+        const urlStylistKategori = {!! request()->query('stylist_id') && ($preSelStylist = \App\Models\User::find(request()->query('stylist_id'))) ? json_encode(strtolower($preSelStylist->kategori)) : 'null' !!};
         const isStaff = @json($isStaff);
         const customers = @json($customers);
         let hasColoringLoyalty = {{ Auth::user()->has_coloring_loyalty ? 'true' : 'false' }};
@@ -935,8 +1078,7 @@
                 disable: holidayDates,
                 defaultDate: initialDateVal,
                 onChange: function(selectedDates, dateStr) {
-                    updateTimeSlots();
-                    checkStylistAvailability();
+                    fetchDaySchedule(dateStr);
                 }
             });
 
@@ -959,46 +1101,206 @@
             }
             findNextAvailable();
 
-            // 2. Generate Time Slots
-            function updateTimeSlots() {
+            // 2. Generate Time Slot BUTTONS
+            window.updateTimeSlots = function() {
                 const selectedDate = dateInput.value;
                 const now = new Date();
 
-                // Perbandingan tanggal lokal yang lebih akurat
                 const selectedDateObj = new Date(selectedDate);
                 const isToday = now.toDateString() === selectedDateObj.toDateString();
 
-                timeSelect.innerHTML = '<option value="">-- Pilih Jam --</option>';
+                const hasColoring = typeof selectedDetails !== 'undefined' && selectedDetails.some(d => d.isColoring);
+                const maxHour   = hasColoring ? 10 : 17;
+                const maxMinute = hasColoring ? 30 :  0;
 
-                for (let h = 9; h <= 17; h++) {
+                const currentStylistId = typeof selectedDetails !== 'undefined' && selectedDetails.length > 0
+                    ? selectedDetails[0].stylistId : null;
+                const busyWindows = (currentStylistId && window.bookedStylistWindows && window.bookedStylistWindows[currentStylistId])
+                    ? window.bookedStylistWindows[currentStylistId] : [];
+
+                const grid       = document.getElementById('timeSlotGrid');
+                const emptyNote  = document.getElementById('timeSlotEmpty');
+                const hiddenInput = document.getElementById('reservation_time');
+                const prevValue  = hiddenInput.value;
+
+                grid.innerHTML = '';
+                let hasSlots = false;
+
+                let morningSlots = [];
+                let afternoonSlots = [];
+                let eveningSlots = [];
+
+                for (let h = 9; h <= maxHour; h++) {
                     for (let m = 0; m < 60; m += 15) {
-                        // Batasi jam booking maksimal jam (Permintaan Client)
-                        if (h === 17 && m > 0) break;
+                        if (h === maxHour && m > maxMinute) break;
 
-                        const timeVal = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                        const timeVal = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 
-                        // Jika tanggal yang dipilih adalah hari ini, sembunyikan jam yang sudah lewat
+                        // Sembunyikan jam yang sudah lewat jika hari ini
                         if (isToday) {
-                            if (h < now.getHours() || (h === now.getHours() && m <= now.getMinutes())) {
-                                continue;
+                            if (h < now.getHours() || (h === now.getHours() && m <= now.getMinutes())) continue;
+                        }
+
+                        // Cek apakah jam ini + total durasi overlap dengan window yang sudah dibooking
+                        const timeMins = h * 60 + m;
+                        let totalDuration = 0;
+                        if (typeof selectedDetails !== 'undefined') {
+                            selectedDetails.forEach(d => {
+                                const durationMins = d.isColoring ? 420 : (d.duration || 60);
+                                totalDuration += durationMins;
+                            });
+                        }
+                        const endTimeMins = timeMins + totalDuration;
+
+                        // Cek apakah jam ini + total durasi melebihi jam operasional (tutup pukul 18:00)
+                        if (endTimeMins > 18 * 60) {
+                            continue; // Jangan sediakan jam ini jika total durasi melewati jam operasional
+                        }
+
+                        let isBusy = false;
+                        for (let bw of busyWindows) {
+                            const [sh, sm] = bw.start.split(':').map(Number);
+                            const [eh, em] = bw.end.split(':').map(Number);
+                            const busyStartMins = sh * 60 + sm;
+                            const busyEndMins = eh * 60 + em;
+                            
+                            // Check overlap: newStart < busyEnd AND newEnd > busyStart
+                            if (timeMins < busyEndMins && endTimeMins > busyStartMins) {
+                                isBusy = true;
+                                break;
                             }
                         }
 
-                        const option = document.createElement('option');
-                        option.value = timeVal;
-                        option.textContent = timeVal;
-                        timeSelect.appendChild(option);
+                        // Jika busy, SKIP (jangan tampilkan tombol)
+                        if (isBusy) continue;
+
+                        hasSlots = true;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'time-slot-btn' + (timeVal === prevValue ? ' selected' : '');
+                        btn.textContent = timeVal;
+                        btn.setAttribute('data-time', timeVal);
+                        btn.addEventListener('click', function() {
+                            // Deselect all
+                            grid.querySelectorAll('.time-slot-btn').forEach(b => b.classList.remove('selected'));
+                            this.classList.add('selected');
+                            hiddenInput.value = timeVal;
+                            // Trigger availability check
+                            resetLastCreatedBookingId();
+                            checkStylistAvailability();
+                        });
+
+                        if (timeMins >= 9 * 60 && timeMins <= 11 * 60 + 45) {
+                            morningSlots.push(btn);
+                        } else if (timeMins >= 12 * 60 && timeMins <= 14 * 60 + 45) {
+                            afternoonSlots.push(btn);
+                        } else if (timeMins >= 15 * 60 && timeMins <= 17 * 60) {
+                            eveningSlots.push(btn);
+                        }
                     }
                 }
 
-                // Pastikan select tidak disabled
-                timeSelect.disabled = false;
+                // Append grouped slots with beautiful headers
+                function appendGroup(config, slots) {
+                    if (slots.length === 0) return;
+
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'mb-4 w-100';
+
+                    // Premium header
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'time-group-header';
+                    headerDiv.style.color = config.color;
+                    headerDiv.style.background = config.gradient;
+
+                    const iconBadge = document.createElement('div');
+                    iconBadge.className = 'time-group-icon-badge';
+                    iconBadge.style.background = config.iconBg;
+                    iconBadge.innerHTML = config.icon;
+
+                    const titleSpan = document.createElement('span');
+                    titleSpan.className = 'time-group-title';
+                    titleSpan.style.color = config.color;
+                    titleSpan.textContent = config.title;
+
+                    const countBadge = document.createElement('span');
+                    countBadge.className = 'time-group-badge';
+                    countBadge.style.background = config.badgeBg;
+                    countBadge.style.color = config.color;
+                    countBadge.textContent = config.range;
+
+                    headerDiv.appendChild(iconBadge);
+                    headerDiv.appendChild(titleSpan);
+                    headerDiv.appendChild(countBadge);
+
+                    const divider = document.createElement('div');
+                    divider.className = 'time-group-divider';
+                    divider.style.background = config.color;
+
+                    const flexContainer = document.createElement('div');
+                    flexContainer.className = 'time-slot-grid';
+                    slots.forEach(slot => flexContainer.appendChild(slot));
+
+                    groupDiv.appendChild(headerDiv);
+                    groupDiv.appendChild(divider);
+                    groupDiv.appendChild(flexContainer);
+                    grid.appendChild(groupDiv);
+                }
+
+                // SVG icons for each session (crisp, premium, not pixelated emoji)
+                const svgSun = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`;
+                const svgBright = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+                const svgSunset = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10a4 4 0 0 0-4 4"/><path d="M20 14a8 8 0 1 0-16 0"/><line x1="3" y1="14" x2="21" y2="14"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="19.78" y1="4.22" x2="18.36" y2="5.64"/><polyline points="16 5 12 9 8 5"/></svg>`;
+
+                appendGroup({
+                    title: 'Sesi Pagi',
+                    icon: svgSun,
+                    range: '09:00 – 11:45',
+                    color: '#c0392b',
+                    gradient: 'linear-gradient(135deg, #fff5f0 0%, #ffe8e0 100%)',
+                    iconBg: 'linear-gradient(135deg, #ff6b35, #f7931e)',
+                    badgeBg: 'rgba(192,57,43,0.1)'
+                }, morningSlots);
+
+                appendGroup({
+                    title: 'Sesi Siang',
+                    icon: svgBright,
+                    range: '12:00 – 14:45',
+                    color: '#b7860a',
+                    gradient: 'linear-gradient(135deg, #fffbf0 0%, #fff3d0 100%)',
+                    iconBg: 'linear-gradient(135deg, #f7ca18, #f39c12)',
+                    badgeBg: 'rgba(183,134,10,0.1)'
+                }, afternoonSlots);
+
+                appendGroup({
+                    title: 'Sesi Sore',
+                    icon: svgSunset,
+                    range: '15:00 – 17:00',
+                    color: '#6c3483',
+                    gradient: 'linear-gradient(135deg, #f9f0ff 0%, #efe0ff 100%)',
+                    iconBg: 'linear-gradient(135deg, #9b59b6, #6c3483)',
+                    badgeBg: 'rgba(108,52,131,0.1)'
+                }, eveningSlots);
+
+                // Jika tidak ada slot yang tersedia
+                if (!hasSlots) {
+                    const span = document.createElement('span');
+                    span.id = 'timeSlotEmpty';
+                    span.className = 'text-muted small fst-italic';
+                    span.textContent = selectedDate
+                        ? 'Tidak ada jam tersedia untuk stylist ini pada tanggal ini.'
+                        : 'Pilih tanggal terlebih dahulu...';
+                    grid.appendChild(span);
+                    hiddenInput.value = '';
+                } else if (prevValue && !grid.querySelector(`[data-time="${prevValue}"]`)) {
+                    // Jam yang sebelumnya dipilih sudah tidak tersedia
+                    hiddenInput.value = '';
+                }
             }
 
             // Jalankan pertama kali
             updateTimeSlots();
         }
-        initTimeSelection();
 
         let currentStep = 1;
         const totalSteps = 3;
@@ -1041,8 +1343,8 @@
                         }
                     @endphp
                     image: {!! json_encode($initImg) !!},
-                    stylistId: {{ request()->query('stylist_id') ? (int) request()->query('stylist_id') : 'null' }},
-                    stylistKategori: {!! request()->query('stylist_id') && ($preSelStylist = \App\Models\User::find(request()->query('stylist_id'))) ? json_encode(strtolower($preSelStylist->kategori)) : 'null' !!}
+                    stylistId: urlStylistId,
+                    stylistKategori: urlStylistKategori
                 },
             @endforeach
             @if($preSelectedDetails->isEmpty() && $treatment->details->count() === 1)
@@ -1079,12 +1381,15 @@
                             }
                         @endphp
                         image: {!! json_encode($initImg) !!},
-                        stylistId: {{ request()->query('stylist_id') ? (int) request()->query('stylist_id') : 'null' }},
-                        stylistKategori: {!! request()->query('stylist_id') && ($preSelStylist = \App\Models\User::find(request()->query('stylist_id'))) ? json_encode(strtolower($preSelStylist->kategori)) : 'null' !!}
+                        stylistId: urlStylistId,
+                        stylistKategori: urlStylistKategori
                     },
                 @endforeach
             @endif
         ];
+
+        // Jalankan inisialisasi waktu setelah selectedDetails didefinisikan untuk mencegah ReferenceError (TDZ)
+        initTimeSelection();
 
         // Mark pre-selected items as checked in the variant list
         document.addEventListener('DOMContentLoaded', function() {
@@ -1144,7 +1449,9 @@
                         promoType: checkbox.getAttribute('data-promo-type'),
                         promoValue: parseInt(checkbox.getAttribute('data-promo-value') || 0),
                         isColoring: checkbox.getAttribute('data-is-coloring') === '1',
-                        image: checkbox.getAttribute('data-image')
+                        image: checkbox.getAttribute('data-image'),
+                        stylistId: urlStylistId,
+                        stylistKategori: urlStylistKategori
                     });
                 }
             } else {
@@ -1153,10 +1460,13 @@
                 selectedDetails = selectedDetails.filter(d => d.id !== id);
             }
             renderSelectedTreatments();
-            checkStylistAvailability();
+            fetchDaySchedule(document.getElementById('reservation_date').value);
         };
 
         function renderSelectedTreatments() {
+            if (typeof window.updateTimeSlots === 'function') {
+                window.updateTimeSlots();
+            }
             const container = document.getElementById('selectedTreatmentsContainer');
             if (!container) return;
             container.innerHTML = '';
@@ -1228,32 +1538,99 @@
 
         let busyStylistsMap = {};
         let offWorkStylists = [];
+        let activeAvailabilityRequest = null;
 
-        window.checkStylistAvailability = function () {
-            const date = document.getElementById('reservation_date').value;
+        window.calculateConflictsLocally = function () {
             const time = document.getElementById('reservation_time').value;
+            if (!time || selectedDetails.length === 0) {
+                busyStylistsMap = {};
+                applyBusyStylists();
+                return;
+            }
 
-            if (!date || selectedDetails.length === 0) return;
+            const [startH, startM] = time.split(':').map(Number);
+            let currentStart = startH * 60 + startM;
 
-            $.ajax({
+            busyStylistsMap = {};
+
+            selectedDetails.forEach((detail, index) => {
+                const durationMins = detail.isColoring ? 420 : (detail.duration || 60);
+                const currentEnd = currentStart + durationMins;
+
+                const busyIds = [];
+                for (let stylistId in window.bookedStylistWindows || {}) {
+                    const windows = window.bookedStylistWindows[stylistId] || [];
+                    for (let win of windows) {
+                        const [sh, sm] = win.start.split(':').map(Number);
+                        const [eh, em] = win.end.split(':').map(Number);
+                        const busyStartMins = sh * 60 + sm;
+                        const busyEndMins = eh * 60 + em;
+
+                        // Check overlap
+                        if (currentStart < busyEndMins && currentEnd > busyStartMins) {
+                            busyIds.push(Number(stylistId));
+                            break;
+                        }
+                    }
+                }
+                busyStylistsMap[index] = busyIds;
+
+                currentStart = currentEnd;
+            });
+
+            applyBusyStylists();
+        };
+
+        let lastFetchedDate = '';
+        window.fetchDaySchedule = function (date) {
+            if (!date) return;
+
+            // If the date has not changed, we don't need to fetch from the server!
+            // Just recalculate everything locally instantly!
+            if (date === lastFetchedDate) {
+                window.updateTimeSlots();
+                calculateConflictsLocally();
+                return;
+            }
+
+            if (activeAvailabilityRequest) {
+                activeAvailabilityRequest.abort();
+            }
+
+            activeAvailabilityRequest = $.ajax({
                 url: "{{ route('booking.check_stylist_availability') }}",
                 method: 'POST',
                 data: {
                     _token: "{{ csrf_token() }}",
                     reservation_date: date,
-                    reservation_time: time,
+                    reservation_time: '', // empty to get all windows for the day
                     selected_details: selectedDetails.map(d => ({id: d.id}))
                 },
                 success: function (response) {
+                    activeAvailabilityRequest = null;
+                    lastFetchedDate = date;
+
                     if (response.is_holiday) {
                         alert(response.message || 'Salon tutup pada tanggal ini.');
                         busyStylistsMap = {};
-                        applyBusyStylists(); // Clear current
+                        offWorkStylists = [];
+                        window.bookedStylistWindows = {};
+                        applyBusyStylists();
+                        window.updateTimeSlots();
                         return;
                     }
-                    busyStylistsMap = response.conflicts;
+
                     offWorkStylists = response.off_work_ids || [];
-                    applyBusyStylists();
+                    window.bookedStylistWindows = response.booked_windows || {};
+                    
+                    // Recalculate everything locally instantly!
+                    window.updateTimeSlots();
+                    calculateConflictsLocally();
+                },
+                error: function (xhr, status, error) {
+                    if (status !== 'abort') {
+                        activeAvailabilityRequest = null;
+                    }
                 }
             });
         };
@@ -1402,15 +1779,17 @@
             renderSelectedTreatments();
         }
 
-        // Trigger availability check when date or time changes
+        // Jalankan pengecekan ketersediaan stylist dan jam saat halaman dimuat
+        if (document.getElementById('reservation_date').value) {
+            fetchDaySchedule(document.getElementById('reservation_date').value);
+        }
+
         document.getElementById('reservation_date').addEventListener('change', function() {
             resetLastCreatedBookingId();
-            checkStylistAvailability();
+            fetchDaySchedule(this.value);
         });
-        document.getElementById('reservation_time').addEventListener('change', function() {
-            resetLastCreatedBookingId();
-            checkStylistAvailability();
-        });
+        // Tidak ada event change pada reservation_time (hidden input),
+        // klik tombol jam sudah otomatis trigger checkStylistAvailability.
 
         window.removeDetail = function (id) {
             resetLastCreatedBookingId();
@@ -1429,7 +1808,7 @@
             }
             
             renderSelectedTreatments();
-            checkStylistAvailability();
+            fetchDaySchedule(document.getElementById('reservation_date').value);
         };
 
         // Modal Add Detail logic
@@ -1472,12 +1851,12 @@
                     promoValue: parseInt(this.getAttribute('data-promo-value') || 0),
                     isColoring: this.getAttribute('data-is-coloring') === '1',
                     image: this.getAttribute('data-image'),
-                    stylistId: selectedDetails.length > 0 ? selectedDetails[0].stylistId : null,
-                    stylistKategori: selectedDetails.length > 0 ? selectedDetails[0].stylistKategori : null
+                    stylistId: (selectedDetails.length > 0 && selectedDetails[0].stylistId) ? selectedDetails[0].stylistId : urlStylistId,
+                    stylistKategori: (selectedDetails.length > 0 && selectedDetails[0].stylistKategori) ? selectedDetails[0].stylistKategori : urlStylistKategori
                 });
 
                 renderSelectedTreatments();
-                checkStylistAvailability();
+                fetchDaySchedule(document.getElementById('reservation_date').value);
                 // Feedback visual
                 this.classList.replace('btn-primary', 'btn-success');
                 this.innerText = 'Ditambah';

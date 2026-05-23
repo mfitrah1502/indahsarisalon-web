@@ -154,7 +154,7 @@
                                                             </td>
                                                             <td>
                                                                 <span class="badge rounded-pill {{ 
-                                                                        $item->category == 'gaji karyawan' ? 'bg-light-primary text-primary' :
+                                                                        $item->category == 'employee_salary' ? 'bg-light-primary text-primary' :
                                     ($item->category == 'maintenance' ? 'bg-light-warning text-warning' : 'bg-light-secondary text-secondary') 
                                                                     }}">
                                                                     {{ $item->category }}
@@ -201,7 +201,7 @@
                             <div class="form-floating mb-3">
                                 <select name="category" class="form-select border-0 shadow-sm" id="categorySelect"
                                     style="border-radius: 12px;" required>
-                                    <option value="gaji karyawan">Gaji Karyawan</option>
+                                    <option value="employee_salary">Gaji Karyawan</option>
                                     <option value="maintenance">Maintenance</option>
                                     <option value="others">Others</option>
                                 </select>

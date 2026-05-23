@@ -129,7 +129,7 @@
             <div class="card-header bg-white border-bottom pt-4 pb-0">
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 px-2">
                     <div>
-                        <h4 class="fw-bold text-dark mb-1">📋 Manajemen Status Pemesanan</h4>
+                        <h4 class="fw-bold text-dark mb-1"><i class="ti ti-clipboard-list me-2 text-pink"></i>Manajemen Status Pemesanan</h4>
                         <p class="text-muted small mb-0">Pantau dan update status layanan pelanggan secara real-time.</p>
                     </div>
                     
@@ -165,19 +165,19 @@
                     <div class="d-flex flex-wrap gap-2">
                         <a href="{{ route('admin.bookings.index', ['status' => 'pending']) }}" 
                            class="btn rounded-pill px-4 py-2 {{ $status == 'pending' ? 'btn-warning text-dark fw-bold shadow-sm' : 'btn-light text-muted border' }}">
-                            ⏳ Pending
+                            <i class="ti ti-clock me-1"></i> Pending
                         </a>
                         <a href="{{ route('admin.bookings.index', ['status' => 'success']) }}" 
                            class="btn rounded-pill px-4 py-2 {{ $status == 'success' ? 'btn-success text-white fw-bold shadow-sm' : 'btn-light text-muted border' }}">
-                            ✅ Selesai (Berhasil)
+                            <i class="ti ti-circle-check me-1"></i> Selesai (Berhasil)
                         </a>
                         <a href="{{ route('admin.bookings.index', ['status' => 'dibatalkan']) }}" 
                            class="btn rounded-pill px-4 py-2 {{ $status == 'dibatalkan' ? 'btn-danger text-white fw-bold shadow-sm' : 'btn-light text-muted border' }}">
-                            ❌ Dibatalkan
+                            <i class="ti ti-circle-x me-1"></i> Dibatalkan
                         </a>
                         <a href="{{ route('admin.bookings.index', ['status' => 'all']) }}" 
                            class="btn rounded-pill px-4 py-2 {{ $status == 'all' ? 'btn-dark text-white fw-bold shadow-sm' : 'btn-light text-muted border' }}">
-                            📑 Semua
+                            <i class="ti ti-layout-list me-1"></i> Semua
                         </a>
                     </div>
                 </div>
@@ -263,7 +263,7 @@
                                 <tr>
                                     <td colspan="6" class="text-center py-5">
                                         <div class="text-muted py-4">
-                                            <i class="ti ti-clipboard-x fs-1 opacity-25"></i>
+                                            <i class="ti ti-calendar-off fs-1 opacity-25 d-block mb-2"></i>
                                             <p class="mt-3">Belum ada pemesanan dalam kategori <b>{{ ucfirst($status) }}</b>.</p>
                                         </div>
                                     </td>
@@ -345,7 +345,7 @@
                             
                             <!-- CASH PAYMENT SECTION -->
                             <div id="cash_payment_section" style="display:none;" class="mt-3 p-3 bg-white rounded border border-success shadow-sm">
-                                <label class="small fw-bold text-success mb-1">💸 Pembayaran Tunai:</label>
+                                <label class="small fw-bold text-success mb-1"><i class="ti ti-cash me-1"></i> Pembayaran Tunai:</label>
                                 <div class="input-group input-group-sm mb-2">
                                     <span class="input-group-text bg-light text-success fw-bold">Rp</span>
                                     <input type="text" id="cash_nominal" class="form-control fw-bold text-success" placeholder="Masukkan nominal...">
@@ -440,9 +440,9 @@
                     
                     // Status Badge Mapping
                     const statusMap = {
-                        'pending': { label: '⏳ Pending', class: 'bg-warning text-dark' },
-                        'success': { label: '✅ Selesai', class: 'bg-success text-white' },
-                        'dibatalkan': { label: '❌ Batal', class: 'bg-danger text-white' }
+                        'pending':    { label: '<i class="ti ti-clock me-1"></i> Pending',  class: 'bg-warning text-dark' },
+                        'success':    { label: '<i class="ti ti-circle-check me-1"></i> Selesai', class: 'bg-success text-white' },
+                        'dibatalkan': { label: '<i class="ti ti-circle-x me-1"></i> Batal',  class: 'bg-danger text-white' }
                     };
                     const payMap = {
                         // 'paid': { label: 'LUNAS', class: 'bg-success text-white' },
@@ -452,7 +452,7 @@
                     };
 
                     const s = statusMap[data.status] || { label: data.status, class: 'bg-secondary' };
-                    $('#mdl_status').text(s.label).removeClass().addClass('badge-status ' + s.class);
+                    $('#mdl_status').html(s.label).removeClass().addClass('badge-status ' + s.class);
                     
                     const ps = payMap[data.payment_status] || { label: data.payment_status, class: 'bg-secondary' };
                     $('#mdl_payment_status').text(ps.label).removeClass().addClass('badge-status ' + ps.class);
@@ -494,13 +494,18 @@
                     let servicesHtml = '';
                     data.details.forEach(detail => {
                         const detailName = detail.treatment_detail ? detail.treatment_detail.name : 'Layanan Tidak Diketahui';
+                        const duration   = detail.treatment_detail ? detail.treatment_detail.duration : null;
+                        const stylistName = detail.stylist ? detail.stylist.name : (data.stylist ? data.stylist.name : 'Tanpa Stylist');
                         servicesHtml += `
                             <div class="list-group-item p-3 border-0 border-bottom">
                                 <div class="d-flex justify-content-between mb-1">
                                     <span class="fw-bold text-dark">${detailName}</span>
                                     <span class="fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(detail.price)}</span>
                                 </div>
-                                <small class="text-muted"><i class="ti ti-user me-1"></i>Stylist: ${detail.stylist ? detail.stylist.name : (data.stylist ? data.stylist.name : 'Tanpa Stylist')}</small>
+                                <div class="d-flex gap-3 flex-wrap">
+                                    <small class="text-muted"><i class="ti ti-user me-1"></i>Stylist: ${stylistName}</small>
+                                    ${duration ? `<small class="text-muted"><i class="ti ti-clock me-1"></i>Durasi: ${duration} menit</small>` : ''}
+                                </div>
                             </div>
                         `;
                     });

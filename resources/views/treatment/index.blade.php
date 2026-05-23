@@ -133,6 +133,7 @@
                                 @forelse($treatments as $treatment)
                                     @php
                                         $imageUrl = $treatment->main_image_url;
+                                        $hasImage = $imageUrl && $imageUrl !== asset('assets/images/no-image.jpg');
                                     @endphp
                                     <tr class="treatment-row" 
                                         data-id="{{ $treatment->id }}"

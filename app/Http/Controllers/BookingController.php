@@ -207,14 +207,24 @@ class BookingController extends Controller
             return redirect()->back()->with('error', $msg);
         }
 
-        // Validasi Jam Operasional (09:00 - 10:30 sesuai permintaan client)
+        // Validasi Jam Operasional Dinamis
         $dateTime = Carbon::parse($request->reservation_date.' '.$request->reservation_time);
         $hour = $dateTime->hour;
         $minute = $dateTime->minute;
+
+        // Cek apakah ada treatment coloring untuk validasi jam 10:30
+        $isColoringBooking = \App\Models\TreatmentDetail::whereIn('treatment_details.id', $request->treatment_detail_ids)
+            ->join('treatments', 'treatment_details.treatment_id', '=', 'treatments.id')
+            ->join('categories', 'treatments.category_id', '=', 'categories.id')
+            ->where('categories.name', 'LIKE', '%Coloring%')
+            ->exists();
+
+        $maxHour = $isColoringBooking ? 10 : 17;
+        $maxMinute = $isColoringBooking ? 30 : 0;
         
-        // Cek apakah lebih dari jam 17:00
-        if ($hour < 9 || $hour > 17 || ($hour === 17 && $minute > 0)) {
-            $errorMsg = 'Mohon maaf, jam reservasi maksimal adalah pukul 17:00.';
+        if ($hour < 9 || $hour > $maxHour || ($hour === $maxHour && $minute > $maxMinute)) {
+            $timeLimitStr = $isColoringBooking ? '10:30' : '17:00';
+            $errorMsg = "Mohon maaf, jam reservasi maksimal adalah pukul $timeLimitStr.";
             if ($request->ajax()) {
                 return response()->json(['message' => $errorMsg], 400);
             }
@@ -232,7 +242,7 @@ class BookingController extends Controller
         $endOfDay = $requestedDate . ' 23:59:59';
         $existingBookings = \App\Models\Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
             ->whereNotIn('status', ['dibatalkan', 'success'])
-            ->with(['details.treatmentDetail'])
+            ->with(['details.treatmentDetail.treatment.category'])
             ->get();
 
         $stylistWindows = [];
@@ -240,10 +250,13 @@ class BookingController extends Controller
             $currStart = \Carbon\Carbon::parse($b->reservation_datetime);
             foreach ($b->details as $d) {
                 if ($d->treatmentDetail) {
-                    // Sistem otomatis memblokir 7 jam dari jam terpilih (permintaan client)
-                    $currEnd = $currStart->copy()->addHours(7);
-                    if ($d->stylist_id) {
-                        $stylistWindows[$d->stylist_id][] = ['start' => $currStart->copy(), 'end' => $currEnd->copy()];
+                    // Sistem otomatis memblokir 7 jam untuk Coloring, selebihnya sesuai durasi
+                    $isCol = $d->treatmentDetail->treatment && $d->treatmentDetail->treatment->category && stripos($d->treatmentDetail->treatment->category->name, 'Coloring') !== false;
+                    $durationMins = $isCol ? 420 : ($d->treatmentDetail->duration ?? 60);
+                    $currEnd = $currStart->copy()->addMinutes($durationMins);
+                    $stylistId = $d->stylist_id ?: $b->stylist_id;
+                    if ($stylistId) {
+                        $stylistWindows[$stylistId][] = ['start' => $currStart->copy(), 'end' => $currEnd->copy()];
                     }
                     $currStart = $currEnd->copy();
                 }
@@ -256,6 +269,26 @@ class BookingController extends Controller
         $preloadedDetails = \App\Models\TreatmentDetail::with(['treatment.category'])->whereIn('id', $allDetailIds)->get()->keyBy('id');
         $preloadedStylists = \App\Models\User::whereIn('id', $allStylistIds)->get()->keyBy('id');
 
+        // Validasi total durasi layanan tidak melebihi jam operasional (18:00)
+        $totalDuration = 0;
+        foreach ($request->treatment_detail_ids as $dId) {
+            $detail = $preloadedDetails->get($dId);
+            if ($detail) {
+                $isCol = $detail->treatment && $detail->treatment->category && stripos($detail->treatment->category->name, 'Coloring') !== false;
+                $durationMins = $isCol ? 420 : ($detail->duration ?? 60);
+                $totalDuration += $durationMins;
+            }
+        }
+        
+        $startMinutes = $hour * 60 + $minute;
+        if ($startMinutes + $totalDuration > 18 * 60) {
+            $errorMsg = "Mohon maaf, total durasi layanan (" . $totalDuration . " menit) dari jam reservasi terpilih melebihi jam operasional salon (tutup pukul 18:00). Silakan pilih jam lebih awal.";
+            if ($request->ajax()) {
+                return response()->json(['message' => $errorMsg], 422);
+            }
+            return redirect()->back()->with('error', $errorMsg);
+        }
+
         $tempRequestedStart = $startCheckpoint->copy();
         foreach ($request->treatment_detail_ids as $index => $dId) {
             $sId = $request->stylist_ids[$index] ?? null;
@@ -264,8 +297,10 @@ class BookingController extends Controller
             $detail = $preloadedDetails->get($dId);
             if (!$detail) continue;
 
-            // Blokir 7 jam untuk pengecekan ketersediaan (permintaan client)
-            $tempRequestedEnd = $tempRequestedStart->copy()->addHours(7);
+            // Blokir 7 jam untuk Coloring, selebihnya sesuai durasi
+            $isCol = $detail->treatment && $detail->treatment->category && stripos($detail->treatment->category->name, 'Coloring') !== false;
+            $durationMins = $isCol ? 420 : ($detail->duration ?? 60);
+            $tempRequestedEnd = $tempRequestedStart->copy()->addMinutes($durationMins);
 
             if (isset($stylistWindows[$sId])) {
                 foreach ($stylistWindows[$sId] as $win) {
@@ -799,17 +834,50 @@ class BookingController extends Controller
         }
 
         try {
-            $startTime = Carbon::parse($date . ' ' . $time);
-            $hour = $startTime->hour;
-            $minute = $startTime->minute;
+            // Validasi Dinamis di AJAX jika jam diisi
+            if ($time) {
+                $startTime = Carbon::parse($date . ' ' . $time);
+                $hour = $startTime->hour;
+                $minute = $startTime->minute;
 
-            // Validasi 10:30 di AJAX juga
-            if ($hour < 9 || $hour > 10 || ($hour === 17 && $minute > 0)) {
-                return response()->json([
-                    'conflicts' => [], 
-                    'off_work_ids' => [],
-                    'message' => 'Maksimal booking jam 17:00'
-                ]);
+                $selIds = [];
+                foreach ($selection as $item) {
+                    $selIds[] = is_array($item) ? $item['id'] : $item;
+                }
+                
+                $preloadedDetailsForCheck = \App\Models\TreatmentDetail::with(['treatment.category'])->whereIn('id', $selIds)->get();
+                
+                $isColoringBooking = false;
+                $totalDuration = 0;
+                foreach ($preloadedDetailsForCheck as $detail) {
+                    $isCol = $detail->treatment && $detail->treatment->category && stripos($detail->treatment->category->name, 'Coloring') !== false;
+                    if ($isCol) {
+                        $isColoringBooking = true;
+                    }
+                    $durationMins = $isCol ? 420 : ($detail->duration ?? 60);
+                    $totalDuration += $durationMins;
+                }
+
+                $maxHour = $isColoringBooking ? 10 : 17;
+                $maxMinute = $isColoringBooking ? 30 : 0;
+
+                if ($hour < 9 || $hour > $maxHour || ($hour === $maxHour && $minute > $maxMinute)) {
+                    $timeLimitStr = $isColoringBooking ? '10:30' : '17:00';
+                    return response()->json([
+                        'conflicts' => [], 
+                        'off_work_ids' => [],
+                        'message' => "Maksimal booking jam $timeLimitStr"
+                    ]);
+                }
+
+                $startMinutes = $hour * 60 + $minute;
+                if ($startMinutes + $totalDuration > 18 * 60) {
+                    return response()->json([
+                        'conflicts' => [],
+                        'off_work_ids' => [],
+                        'message' => "Total durasi layanan (" . $totalDuration . " menit) melebihi jam operasional salon (tutup pukul 18:00)."
+                    ]);
+                }
             }
             
             // 0. Check if it's a holiday
@@ -830,41 +898,49 @@ class BookingController extends Controller
                 ->map(fn($id) => (int)$id)
                 ->toArray();
 
+            // 1. Get ALL bookings for that day (except dibatalkan & selesai/berhasil)
+            $startOfDay = $date . ' 00:00:00';
+            $endOfDay = $date . ' 23:59:59';
+            $existingBookings = Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
+                ->whereNotIn('status', ['dibatalkan', 'success'])
+                ->with(['details.treatmentDetail.treatment.category'])
+                ->get();
+
+            // 2. Map existing busy windows for each stylist
+            $stylistWindows = [];
+            $formattedWindows = [];
+            foreach ($existingBookings as $b) {
+                // Determine starting point for this booking
+                $currentStart = Carbon::parse($b->reservation_datetime);
+                
+                // Details are sequential
+                foreach ($b->details as $d) {
+                    if ($d->treatmentDetail) {
+                        // Blokir 7 jam untuk Coloring, selebihnya sesuai durasi
+                        $isCol = $d->treatmentDetail->treatment && $d->treatmentDetail->treatment->category && stripos($d->treatmentDetail->treatment->category->name, 'Coloring') !== false;
+                        $durationMins = $isCol ? 420 : ($d->treatmentDetail->duration ?? 60);
+                        $currentEnd = $currentStart->copy()->addMinutes($durationMins);
+                        
+                        $stylistId = $d->stylist_id ?: $b->stylist_id;
+                        if ($stylistId) {
+                            $stylistWindows[$stylistId][] = [
+                                'start' => $currentStart->copy(),
+                                'end' => $currentEnd->copy()
+                            ];
+                            $formattedWindows[$stylistId][] = [
+                                'start' => $currentStart->format('H:i'),
+                                'end' => $currentEnd->format('H:i')
+                            ];
+                        }
+                        
+                        $currentStart = $currentEnd->copy();
+                    }
+                }
+            }
+
             $conflicts = [];
             if ($time) {
                 $startTime = Carbon::parse($date . ' ' . $time);
-                
-                // 1. Get ALL bookings for that day (except dibatalkan & selesai/berhasil)
-                $startOfDay = $date . ' 00:00:00';
-                $endOfDay = $date . ' 23:59:59';
-                $existingBookings = Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
-                    ->whereNotIn('status', ['dibatalkan', 'success'])
-                    ->with(['details.treatmentDetail'])
-                    ->get();
-
-                // 2. Map existing busy windows for each stylist
-                $stylistWindows = [];
-                foreach ($existingBookings as $b) {
-                    // Determine starting point for this booking
-                    $currentStart = Carbon::parse($b->reservation_datetime);
-                    
-                    // Details are sequential
-                    foreach ($b->details as $d) {
-                        if ($d->treatmentDetail) {
-                            // Blokir 7 jam (permintaan client)
-                            $currentEnd = $currentStart->copy()->addHours(7);
-                            
-                            if ($d->stylist_id) {
-                                $stylistWindows[$d->stylist_id][] = [
-                                    'start' => $currentStart->copy(),
-                                    'end' => $currentEnd->copy()
-                                ];
-                            }
-                            
-                            $currentStart = $currentEnd->copy();
-                        }
-                    }
-                }
 
                 // 3. Check requested selection window for each detail index
                 $currentRequestedStart = $startTime->copy();
@@ -879,8 +955,10 @@ class BookingController extends Controller
                         continue;
                     }
 
-                    // Blokir 7 jam (permintaan client)
-                    $currentRequestedEnd = $currentRequestedStart->copy()->addHours(7);
+                    // Blokir 7 jam untuk Coloring, selebihnya sesuai durasi
+                    $isCol = $detail->treatment && $detail->treatment->category && stripos($detail->treatment->category->name, 'Coloring') !== false;
+                    $durationMins = $isCol ? 420 : ($detail->duration ?? 60);
+                    $currentRequestedEnd = $currentRequestedStart->copy()->addMinutes($durationMins);
 
                     $busyIds = [];
                     foreach ($stylistWindows as $stylistId => $windows) {
@@ -902,7 +980,8 @@ class BookingController extends Controller
 
             return response()->json([
                 'conflicts' => $conflicts,
-                'off_work_ids' => $offWorkIds
+                'off_work_ids' => $offWorkIds,
+                'booked_windows' => $formattedWindows
             ]);
 
         } catch (\Exception $e) {
@@ -930,9 +1009,18 @@ class BookingController extends Controller
                 ->pluck('id');
 
             // 2. Ambil stylist yang memiliki booking aktif pada tanggal tersebut
-            $bookedStylistIds = \App\Models\BookingDetail::whereIn('booking_id', $bookingIds)
+            $parentStylistIds = \App\Models\Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
+                ->whereNotIn('status', ['dibatalkan', 'success'])
                 ->whereNotNull('stylist_id')
                 ->pluck('stylist_id')
+                ->toArray();
+
+            $detailStylistIds = \App\Models\BookingDetail::whereIn('booking_id', $bookingIds)
+                ->whereNotNull('stylist_id')
+                ->pluck('stylist_id')
+                ->toArray();
+
+            $bookedStylistIds = collect(array_merge($parentStylistIds, $detailStylistIds))
                 ->map(fn($id) => (int)$id)
                 ->unique()
                 ->values()

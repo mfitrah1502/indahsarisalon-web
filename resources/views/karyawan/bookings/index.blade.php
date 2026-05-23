@@ -129,7 +129,7 @@
             <div class="card-header bg-white border-bottom pt-4 pb-0">
                 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 px-2">
                     <div>
-                        <h4 class="fw-bold text-dark mb-1">📋 Panel Operasional Booking</h4>
+                        <h4 class="fw-bold text-dark mb-1"><i class="ti ti-calendar-event me-2 text-pink"></i>Panel Operasional Booking</h4>
                         <p class="text-muted small mb-0">Kelola pengerjaan treatment pelanggan secara efisien.</p>
                     </div>
                     
@@ -160,30 +160,29 @@
                     </form>
                 </div>
                 
-                <!-- TABS -->
                 <ul class="nav nav-tabs card-header-tabs px-3 border-bottom-0" role="tablist">
                     <li class="nav-item">
                         <a class="nav-link {{ $status == 'pending' ? 'active fw-bold' : '' }}" 
                            href="{{ route('admin.bookings.index', ['status' => 'pending']) }}">
-                            ⏳ Pending
+                            <i class="ti ti-clock me-1"></i> Pending
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ $status == 'success' ? 'active fw-bold' : '' }}" 
                            href="{{ route('admin.bookings.index', ['status' => 'success']) }}">
-                            ✅ Selesai (Berhasil)
+                            <i class="ti ti-circle-check me-1"></i> Selesai (Berhasil)
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ $status == 'dibatalkan' ? 'active fw-bold' : '' }}" 
                            href="{{ route('admin.bookings.index', ['status' => 'dibatalkan']) }}">
-                            ❌ Dibatalkan
+                            <i class="ti ti-circle-x me-1"></i> Dibatalkan
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link {{ $status == 'all' ? 'active fw-bold' : '' }}" 
                            href="{{ route('admin.bookings.index', ['status' => 'all']) }}">
-                            Semua
+                            <i class="ti ti-layout-list me-1"></i> Semua
                         </a>
                     </li>
                 </ul>
@@ -377,9 +376,9 @@
                     $('#mdl_role_badge').text(data.user_id ? 'Pelanggan Terdaftar' : 'Pelanggan Guest/Offline');
                     
                     const statusMap = {
-                        'pending': { label: '⏳ Pending', class: 'bg-warning text-dark' },
-                        'success': { label: '✅ Selesai', class: 'bg-success text-white' },
-                        'dibatalkan': { label: '❌ Batal', class: 'bg-danger text-white' }
+                        'pending':    { label: '<i class="ti ti-clock me-1"></i> Pending',  class: 'bg-warning text-dark' },
+                        'success':    { label: '<i class="ti ti-circle-check me-1"></i> Selesai', class: 'bg-success text-white' },
+                        'dibatalkan': { label: '<i class="ti ti-circle-x me-1"></i> Batal',  class: 'bg-danger text-white' }
                     };
                     const payMap = {
                         'paid': { label: 'LUNAS', class: 'bg-success' },
@@ -388,7 +387,7 @@
                     };
 
                     const s = statusMap[data.status] || { label: data.status, class: 'bg-secondary' };
-                    $('#mdl_status').text(s.label).removeClass().addClass('badge-status ' + s.class);
+                    $('#mdl_status').html(s.label).removeClass().addClass('badge-status ' + s.class);
                     
                     const ps = payMap[data.payment_status] || { label: data.payment_status, class: 'bg-secondary' };
                     $('#mdl_payment_status').text(ps.label).removeClass().addClass('badge-status ' + ps.class);
@@ -398,14 +397,19 @@
 
                     let servicesHtml = '';
                     data.details.forEach(detail => {
-                        const detailName = detail.treatment_detail ? detail.treatment_detail.name : 'Layanan Tidak Diketahui';
+                        const detailName  = detail.treatment_detail ? detail.treatment_detail.name : 'Layanan Tidak Diketahui';
+                        const duration    = detail.treatment_detail ? detail.treatment_detail.duration : null;
+                        const stylistName = detail.stylist ? detail.stylist.name : 'Tanpa Stylist';
                         servicesHtml += `
                             <div class="list-group-item p-3 border-0 border-bottom">
                                 <div class="d-flex justify-content-between mb-1">
                                     <span class="fw-bold text-dark">${detailName}</span>
                                     <span class="fw-bold">Rp ${new Intl.NumberFormat('id-ID').format(detail.price)}</span>
                                 </div>
-                                <small class="text-muted">Stylist: ${detail.stylist ? detail.stylist.name : 'Tanpa Stylist'}</small>
+                                <div class="d-flex gap-3 flex-wrap">
+                                    <small class="text-muted"><i class="ti ti-user me-1"></i>Stylist: ${stylistName}</small>
+                                    ${duration ? `<small class="text-muted"><i class="ti ti-clock me-1"></i>Durasi: ${duration} menit</small>` : ''}
+                                </div>
                             </div>
                         `;
                     });

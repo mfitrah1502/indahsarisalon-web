@@ -223,6 +223,62 @@
         font-style: italic;
     }
 
+    /* === TIME PERIOD GROUP HEADERS === */
+    .time-group-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        margin-top: 8px;
+        position: relative;
+        overflow: hidden;
+    }
+    .time-group-header::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: 0.08;
+        border-radius: 12px;
+        background: currentColor;
+    }
+    .time-group-icon-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+        position: relative;
+        z-index: 1;
+    }
+    .time-group-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        position: relative;
+        z-index: 1;
+    }
+    .time-group-badge {
+        font-size: 0.65rem;
+        font-weight: 600;
+        padding: 2px 9px;
+        border-radius: 20px;
+        position: relative;
+        z-index: 1;
+        margin-left: auto;
+    }
+    .time-group-divider {
+        height: 2px;
+        border-radius: 2px;
+        margin-bottom: 10px;
+        opacity: 0.15;
+    }
+
     /* Animation spin untuk loader icon */
     @keyframes spin {
         0% { transform: rotate(0deg); }
@@ -241,7 +297,7 @@
 
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white border-bottom">
-                    <h4 class="mb-1">📅 Booking Appointment</h4>
+                    <h4 class="mb-1">✨🗓️ Booking Appointment</h4>
                     <small class="text-muted">Ikuti langkah untuk menyelesaikan booking</small>
 
                     <!-- STEP INDICATOR -->
@@ -437,7 +493,7 @@
                                 @endphp
                                 <!-- TANGGAL -->
                                 <div class="col-md-3 mb-3" @if(request()->filled('reservation_date')) style="display: none;" @endif>
-                                    <label class="form-label">📅 Tanggal</label>
+                                    <label class="form-label">🗓️✨ Tanggal</label>
                                     <div class="position-relative">
                                         <input type="text" name="reservation_date" id="reservation_date" class="form-control cursor-pointer"
                                             min="{{ $initialDate }}" value="{{ request()->input('reservation_date', $initialDate) }}" required readonly style="padding-left: 40px; padding-right: 40px; font-weight: bold;">
@@ -452,7 +508,7 @@
 
                                 <!-- JAM -->
                                 <div class="{{ request()->filled('reservation_date') ? 'col-md-6' : 'col-md-3' }} mb-3">
-                                    <label class="form-label">⏰ Jam Reservasi</label>
+                                    <label class="form-label">🕐💫 Jam Reservasi</label>
                                     <!-- Hidden input yang dikirim ke server -->
                                     <input type="hidden" name="reservation_time" id="reservation_time" required>
                                     <!-- Grid tombol jam -->
@@ -469,7 +525,7 @@
                     <!-- STEP 2 -->
                     <div class="tab-pane fade" id="step2">
                         <div class="p-3 rounded bg-light">
-                            <h5 class="mb-3">📋 Ringkasan Booking</h5>
+                            <h5 class="mb-3">📝✨ Ringkasan Booking</h5>
 
                             <p class="mb-1"><strong>Customer:</strong> <span id="summaryCustomer">{{ Auth::user()->name }}</span></p>
                             <p class="mb-1"><strong>No. HP:</strong> <span id="summaryPhone">{{ Auth::user()->phone ?? '-' }}</span></p>
@@ -491,7 +547,7 @@
                     <!-- STEP 3 -->
                     <div class="tab-pane fade" id="step3">
                         <div class="p-3 rounded bg-light">
-                            <h5 class="mb-3">💳 Pembayaran</h5>
+                            <h5 class="mb-3">💳💎 Pembayaran</h5>
 
                             <form method="POST" action="{{ route('booking.store') }}" id="finalBookingForm">
                                 @csrf
@@ -521,7 +577,7 @@
                                 </div>
 
                                 <button type="submit" class="btn btn-success w-100">
-                                    ✅ Bayar & Konfirmasi
+                                    🎉✨ Bayar & Konfirmasi
                                 </button>
                             </form>
                         </div>
@@ -1000,8 +1056,7 @@
                 disable: holidayDates,
                 defaultDate: initialDateVal,
                 onChange: function(selectedDates, dateStr) {
-                    updateTimeSlots();
-                    checkStylistAvailability();
+                    fetchDaySchedule(dateStr);
                 }
             });
 
@@ -1124,43 +1179,81 @@
                 }
 
                 // Append grouped slots with beautiful headers
-                function appendGroup(title, emoji, rangeText, slots, iconColor, bgSoftColor) {
+                function appendGroup(config, slots) {
                     if (slots.length === 0) return;
 
                     const groupDiv = document.createElement('div');
-                    groupDiv.className = 'mb-3 w-100';
+                    groupDiv.className = 'mb-4 w-100';
 
+                    // Premium header
                     const headerDiv = document.createElement('div');
-                    headerDiv.className = 'd-flex align-items-center mb-2 mt-2';
-                    headerDiv.style.borderBottom = '1px dashed #e9ecef';
-                    headerDiv.style.paddingBottom = '4px';
+                    headerDiv.className = 'time-group-header';
+                    headerDiv.style.color = config.color;
+                    headerDiv.style.background = config.gradient;
+
+                    const iconBadge = document.createElement('div');
+                    iconBadge.className = 'time-group-icon-badge';
+                    iconBadge.style.background = config.iconBg;
+                    iconBadge.innerHTML = config.icon;
 
                     const titleSpan = document.createElement('span');
-                    titleSpan.className = 'fw-bold small text-dark me-2 d-flex align-items-center';
-                    titleSpan.innerHTML = `<span class="me-1">${emoji}</span> ${title}`;
+                    titleSpan.className = 'time-group-title';
+                    titleSpan.style.color = config.color;
+                    titleSpan.textContent = config.title;
 
-                    const rangeSpan = document.createElement('span');
-                    rangeSpan.className = 'badge rounded-pill extra-small fw-normal';
-                    rangeSpan.style.backgroundColor = bgSoftColor;
-                    rangeSpan.style.color = iconColor;
-                    rangeSpan.style.fontSize = '0.65rem';
-                    rangeSpan.textContent = rangeText;
+                    const countBadge = document.createElement('span');
+                    countBadge.className = 'time-group-badge';
+                    countBadge.style.background = config.badgeBg;
+                    countBadge.style.color = config.color;
+                    countBadge.textContent = config.range;
 
+                    headerDiv.appendChild(iconBadge);
                     headerDiv.appendChild(titleSpan);
-                    headerDiv.appendChild(rangeSpan);
+                    headerDiv.appendChild(countBadge);
+
+                    const divider = document.createElement('div');
+                    divider.className = 'time-group-divider';
+                    divider.style.background = config.color;
 
                     const flexContainer = document.createElement('div');
                     flexContainer.className = 'time-slot-grid';
                     slots.forEach(slot => flexContainer.appendChild(slot));
 
                     groupDiv.appendChild(headerDiv);
+                    groupDiv.appendChild(divider);
                     groupDiv.appendChild(flexContainer);
                     grid.appendChild(groupDiv);
                 }
 
-                appendGroup('Pagi', '🌅', '09:00 - 11:45', morningSlots, '#EA8290', '#fff0f2');
-                appendGroup('Siang', '☀️', '12:00 - 14:45', afternoonSlots, '#fd7e14', '#fff4ec');
-                appendGroup('Sore', '🌇', '15:00 - 17:00', eveningSlots, '#20c997', '#e6fcf5');
+                appendGroup({
+                    title: 'Sesi Pagi',
+                    icon: '&#x1F31E;',
+                    range: '09:00 – 11:45',
+                    color: '#c0392b',
+                    gradient: 'linear-gradient(135deg, #fff5f0 0%, #ffe8e0 100%)',
+                    iconBg: 'linear-gradient(135deg, #ff6b35, #f7931e)',
+                    badgeBg: 'rgba(192,57,43,0.1)'
+                }, morningSlots);
+
+                appendGroup({
+                    title: 'Sesi Siang',
+                    icon: '&#x2600;&#xFE0F;',
+                    range: '12:00 – 14:45',
+                    color: '#e67e22',
+                    gradient: 'linear-gradient(135deg, #fffbf0 0%, #fff3d0 100%)',
+                    iconBg: 'linear-gradient(135deg, #f7ca18, #f39c12)',
+                    badgeBg: 'rgba(230,126,34,0.1)'
+                }, afternoonSlots);
+
+                appendGroup({
+                    title: 'Sesi Sore',
+                    icon: '&#x1F306;',
+                    range: '15:00 – 17:00',
+                    color: '#8e44ad',
+                    gradient: 'linear-gradient(135deg, #f9f0ff 0%, #efe0ff 100%)',
+                    iconBg: 'linear-gradient(135deg, #9b59b6, #6c3483)',
+                    badgeBg: 'rgba(142,68,173,0.1)'
+                }, eveningSlots);
 
                 // Jika tidak ada slot yang tersedia
                 if (!hasSlots) {
@@ -1340,7 +1433,7 @@
                 selectedDetails = selectedDetails.filter(d => d.id !== id);
             }
             renderSelectedTreatments();
-            checkStylistAvailability();
+            fetchDaySchedule(document.getElementById('reservation_date').value);
         };
 
         function renderSelectedTreatments() {
@@ -1461,20 +1554,20 @@
             applyBusyStylists();
         };
 
-        window.checkStylistAvailability = function () {
-            const date = document.getElementById('reservation_date').value;
-            const time = document.getElementById('reservation_time').value;
+        let lastFetchedDate = '';
+        window.fetchDaySchedule = function (date) {
+            if (!date) return;
 
-            if (!date || selectedDetails.length === 0) return;
-
-            // Abort previous active request for instant response & to avoid race conditions
-            if (activeAvailabilityRequest) {
-                activeAvailabilityRequest.abort();
+            // If the date has not changed, we don't need to fetch from the server!
+            // Just recalculate everything locally instantly!
+            if (date === lastFetchedDate) {
+                window.updateTimeSlots();
+                calculateConflictsLocally();
+                return;
             }
 
-            // Immediately calculate conflicts locally for instant UI update!
-            if (time) {
-                calculateConflictsLocally();
+            if (activeAvailabilityRequest) {
+                activeAvailabilityRequest.abort();
             }
 
             activeAvailabilityRequest = $.ajax({
@@ -1483,24 +1576,29 @@
                 data: {
                     _token: "{{ csrf_token() }}",
                     reservation_date: date,
-                    reservation_time: time,
+                    reservation_time: '', // empty to get all windows for the day
                     selected_details: selectedDetails.map(d => ({id: d.id}))
                 },
                 success: function (response) {
                     activeAvailabilityRequest = null;
+                    lastFetchedDate = date;
+
                     if (response.is_holiday) {
                         alert(response.message || 'Salon tutup pada tanggal ini.');
                         busyStylistsMap = {};
-                        applyBusyStylists(); // Clear current
+                        offWorkStylists = [];
+                        window.bookedStylistWindows = {};
+                        applyBusyStylists();
+                        window.updateTimeSlots();
                         return;
                     }
-                    busyStylistsMap = response.conflicts;
+
                     offWorkStylists = response.off_work_ids || [];
                     window.bookedStylistWindows = response.booked_windows || {};
-                    applyBusyStylists();
-                    if (typeof window.updateTimeSlots === 'function') {
-                        window.updateTimeSlots();
-                    }
+                    
+                    // Recalculate everything locally instantly!
+                    window.updateTimeSlots();
+                    calculateConflictsLocally();
                 },
                 error: function (xhr, status, error) {
                     if (status !== 'abort') {
@@ -1656,12 +1754,12 @@
 
         // Jalankan pengecekan ketersediaan stylist dan jam saat halaman dimuat
         if (document.getElementById('reservation_date').value) {
-            checkStylistAvailability();
+            fetchDaySchedule(document.getElementById('reservation_date').value);
         }
 
         document.getElementById('reservation_date').addEventListener('change', function() {
             resetLastCreatedBookingId();
-            checkStylistAvailability();
+            fetchDaySchedule(this.value);
         });
         // Tidak ada event change pada reservation_time (hidden input),
         // klik tombol jam sudah otomatis trigger checkStylistAvailability.
@@ -1683,7 +1781,7 @@
             }
             
             renderSelectedTreatments();
-            checkStylistAvailability();
+            fetchDaySchedule(document.getElementById('reservation_date').value);
         };
 
         // Modal Add Detail logic
@@ -1731,7 +1829,7 @@
                 });
 
                 renderSelectedTreatments();
-                checkStylistAvailability();
+                fetchDaySchedule(document.getElementById('reservation_date').value);
                 // Feedback visual
                 this.classList.replace('btn-primary', 'btn-success');
                 this.innerText = 'Ditambah';

@@ -269,6 +269,26 @@ class BookingController extends Controller
         $preloadedDetails = \App\Models\TreatmentDetail::with(['treatment.category'])->whereIn('id', $allDetailIds)->get()->keyBy('id');
         $preloadedStylists = \App\Models\User::whereIn('id', $allStylistIds)->get()->keyBy('id');
 
+        // Validasi total durasi layanan tidak melebihi jam operasional (18:00)
+        $totalDuration = 0;
+        foreach ($request->treatment_detail_ids as $dId) {
+            $detail = $preloadedDetails->get($dId);
+            if ($detail) {
+                $isCol = $detail->treatment && $detail->treatment->category && stripos($detail->treatment->category->name, 'Coloring') !== false;
+                $durationMins = $isCol ? 420 : ($detail->duration ?? 60);
+                $totalDuration += $durationMins;
+            }
+        }
+        
+        $startMinutes = $hour * 60 + $minute;
+        if ($startMinutes + $totalDuration > 18 * 60) {
+            $errorMsg = "Mohon maaf, total durasi layanan (" . $totalDuration . " menit) dari jam reservasi terpilih melebihi jam operasional salon (tutup pukul 18:00). Silakan pilih jam lebih awal.";
+            if ($request->ajax()) {
+                return response()->json(['message' => $errorMsg], 422);
+            }
+            return redirect()->back()->with('error', $errorMsg);
+        }
+
         $tempRequestedStart = $startCheckpoint->copy();
         foreach ($request->treatment_detail_ids as $index => $dId) {
             $sId = $request->stylist_ids[$index] ?? null;
@@ -824,11 +844,19 @@ class BookingController extends Controller
                 foreach ($selection as $item) {
                     $selIds[] = is_array($item) ? $item['id'] : $item;
                 }
-                $isColoringBooking = \App\Models\TreatmentDetail::whereIn('treatment_details.id', $selIds)
-                    ->join('treatments', 'treatment_details.treatment_id', '=', 'treatments.id')
-                    ->join('categories', 'treatments.category_id', '=', 'categories.id')
-                    ->where('categories.name', 'LIKE', '%Coloring%')
-                    ->exists();
+                
+                $preloadedDetailsForCheck = \App\Models\TreatmentDetail::with(['treatment.category'])->whereIn('id', $selIds)->get();
+                
+                $isColoringBooking = false;
+                $totalDuration = 0;
+                foreach ($preloadedDetailsForCheck as $detail) {
+                    $isCol = $detail->treatment && $detail->treatment->category && stripos($detail->treatment->category->name, 'Coloring') !== false;
+                    if ($isCol) {
+                        $isColoringBooking = true;
+                    }
+                    $durationMins = $isCol ? 420 : ($detail->duration ?? 60);
+                    $totalDuration += $durationMins;
+                }
 
                 $maxHour = $isColoringBooking ? 10 : 17;
                 $maxMinute = $isColoringBooking ? 30 : 0;
@@ -839,6 +867,15 @@ class BookingController extends Controller
                         'conflicts' => [], 
                         'off_work_ids' => [],
                         'message' => "Maksimal booking jam $timeLimitStr"
+                    ]);
+                }
+
+                $startMinutes = $hour * 60 + $minute;
+                if ($startMinutes + $totalDuration > 18 * 60) {
+                    return response()->json([
+                        'conflicts' => [],
+                        'off_work_ids' => [],
+                        'message' => "Total durasi layanan (" . $totalDuration . " menit) melebihi jam operasional salon (tutup pukul 18:00)."
                     ]);
                 }
             }

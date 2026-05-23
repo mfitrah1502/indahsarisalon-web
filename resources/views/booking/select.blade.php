@@ -459,7 +459,7 @@
                                     <div class="time-slot-grid" id="timeSlotGrid">
                                         <span id="timeSlotEmpty" class="text-muted small">Pilih tanggal terlebih dahulu...</span>
                                     </div>
-                                    <small class="text-muted extra-small">Batas reservasi: 09:00 - 17:00</small>
+                                    <!-- <small class="text-muted extra-small">Batas reservasi: 09:00 - 17:00</small> -->
                                 </div>
 
                             </div>
@@ -1049,6 +1049,10 @@
                 grid.innerHTML = '';
                 let hasSlots = false;
 
+                let morningSlots = [];
+                let afternoonSlots = [];
+                let eveningSlots = [];
+
                 for (let h = 9; h <= maxHour; h++) {
                     for (let m = 0; m < 60; m += 15) {
                         if (h === maxHour && m > maxMinute) break;
@@ -1060,13 +1064,31 @@
                             if (h < now.getHours() || (h === now.getHours() && m <= now.getMinutes())) continue;
                         }
 
-                        // Cek apakah jam ini termasuk dalam window yang sudah dibooking
+                        // Cek apakah jam ini + total durasi overlap dengan window yang sudah dibooking
                         const timeMins = h * 60 + m;
+                        let totalDuration = 0;
+                        if (typeof selectedDetails !== 'undefined') {
+                            selectedDetails.forEach(d => {
+                                const durationMins = d.isColoring ? 420 : (d.duration || 60);
+                                totalDuration += durationMins;
+                            });
+                        }
+                        const endTimeMins = timeMins + totalDuration;
+
+                        // Cek apakah jam ini + total durasi melebihi jam operasional (tutup pukul 18:00)
+                        if (endTimeMins > 18 * 60) {
+                            continue; // Jangan sediakan jam ini jika total durasi melewati jam operasional
+                        }
+
                         let isBusy = false;
                         for (let bw of busyWindows) {
                             const [sh, sm] = bw.start.split(':').map(Number);
                             const [eh, em] = bw.end.split(':').map(Number);
-                            if (timeMins >= sh * 60 + sm && timeMins < eh * 60 + em) {
+                            const busyStartMins = sh * 60 + sm;
+                            const busyEndMins = eh * 60 + em;
+                            
+                            // Check overlap: newStart < busyEnd AND newEnd > busyStart
+                            if (timeMins < busyEndMins && endTimeMins > busyStartMins) {
                                 isBusy = true;
                                 break;
                             }
@@ -1091,9 +1113,54 @@
                             checkStylistAvailability();
                         });
 
-                        grid.appendChild(btn);
+                        if (timeMins >= 9 * 60 && timeMins <= 11 * 60 + 45) {
+                            morningSlots.push(btn);
+                        } else if (timeMins >= 12 * 60 && timeMins <= 14 * 60 + 45) {
+                            afternoonSlots.push(btn);
+                        } else if (timeMins >= 15 * 60 && timeMins <= 17 * 60) {
+                            eveningSlots.push(btn);
+                        }
                     }
                 }
+
+                // Append grouped slots with beautiful headers
+                function appendGroup(title, emoji, rangeText, slots, iconColor, bgSoftColor) {
+                    if (slots.length === 0) return;
+
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'mb-3 w-100';
+
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'd-flex align-items-center mb-2 mt-2';
+                    headerDiv.style.borderBottom = '1px dashed #e9ecef';
+                    headerDiv.style.paddingBottom = '4px';
+
+                    const titleSpan = document.createElement('span');
+                    titleSpan.className = 'fw-bold small text-dark me-2 d-flex align-items-center';
+                    titleSpan.innerHTML = `<span class="me-1">${emoji}</span> ${title}`;
+
+                    const rangeSpan = document.createElement('span');
+                    rangeSpan.className = 'badge rounded-pill extra-small fw-normal';
+                    rangeSpan.style.backgroundColor = bgSoftColor;
+                    rangeSpan.style.color = iconColor;
+                    rangeSpan.style.fontSize = '0.65rem';
+                    rangeSpan.textContent = rangeText;
+
+                    headerDiv.appendChild(titleSpan);
+                    headerDiv.appendChild(rangeSpan);
+
+                    const flexContainer = document.createElement('div');
+                    flexContainer.className = 'time-slot-grid';
+                    slots.forEach(slot => flexContainer.appendChild(slot));
+
+                    groupDiv.appendChild(headerDiv);
+                    groupDiv.appendChild(flexContainer);
+                    grid.appendChild(groupDiv);
+                }
+
+                appendGroup('Pagi', '🌅', '09:00 - 11:45', morningSlots, '#EA8290', '#fff0f2');
+                appendGroup('Siang', '☀️', '12:00 - 14:45', afternoonSlots, '#fd7e14', '#fff4ec');
+                appendGroup('Sore', '🌇', '15:00 - 17:00', eveningSlots, '#20c997', '#e6fcf5');
 
                 // Jika tidak ada slot yang tersedia
                 if (!hasSlots) {

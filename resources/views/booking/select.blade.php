@@ -1418,6 +1418,48 @@
 
         let busyStylistsMap = {};
         let offWorkStylists = [];
+        let activeAvailabilityRequest = null;
+
+        window.calculateConflictsLocally = function () {
+            const time = document.getElementById('reservation_time').value;
+            if (!time || selectedDetails.length === 0) {
+                busyStylistsMap = {};
+                applyBusyStylists();
+                return;
+            }
+
+            const [startH, startM] = time.split(':').map(Number);
+            let currentStart = startH * 60 + startM;
+
+            busyStylistsMap = {};
+
+            selectedDetails.forEach((detail, index) => {
+                const durationMins = detail.isColoring ? 420 : (detail.duration || 60);
+                const currentEnd = currentStart + durationMins;
+
+                const busyIds = [];
+                for (let stylistId in window.bookedStylistWindows || {}) {
+                    const windows = window.bookedStylistWindows[stylistId] || [];
+                    for (let win of windows) {
+                        const [sh, sm] = win.start.split(':').map(Number);
+                        const [eh, em] = win.end.split(':').map(Number);
+                        const busyStartMins = sh * 60 + sm;
+                        const busyEndMins = eh * 60 + em;
+
+                        // Check overlap
+                        if (currentStart < busyEndMins && currentEnd > busyStartMins) {
+                            busyIds.push(Number(stylistId));
+                            break;
+                        }
+                    }
+                }
+                busyStylistsMap[index] = busyIds;
+
+                currentStart = currentEnd;
+            });
+
+            applyBusyStylists();
+        };
 
         window.checkStylistAvailability = function () {
             const date = document.getElementById('reservation_date').value;
@@ -1425,7 +1467,17 @@
 
             if (!date || selectedDetails.length === 0) return;
 
-            $.ajax({
+            // Abort previous active request for instant response & to avoid race conditions
+            if (activeAvailabilityRequest) {
+                activeAvailabilityRequest.abort();
+            }
+
+            // Immediately calculate conflicts locally for instant UI update!
+            if (time) {
+                calculateConflictsLocally();
+            }
+
+            activeAvailabilityRequest = $.ajax({
                 url: "{{ route('booking.check_stylist_availability') }}",
                 method: 'POST',
                 data: {
@@ -1435,6 +1487,7 @@
                     selected_details: selectedDetails.map(d => ({id: d.id}))
                 },
                 success: function (response) {
+                    activeAvailabilityRequest = null;
                     if (response.is_holiday) {
                         alert(response.message || 'Salon tutup pada tanggal ini.');
                         busyStylistsMap = {};
@@ -1447,6 +1500,11 @@
                     applyBusyStylists();
                     if (typeof window.updateTimeSlots === 'function') {
                         window.updateTimeSlots();
+                    }
+                },
+                error: function (xhr, status, error) {
+                    if (status !== 'abort') {
+                        activeAvailabilityRequest = null;
                     }
                 }
             });

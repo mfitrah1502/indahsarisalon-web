@@ -1187,7 +1187,7 @@
                             hiddenInput.value = timeVal;
                             // Trigger availability check
                             resetLastCreatedBookingId();
-                            checkStylistAvailability();
+                            calculateConflictsLocally();
                         });
 
                         if (timeMins >= 9 * 60 && timeMins <= 11 * 60 + 45) {
@@ -1789,7 +1789,7 @@
             fetchDaySchedule(this.value);
         });
         // Tidak ada event change pada reservation_time (hidden input),
-        // klik tombol jam sudah otomatis trigger checkStylistAvailability.
+        // klik tombol jam sudah otomatis trigger calculateConflictsLocally.
 
         window.removeDetail = function (id) {
             resetLastCreatedBookingId();
@@ -2274,7 +2274,7 @@
 
         // Initial setup
         renderSelectedTreatments();
-        checkStylistAvailability();
+        calculateConflictsLocally();
         showStep(currentStep);
     </script>
 @endpush

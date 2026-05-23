@@ -32,19 +32,32 @@ class PasswordResetController extends Controller
 
         try {
             if ($gmailScriptUrl) {
-                // Kirim via Google Apps Script (Bypass port SMTP via HTTP/HTTPS)
-                $response = \Illuminate\Support\Facades\Http::post($gmailScriptUrl, [
-                    'to' => $request->email,
-                    'subject' => 'Kode OTP Reset Password - Indah Sari Salon',
+                // Kirim via Google Apps Script (GET request - bypass SMTP port block)
+                $params = http_build_query([
+                    'to'       => $request->email,
+                    'subject'  => 'Kode OTP Reset Password - Indah Sari Salon',
                     'htmlBody' => view('email.send_otp', ['otp' => $otp])->render(),
-                    'token' => env('GMAIL_SCRIPT_TOKEN')
+                    'token'    => env('GMAIL_SCRIPT_TOKEN'),
                 ]);
 
-                if (!$response->successful() || $response->body() !== 'Success') {
-                    throw new \Exception("Google Apps Script response: " . $response->body());
+                $ch = curl_init($gmailScriptUrl . '?' . $params);
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_TIMEOUT        => 30,
+                    CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
+                ]);
+                $result = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $err = curl_error($ch);
+                curl_close($ch);
+
+                if ($err || trim($result) !== 'Success') {
+                    throw new \Exception("Google Apps Script gagal (HTTP $httpCode): " . ($err ?: $result));
                 }
             } else {
-                // Kirim via SMTP biasa
+                // Kirim via SMTP biasa (untuk lokal)
                 Mail::to($request->email)->send(new SendOtpMail($otp));
             }
         } catch (\Throwable $e) {

@@ -116,38 +116,51 @@ class Treatment extends Model
     }
 
     /**
-     * Check if the promo matches the given user based on target audience
+     * Check if the promo matches the given user based on target audience.
+     * Strict matching: promo platinum → hanya untuk user platinum.
+     * Promo gold → hanya user gold. Promo silver → hanya user silver.
+     * Colour Circle adalah keanggotaan terpisah.
      */
     public function matchesUser($user = null)
     {
         $audience = strtolower($this->target_audience ?: 'general');
-        
-        if (in_array($audience, ['general', 'semua (general)', 'semua'])) {
+
+        // General promos — tampil untuk semua user
+        if (in_array($audience, ['general', 'semua (general)', 'semua', ''])) {
             return true;
         }
-        
+
         $currentUser = $user ?? auth()->user();
         if (!$currentUser) {
             return false;
         }
-        
+
+        // Community — tampil untuk semua user yang login
         if (in_array($audience, ['komunitas (grup awal)', 'komunitas', 'community'])) {
             return true;
         }
-        
-        $userTier = strtolower($currentUser->tier); // 'regular', 'silver', 'colour circle', 'gold', 'platinum'
-        
-        $targetTier = 'regular';
-        if (strpos($audience, 'silver') !== false) {
-            $targetTier = 'silver';
-        } elseif (strpos($audience, 'colour circle') !== false) {
-            $targetTier = 'colour circle';
-        } elseif (strpos($audience, 'gold') !== false) {
-            $targetTier = 'gold';
-        } elseif (strpos($audience, 'platinum') !== false) {
-            $targetTier = 'platinum';
+
+        // Colour Circle — hanya untuk anggota colour circle
+        if (strpos($audience, 'colour circle') !== false) {
+            return (bool) $currentUser->is_colour_circle_member;
         }
-        
-        return $userTier === $targetTier;
+
+        // Strict tier match: promo hanya tampil pada tier yang persis sama
+        $userTier = strtolower($currentUser->tier ?? 'regular');
+
+        if (strpos($audience, 'platinum') !== false) {
+            return $userTier === 'platinum';
+        }
+
+        if (strpos($audience, 'gold') !== false) {
+            return $userTier === 'gold';
+        }
+
+        if (strpos($audience, 'silver') !== false) {
+            return $userTier === 'silver';
+        }
+
+        // Default: regular
+        return $userTier === 'regular';
     }
 }

@@ -12,8 +12,8 @@
             <div class="modal-body p-0">
                 <div id="promoCarousel" class="carousel slide" data-bs-ride="carousel">
                     <div class="carousel-inner">
-                        @foreach($promoTreatments as $index => $promo)
-                            <div class="carousel-item {{ $index == 0 ? 'active' : '' }}">
+                        @foreach($promoTreatments as $promo)
+                            <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
                                 <div class="row g-0">
                                     <div class="col-md-6">
                                         @php

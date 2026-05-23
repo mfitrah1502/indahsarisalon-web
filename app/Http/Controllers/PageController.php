@@ -29,7 +29,12 @@ class PageController extends Controller
           })
           ->with(['details.treatment.category'])->get();
         
-        
+        // Filter promo berdasarkan tier user (khusus pelanggan)
+        if ($user && strtolower($user->role) === 'pelanggan') {
+            $promoTreatments = $promoTreatments->filter(function ($t) use ($user) {
+                return $t->matchesUser($user);
+            })->values(); // reset index agar carousel active item benar
+        }
         
         if (in_array(strtolower($user->role), ['admin', 'karyawan'])) {
             $today = now()->format('Y-m-d');
@@ -190,6 +195,9 @@ class PageController extends Controller
         }
 
         $treatments = \App\Models\Treatment::where('is_active', true)
+            ->whereHas('category', function ($q) {
+                $q->where('name', '!=', 'Promo');
+            })
             ->with(['details', 'category'])
             ->latest()
             ->take(6)

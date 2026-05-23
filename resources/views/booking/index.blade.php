@@ -393,7 +393,8 @@
                             reservation_date: date
                         },
                         success: function (response) {
-                            const bookedIds = response.booked_stylist_ids || [];
+                            // bookedIds = stylist dengan booking COLORING (blokir seharian)
+                            const bookedIds  = response.booked_stylist_ids || [];
                             const offWorkIds = response.off_work_ids || [];
 
                             $('#main_stylist_grid .stylist-card-modern').each(function () {
@@ -401,19 +402,29 @@
                                 const stylistId = parseInt(card.data('stylist-id'));
                                 if (!stylistId) return; // Skip "Semua" card
 
-                                const isBooked = bookedIds.includes(stylistId);
-                                const isOff = offWorkIds.includes(stylistId);
+                                const isBusy = bookedIds.includes(stylistId);
+                                const isOff  = offWorkIds.includes(stylistId);
 
+                                // Reset semua state dulu
                                 card.removeClass('disabled busy off-work');
                                 card.css('pointer-events', '');
                                 card.css('opacity', '');
-                                
+
                                 if (isOff) {
+                                    // Tandai Libur
                                     card.addClass('off-work disabled');
                                     card.css('pointer-events', 'none');
                                     card.css('opacity', '0.5');
                                     if (selectedStylist && selectedStylist.id === stylistId) {
-                                        selectMainStylist(null, $('#main_stylist_grid .stylist-card-modern[data-stylist-id=""]'));
+                                        selectMainStylist(null, $('#main_stylist_grid .stylist-card-modern[data-stylist-id=""]')[0]);
+                                    }
+                                } else if (isBusy) {
+                                    // Tandai Sibuk (ada booking coloring = blokir seharian)
+                                    card.addClass('disabled busy');
+                                    card.css('pointer-events', 'none');
+                                    card.css('opacity', '0.5');
+                                    if (selectedStylist && selectedStylist.id === stylistId) {
+                                        selectMainStylist(null, $('#main_stylist_grid .stylist-card-modern[data-stylist-id=""]')[0]);
                                     }
                                 }
                             });

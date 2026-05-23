@@ -991,6 +991,10 @@ class BookingController extends Controller
 
     /**
      * AJAX: Check booked & off-work stylists for a given date (Step 1).
+     * Hanya stylist yang memiliki booking COLORING pada tanggal tersebut yang
+     * ditandai "Sibuk" di halaman pilih stylist, karena coloring memblokir
+     * seluruh hari kerja (7 jam). Booking treatment biasa TIDAK memblokir
+     * stylist di level ini — konflik jam ditangani di halaman select (time slots).
      */
     public function checkBookedStylists(Request $request)
     {
@@ -1001,32 +1005,39 @@ class BookingController extends Controller
 
         try {
             $startOfDay = $date . ' 00:00:00';
-            $endOfDay = $date . ' 23:59:59';
+            $endOfDay   = $date . ' 23:59:59';
 
-            // 1. Ambil ID booking yang aktif pada tanggal tersebut (selain dibatalkan & success)
-            $bookingIds = \App\Models\Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
+            // 1. Cari semua booking AKTIF pada tanggal tersebut yang mengandung
+            //    treatment kategori "Coloring" — stylist pada booking ini dianggap
+            //    penuh seharian dan ditampilkan "Sibuk" di kartu stylist.
+            $coloringBookings = \App\Models\Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
                 ->whereNotIn('status', ['dibatalkan', 'success'])
-                ->pluck('id');
+                ->with(['details.treatmentDetail.treatment.category'])
+                ->get();
 
-            // 2. Ambil stylist yang memiliki booking aktif pada tanggal tersebut
-            $parentStylistIds = \App\Models\Booking::whereBetween('reservation_datetime', [$startOfDay, $endOfDay])
-                ->whereNotIn('status', ['dibatalkan', 'success'])
-                ->whereNotNull('stylist_id')
-                ->pluck('stylist_id')
-                ->toArray();
+            $coloringStylistIds = collect();
 
-            $detailStylistIds = \App\Models\BookingDetail::whereIn('booking_id', $bookingIds)
-                ->whereNotNull('stylist_id')
-                ->pluck('stylist_id')
-                ->toArray();
+            foreach ($coloringBookings as $b) {
+                foreach ($b->details as $d) {
+                    if (!$d->treatmentDetail) continue;
 
-            $bookedStylistIds = collect(array_merge($parentStylistIds, $detailStylistIds))
-                ->map(fn($id) => (int)$id)
-                ->unique()
-                ->values()
-                ->toArray();
+                    $isColoring = $d->treatmentDetail->treatment
+                        && $d->treatmentDetail->treatment->category
+                        && stripos($d->treatmentDetail->treatment->category->name, 'Coloring') !== false;
 
-            // 3. Ambil stylist yang absen / libur pada tanggal tersebut
+                    if ($isColoring) {
+                        // Stylist bisa ada di detail atau di booking induk
+                        $stylistId = $d->stylist_id ?: $b->stylist_id;
+                        if ($stylistId) {
+                            $coloringStylistIds->push((int) $stylistId);
+                        }
+                    }
+                }
+            }
+
+            $bookedStylistIds = $coloringStylistIds->unique()->values()->toArray();
+
+            // 2. Ambil stylist yang absen / libur pada tanggal tersebut
             $offWorkIds = \App\Models\Absensi::where('tanggal', $date)
                 ->whereIn('status', ['off'])
                 ->pluck('user_id')
@@ -1037,7 +1048,7 @@ class BookingController extends Controller
 
             return response()->json([
                 'booked_stylist_ids' => $bookedStylistIds,
-                'off_work_ids' => $offWorkIds
+                'off_work_ids'       => $offWorkIds
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);

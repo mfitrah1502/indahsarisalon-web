@@ -97,7 +97,7 @@
                 <input type="hidden" name="email" value="{{ $email }}">
                 <div class="mb-3">
                     <label class="form-label small fw-bold">Kode OTP</label>
-                    <input type="text" name="otp" class="form-control text-center fs-4" placeholder="123456" maxlength="6" required autofocus>
+                    <input type="text" name="otp" class="form-control text-center fs-4" placeholder="xxxxxx" maxlength="6" required autofocus>
                 </div>
                 <button type="submit" class="btn-custom py-2" id="btnSubmitOTP">
                     <span class="btn-text">Verifikasi OTP</span>

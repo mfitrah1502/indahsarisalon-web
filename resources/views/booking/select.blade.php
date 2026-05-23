@@ -297,7 +297,12 @@
 
             <div class="card shadow-sm border-0">
                 <div class="card-header bg-white border-bottom">
-                    <h4 class="mb-1">✨🗓️ Booking Appointment</h4>
+                    <h4 class="mb-1 d-flex align-items-center gap-2">
+                        <span style="background: linear-gradient(135deg,#EA8290,#c4556a); border-radius:10px; width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(234,130,144,0.4);">
+                            <i class="ti ti-calendar-event" style="color:#fff; font-size:18px;"></i>
+                        </span>
+                        Booking Appointment
+                    </h4>
                     <small class="text-muted">Ikuti langkah untuk menyelesaikan booking</small>
 
                     <!-- STEP INDICATOR -->
@@ -493,7 +498,10 @@
                                 @endphp
                                 <!-- TANGGAL -->
                                 <div class="col-md-3 mb-3" @if(request()->filled('reservation_date')) style="display: none;" @endif>
-                                    <label class="form-label">🗓️✨ Tanggal</label>
+                                    <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                        <i class="ti ti-calendar-filled" style="color:#EA8290; font-size:16px;"></i>
+                                        Tanggal Reservasi
+                                    </label>
                                     <div class="position-relative">
                                         <input type="text" name="reservation_date" id="reservation_date" class="form-control cursor-pointer"
                                             min="{{ $initialDate }}" value="{{ request()->input('reservation_date', $initialDate) }}" required readonly style="padding-left: 40px; padding-right: 40px; font-weight: bold;">
@@ -508,7 +516,10 @@
 
                                 <!-- JAM -->
                                 <div class="{{ request()->filled('reservation_date') ? 'col-md-6' : 'col-md-3' }} mb-3">
-                                    <label class="form-label">🕐💫 Jam Reservasi</label>
+                                    <label class="form-label fw-semibold d-flex align-items-center gap-1">
+                                        <i class="ti ti-clock-hour-4" style="color:#EA8290; font-size:16px;"></i>
+                                        Pilih Jam Reservasi
+                                    </label>
                                     <!-- Hidden input yang dikirim ke server -->
                                     <input type="hidden" name="reservation_time" id="reservation_time" required>
                                     <!-- Grid tombol jam -->
@@ -525,7 +536,12 @@
                     <!-- STEP 2 -->
                     <div class="tab-pane fade" id="step2">
                         <div class="p-3 rounded bg-light">
-                            <h5 class="mb-3">📝✨ Ringkasan Booking</h5>
+                            <h5 class="mb-3 d-flex align-items-center gap-2">
+                                <span style="background:linear-gradient(135deg,#4e73df,#224abe); border-radius:9px; width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(78,115,223,0.35);">
+                                    <i class="ti ti-clipboard-list" style="color:#fff; font-size:16px;"></i>
+                                </span>
+                                Ringkasan Booking
+                            </h5>
 
                             <p class="mb-1"><strong>Customer:</strong> <span id="summaryCustomer">{{ Auth::user()->name }}</span></p>
                             <p class="mb-1"><strong>No. HP:</strong> <span id="summaryPhone">{{ Auth::user()->phone ?? '-' }}</span></p>
@@ -547,7 +563,12 @@
                     <!-- STEP 3 -->
                     <div class="tab-pane fade" id="step3">
                         <div class="p-3 rounded bg-light">
-                            <h5 class="mb-3">💳💎 Pembayaran</h5>
+                            <h5 class="mb-3 d-flex align-items-center gap-2">
+                                <span style="background:linear-gradient(135deg,#1cc88a,#13855c); border-radius:9px; width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 3px 10px rgba(28,200,138,0.35);">
+                                    <i class="ti ti-credit-card" style="color:#fff; font-size:16px;"></i>
+                                </span>
+                                Konfirmasi Pembayaran
+                            </h5>
 
                             <form method="POST" action="{{ route('booking.store') }}" id="finalBookingForm">
                                 @csrf
@@ -576,8 +597,9 @@
                                     </select>
                                 </div>
 
-                                <button type="submit" class="btn btn-success w-100">
-                                    🎉✨ Bayar & Konfirmasi
+                                <button type="submit" class="btn btn-success w-100 d-flex align-items-center justify-content-center gap-2" style="font-weight:700; font-size:1rem; padding:12px; border-radius:12px; box-shadow:0 4px 15px rgba(28,200,138,0.4);">
+                                    <i class="ti ti-circle-check-filled" style="font-size:20px;"></i>
+                                    Bayar & Konfirmasi Sekarang
                                 </button>
                             </form>
                         </div>
@@ -1225,9 +1247,14 @@
                     grid.appendChild(groupDiv);
                 }
 
+                // SVG icons for each session (crisp, premium, not pixelated emoji)
+                const svgSun = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`;
+                const svgBright = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+                const svgSunset = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10a4 4 0 0 0-4 4"/><path d="M20 14a8 8 0 1 0-16 0"/><line x1="3" y1="14" x2="21" y2="14"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="19.78" y1="4.22" x2="18.36" y2="5.64"/><polyline points="16 5 12 9 8 5"/></svg>`;
+
                 appendGroup({
                     title: 'Sesi Pagi',
-                    icon: '&#x1F31E;',
+                    icon: svgSun,
                     range: '09:00 – 11:45',
                     color: '#c0392b',
                     gradient: 'linear-gradient(135deg, #fff5f0 0%, #ffe8e0 100%)',
@@ -1237,22 +1264,22 @@
 
                 appendGroup({
                     title: 'Sesi Siang',
-                    icon: '&#x2600;&#xFE0F;',
+                    icon: svgBright,
                     range: '12:00 – 14:45',
-                    color: '#e67e22',
+                    color: '#b7860a',
                     gradient: 'linear-gradient(135deg, #fffbf0 0%, #fff3d0 100%)',
                     iconBg: 'linear-gradient(135deg, #f7ca18, #f39c12)',
-                    badgeBg: 'rgba(230,126,34,0.1)'
+                    badgeBg: 'rgba(183,134,10,0.1)'
                 }, afternoonSlots);
 
                 appendGroup({
                     title: 'Sesi Sore',
-                    icon: '&#x1F306;',
+                    icon: svgSunset,
                     range: '15:00 – 17:00',
-                    color: '#8e44ad',
+                    color: '#6c3483',
                     gradient: 'linear-gradient(135deg, #f9f0ff 0%, #efe0ff 100%)',
                     iconBg: 'linear-gradient(135deg, #9b59b6, #6c3483)',
-                    badgeBg: 'rgba(142,68,173,0.1)'
+                    badgeBg: 'rgba(108,52,131,0.1)'
                 }, eveningSlots);
 
                 // Jika tidak ada slot yang tersedia

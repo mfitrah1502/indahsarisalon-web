@@ -188,6 +188,41 @@
         cursor: pointer;
     }
 
+    /* === TIME SLOT BUTTONS === */
+    .time-slot-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+    }
+    .time-slot-btn {
+        padding: 6px 14px;
+        border-radius: 20px;
+        border: 2px solid #EA8290;
+        background: #fff;
+        color: #EA8290;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    .time-slot-btn:hover {
+        background: #fce4e7;
+        border-color: #d6717e;
+    }
+    .time-slot-btn.selected {
+        background: #EA8290;
+        color: #fff;
+        box-shadow: 0 3px 10px rgba(234,130,144,0.35);
+        transform: scale(1.05);
+    }
+    #timeSlotEmpty {
+        font-size: 0.82rem;
+        color: #aaa;
+        font-style: italic;
+    }
+
     /* Animation spin untuk loader icon */
     @keyframes spin {
         0% { transform: rotate(0deg); }
@@ -418,9 +453,12 @@
                                 <!-- JAM -->
                                 <div class="{{ request()->filled('reservation_date') ? 'col-md-6' : 'col-md-3' }} mb-3">
                                     <label class="form-label">⏰ Jam Reservasi</label>
-                                    <select name="reservation_time" id="reservation_time" class="form-select" required>
-                                        <option value="">-- Pilih Jam --</option>
-                                    </select>
+                                    <!-- Hidden input yang dikirim ke server -->
+                                    <input type="hidden" name="reservation_time" id="reservation_time" required>
+                                    <!-- Grid tombol jam -->
+                                    <div class="time-slot-grid" id="timeSlotGrid">
+                                        <span id="timeSlotEmpty" class="text-muted small">Pilih tanggal terlebih dahulu...</span>
+                                    </div>
                                     <small class="text-muted extra-small">Batas reservasi: 09:00 - 17:00</small>
                                 </div>
 
@@ -986,80 +1024,91 @@
             }
             findNextAvailable();
 
-            // 2. Generate Time Slots
+            // 2. Generate Time Slot BUTTONS
             window.updateTimeSlots = function() {
                 const selectedDate = dateInput.value;
                 const now = new Date();
 
-                // Perbandingan tanggal lokal yang lebih akurat
                 const selectedDateObj = new Date(selectedDate);
                 const isToday = now.toDateString() === selectedDateObj.toDateString();
 
                 const hasColoring = typeof selectedDetails !== 'undefined' && selectedDetails.some(d => d.isColoring);
-                const maxHour = hasColoring ? 10 : 17;
-                const maxMinute = hasColoring ? 30 : 0;
+                const maxHour   = hasColoring ? 10 : 17;
+                const maxMinute = hasColoring ? 30 :  0;
 
-                const prevValue = timeSelect.value;
-                let hasValidPrevValue = false;
-                
-                const currentStylistId = typeof selectedDetails !== 'undefined' && selectedDetails.length > 0 ? selectedDetails[0].stylistId : null;
-                const busyWindows = (currentStylistId && window.bookedStylistWindows && window.bookedStylistWindows[currentStylistId]) ? window.bookedStylistWindows[currentStylistId] : [];
+                const currentStylistId = typeof selectedDetails !== 'undefined' && selectedDetails.length > 0
+                    ? selectedDetails[0].stylistId : null;
+                const busyWindows = (currentStylistId && window.bookedStylistWindows && window.bookedStylistWindows[currentStylistId])
+                    ? window.bookedStylistWindows[currentStylistId] : [];
 
-                timeSelect.innerHTML = '<option value="">-- Pilih Jam --</option>';
+                const grid       = document.getElementById('timeSlotGrid');
+                const emptyNote  = document.getElementById('timeSlotEmpty');
+                const hiddenInput = document.getElementById('reservation_time');
+                const prevValue  = hiddenInput.value;
+
+                grid.innerHTML = '';
+                let hasSlots = false;
 
                 for (let h = 9; h <= maxHour; h++) {
                     for (let m = 0; m < 60; m += 15) {
-                        // Batasi jam booking maksimal jam
                         if (h === maxHour && m > maxMinute) break;
 
-                        const timeVal = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                        const timeVal = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
 
-                        // Jika tanggal yang dipilih adalah hari ini, sembunyikan jam yang sudah lewat
+                        // Sembunyikan jam yang sudah lewat jika hari ini
                         if (isToday) {
-                            if (h < now.getHours() || (h === now.getHours() && m <= now.getMinutes())) {
-                                continue;
-                            }
+                            if (h < now.getHours() || (h === now.getHours() && m <= now.getMinutes())) continue;
                         }
 
-                                                // Convert time strings to minutes for accurate comparison
-                        const timeParts = timeVal.split(':');
-                        const timeMinutes = parseInt(timeParts[0]) * 60 + parseInt(timeParts[1]);
+                        // Cek apakah jam ini termasuk dalam window yang sudah dibooking
+                        const timeMins = h * 60 + m;
                         let isBusy = false;
                         for (let bw of busyWindows) {
-                            // Assume bw.start and bw.end are "HH:MM" strings
-                            const startParts = bw.start.split(':');
-                            const endParts = bw.end.split(':');
-                            const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
-                            const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
-                            if (timeMinutes >= startMinutes && timeMinutes < endMinutes) {
+                            const [sh, sm] = bw.start.split(':').map(Number);
+                            const [eh, em] = bw.end.split(':').map(Number);
+                            if (timeMins >= sh * 60 + sm && timeMins < eh * 60 + em) {
                                 isBusy = true;
                                 break;
                             }
                         }
 
-                        if (isBusy) {
-                            continue; // Jangan tampilkan jam yang sudah di booking user lain
-                        }
+                        // Jika busy, SKIP (jangan tampilkan tombol)
+                        if (isBusy) continue;
 
-                        const option = document.createElement('option');
-                        option.value = timeVal;
-                        option.textContent = timeVal;
-                        
-                        if (timeVal === prevValue) {
-                            option.selected = true;
-                            hasValidPrevValue = true;
-                        }
-                        
-                        timeSelect.appendChild(option);
+                        hasSlots = true;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'time-slot-btn' + (timeVal === prevValue ? ' selected' : '');
+                        btn.textContent = timeVal;
+                        btn.setAttribute('data-time', timeVal);
+                        btn.addEventListener('click', function() {
+                            // Deselect all
+                            grid.querySelectorAll('.time-slot-btn').forEach(b => b.classList.remove('selected'));
+                            this.classList.add('selected');
+                            hiddenInput.value = timeVal;
+                            // Trigger availability check
+                            resetLastCreatedBookingId();
+                            checkStylistAvailability();
+                        });
+
+                        grid.appendChild(btn);
                     }
                 }
-                
-                if (prevValue && !hasValidPrevValue) {
-                    timeSelect.value = '';
-                }
 
-                // Pastikan select tidak disabled
-                timeSelect.disabled = false;
+                // Jika tidak ada slot yang tersedia
+                if (!hasSlots) {
+                    const span = document.createElement('span');
+                    span.id = 'timeSlotEmpty';
+                    span.className = 'text-muted small fst-italic';
+                    span.textContent = selectedDate
+                        ? 'Tidak ada jam tersedia untuk stylist ini pada tanggal ini.'
+                        : 'Pilih tanggal terlebih dahulu...';
+                    grid.appendChild(span);
+                    hiddenInput.value = '';
+                } else if (prevValue && !grid.querySelector(`[data-time="${prevValue}"]`)) {
+                    // Jam yang sebelumnya dipilih sudah tidak tersedia
+                    hiddenInput.value = '';
+                }
             }
 
             // Jalankan pertama kali
@@ -1485,15 +1534,12 @@
             checkStylistAvailability();
         }
 
-        // Trigger availability check when date or time changes
         document.getElementById('reservation_date').addEventListener('change', function() {
             resetLastCreatedBookingId();
             checkStylistAvailability();
         });
-        document.getElementById('reservation_time').addEventListener('change', function() {
-            resetLastCreatedBookingId();
-            checkStylistAvailability();
-        });
+        // Tidak ada event change pada reservation_time (hidden input),
+        // klik tombol jam sudah otomatis trigger checkStylistAvailability.
 
         window.removeDetail = function (id) {
             resetLastCreatedBookingId();

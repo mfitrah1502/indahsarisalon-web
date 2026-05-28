@@ -641,8 +641,13 @@
             const id = $('#bookingDetailModal').data('id');
             const totalPrice = $('#bookingDetailModal').data('total-price') || 0;
             
-            // Disable Bootstrap's focus trap temporarily to allow typing in SweetAlert2 input
-            $(document).off('focusin.bs.modal');
+            // Prevent Bootstrap modal from hijacking focus when SweetAlert2 is open
+            const stopFocusTrap = (e) => {
+                if (e.target && e.target.closest && e.target.closest('.swal2-container')) {
+                    e.stopImmediatePropagation();
+                }
+            };
+            window.addEventListener('focusin', stopFocusTrap, true);
             
             Swal.fire({
                 title: 'Input Nominal Pembayaran',
@@ -681,6 +686,7 @@
                     });
                 }
             }).then((result) => {
+                window.removeEventListener('focusin', stopFocusTrap, true);
                 if (result.isConfirmed) {
                     const nominal = result.value.replace(/\D/g, '');
                     window.open(`/admin/bookings/${id}/print?nominal=${nominal}`, '_blank');

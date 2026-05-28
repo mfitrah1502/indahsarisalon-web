@@ -245,9 +245,9 @@
                                             ][$booking->payment_status] ?? 'bg-secondary';
                                         @endphp
                                         <div class="d-flex flex-column align-items-center">
-                                            <!-- <span class="badge {{ $payBadge }} rounded-pill px-3 mb-1" style="font-size: 0.7rem;">
+                                            <span class="badge {{ $payBadge }} rounded-pill px-3 mb-1" style="font-size: 0.7rem;">
                                                 {{ $booking->payment_status === 'unpaid' ? 'BELUM BAYAR' : strtoupper($booking->payment_status) }}
-                                            </span> -->
+                                            </span>
                                             <small class="text-muted" style="font-size: 0.65rem;">
                                                 <i class="ti ti-{{ strtolower($booking->payment_method) == 'transfer' ? 'credit-card' : (strtolower($booking->payment_method) == 'qris' ? 'qrcode' : 'wallet') }} me-1"></i>{{ ucfirst($booking->payment_method) }}
                                             </small>

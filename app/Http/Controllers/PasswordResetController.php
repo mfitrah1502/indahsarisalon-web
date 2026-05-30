@@ -28,11 +28,99 @@ class PasswordResetController extends Controller
             ]
         );
 
-        Mail::to($request->email)->send(new SendOtpMail($otp));
+        $gmailScriptUrl = env('GMAIL_SCRIPT_URL');
 
-        // return response()->json(['message' => 'OTP terkirim ke email']);
-         return redirect()->route('reset.password.otp', ['email' => $request->email])
-                         ->with('success', 'OTP terkirim ke email');
+        try {
+            if ($gmailScriptUrl) {
+                // Kirim via Google Apps Script (GET request - bypass SMTP port block)
+                $params = http_build_query([
+                    'to'       => $request->email,
+                    'subject'  => 'Kode OTP Reset Password - Indah Sari Salon',
+                    'htmlBody' => view('email.send_otp', ['otp' => $otp])->render(),
+                    'token'    => env('GMAIL_SCRIPT_TOKEN'),
+                ]);
+
+                $ch = curl_init($gmailScriptUrl . '?' . $params);
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_TIMEOUT        => 30,
+                    CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
+                ]);
+                $result = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $err = curl_error($ch);
+                curl_close($ch);
+
+                if ($err || trim($result) !== 'Success') {
+                    throw new \Exception("Google Apps Script gagal (HTTP $httpCode): " . ($err ?: $result));
+                }
+            } else {
+                // Kirim via SMTP biasa (untuk lokal)
+                Mail::to($request->email)->send(new SendOtpMail($otp));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Gagal mengirim email OTP ke {$request->email}: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal mengirim email OTP. Silakan hubungi admin atau coba lagi nanti.')->withInput();
+        }
+
+        return redirect()->route('reset.password.otp', ['email' => $request->email])
+                         ->with('success', 'Kode OTP telah dikirimkan ke email Anda.');
+    }
+
+    // 1b️⃣ Kirim Ulang OTP
+    public function resendOtp(Request $request)
+    {
+        $request->validate(['email' => 'required|email|exists:users,email']);
+
+        $otp = rand(100000, 999999);
+
+        PasswordReset::updateOrCreate(
+            ['email' => $request->email],
+            [
+                'otp' => $otp,
+                'expires_at' => Carbon::now()->addMinutes(10)
+            ]
+        );
+
+        $gmailScriptUrl = env('GMAIL_SCRIPT_URL');
+
+        try {
+            if ($gmailScriptUrl) {
+                $params = http_build_query([
+                    'to'       => $request->email,
+                    'subject'  => 'Kode OTP Reset Password - Indah Sari Salon',
+                    'htmlBody' => view('email.send_otp', ['otp' => $otp])->render(),
+                    'token'    => env('GMAIL_SCRIPT_TOKEN'),
+                ]);
+
+                $ch = curl_init($gmailScriptUrl . '?' . $params);
+                curl_setopt_array($ch, [
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_FOLLOWLOCATION => true,
+                    CURLOPT_SSL_VERIFYPEER => false,
+                    CURLOPT_TIMEOUT        => 30,
+                    CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
+                ]);
+                $result = curl_exec($ch);
+                $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                $err = curl_error($ch);
+                curl_close($ch);
+
+                if ($err || trim($result) !== 'Success') {
+                    throw new \Exception("Google Apps Script gagal (HTTP $httpCode): " . ($err ?: $result));
+                }
+            } else {
+                Mail::to($request->email)->send(new SendOtpMail($otp));
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Gagal resend email OTP ke {$request->email}: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal mengirim ulang kode OTP. Silakan coba lagi.')->withInput();
+        }
+
+        return redirect()->route('reset.password.otp', ['email' => $request->email])
+                         ->with('success', 'Kode OTP baru telah dikirimkan ke email Anda.');
     }
 
     // 2️⃣ Verifikasi OTP

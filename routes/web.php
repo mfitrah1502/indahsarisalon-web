@@ -44,6 +44,8 @@ Route::get('/new-password', fn(Request $request) => view('new-password', [
 ]))->name('reset.password.form');
 Route::post('/reset-password/otp', [PasswordResetController::class, 'resetPassword'])
     ->name('reset.password.update');
+Route::post('/reset-password/resend', [PasswordResetController::class, 'resendOtp'])
+    ->name('reset.password.resend');
 
 // ------------------------------
 // Routes yang membutuhkan auth + session timeout

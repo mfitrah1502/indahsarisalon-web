@@ -388,6 +388,14 @@
                             </div>
                         @endif
 
+                        @if(session('success'))
+                            <div class="alert alert-success alert-dismissible fade show border-0 small py-2 d-flex align-items-center">
+                                <i class="ti ti-circle-check-filled me-2 fs-5 text-success"></i>
+                                <span>{{ session('success') }}</span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        @endif
+
                         <form id="loginForm" action="{{ route('login.process') }}" method="POST">
                             @csrf
                             <div id="loginAlert"></div>

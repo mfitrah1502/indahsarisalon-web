@@ -97,13 +97,25 @@
                 <input type="hidden" name="email" value="{{ $email }}">
                 <div class="mb-3">
                     <label class="form-label small fw-bold">Kode OTP</label>
-                    <input type="text" name="otp" class="form-control text-center fs-4" placeholder="123456" maxlength="6" required autofocus>
+                    <input type="text" name="otp" class="form-control text-center fs-4" placeholder="xxxxxx" maxlength="6" required autofocus>
                 </div>
                 <button type="submit" class="btn-custom py-2" id="btnSubmitOTP">
                     <span class="btn-text">Verifikasi OTP</span>
                     <span class="spinner-border spinner-border-sm d-none" role="status"></span>
                 </button>
             </form>
+
+            <div class="text-center mt-3">
+                <span class="small text-muted">Tidak menerima kode? </span>
+                <form action="{{ route('reset.password.resend') }}" method="POST" id="resendForm" class="d-inline">
+                    @csrf
+                    <input type="hidden" name="email" value="{{ $email }}">
+                    <button type="submit" id="btnResend" class="btn btn-link text-decoration-none p-0 align-baseline small fw-bold" style="font-size: 0.875rem; color: #ea8290 !important;">
+                        Kirim Ulang
+                    </button>
+                </form>
+                <span id="cooldownText" class="small text-muted d-none">Kirim ulang dalam <strong id="countdown">60</strong>s</span>
+            </div>
         @endif
 
         <p class="text-center mt-4 mb-0">
@@ -116,12 +128,17 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            const forms = [document.getElementById('forgotForm'), document.getElementById('otpForm')];
+            const forms = [
+                document.getElementById('forgotForm'), 
+                document.getElementById('otpForm'),
+                document.getElementById('resendForm')
+            ];
             
             forms.forEach(form => {
                 if (!form) return;
                 form.addEventListener('submit', function () {
                     const btn = form.querySelector('button[type="submit"]');
+                    if (!btn) return;
                     const text = btn.querySelector('.btn-text');
                     const spinner = btn.querySelector('.spinner-border');
                     
@@ -130,6 +147,58 @@
                     if(spinner) spinner.classList.remove('d-none');
                 });
             });
+
+            // Cooldown for OTP Resend
+            const btnResend = document.getElementById('btnResend');
+            const cooldownText = document.getElementById('cooldownText');
+            const countdownEl = document.getElementById('countdown');
+            const resendForm = document.getElementById('resendForm');
+
+            if (btnResend && cooldownText && countdownEl && resendForm) {
+                const COOLDOWN_TIME = 60; // seconds
+                const storageKey = 'otp_resend_cooldown_' + encodeURIComponent('{{ $email }}');
+                
+                function getRemainingTime() {
+                    const expiry = localStorage.getItem(storageKey);
+                    if (!expiry) return 0;
+                    const remaining = Math.ceil((parseInt(expiry) - Date.now()) / 1000);
+                    return remaining > 0 ? remaining : 0;
+                }
+
+                function startTimer(seconds) {
+                    btnResend.classList.add('d-none');
+                    cooldownText.classList.remove('d-none');
+                    countdownEl.textContent = seconds;
+
+                    const interval = setInterval(() => {
+                        const remaining = getRemainingTime();
+                        if (remaining <= 0) {
+                            clearInterval(interval);
+                            btnResend.classList.remove('d-none');
+                            cooldownText.classList.add('d-none');
+                            localStorage.removeItem(storageKey);
+                        } else {
+                            countdownEl.textContent = remaining;
+                        }
+                    }, 1000);
+                }
+
+                resendForm.addEventListener('submit', function () {
+                    const expiryTime = Date.now() + (COOLDOWN_TIME * 1000);
+                    localStorage.setItem(storageKey, expiryTime);
+                });
+
+                const remaining = getRemainingTime();
+                if (remaining > 0) {
+                    startTimer(remaining);
+                } else {
+                    @if(session('success'))
+                        const expiryTime = Date.now() + (COOLDOWN_TIME * 1000);
+                        localStorage.setItem(storageKey, expiryTime);
+                        startTimer(COOLDOWN_TIME);
+                    @endif
+                }
+            }
         });
     </script>
 </body>

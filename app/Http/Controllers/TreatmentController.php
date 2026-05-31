@@ -68,6 +68,14 @@ class TreatmentController extends Controller
             ->limit(500)
             ->get();
 
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'data' => $treatments,
+                'categories' => $categories
+            ]);
+        }
+
         return view('treatment.index', compact('treatments', 'categories', 'customers'));
     }
 
@@ -187,6 +195,14 @@ class TreatmentController extends Controller
                     'image_url' => $treatment->main_image_url,
                 ]
             );
+        }
+
+        if (request()->expectsJson() || request()->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Treatment berhasil ditambahkan',
+                'data' => $treatment
+            ], 201);
         }
 
         return redirect()->route('treatment.index')->with('success','Treatment berhasil ditambahkan');
@@ -353,6 +369,14 @@ class TreatmentController extends Controller
             DB::table('promos')->where('title', $originalName)->delete();
         }
 
+        if (request()->expectsJson() || request()->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Treatment berhasil diperbarui!',
+                'data' => $treatment
+            ]);
+        }
+
         return redirect()->route('treatment.index')->with('success', 'Treatment berhasil diperbarui!');
     }
 
@@ -360,6 +384,14 @@ class TreatmentController extends Controller
     {
         DB::table('promos')->where('title', $treatment->name)->delete();
         $treatment->delete();
+
+        if (request()->expectsJson() || request()->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Treatment berhasil dihapus'
+            ]);
+        }
+
         return redirect()->route('treatment.index')->with('success','Treatment berhasil dihapus');
     }
 

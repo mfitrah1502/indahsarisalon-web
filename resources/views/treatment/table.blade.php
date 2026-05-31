@@ -18,8 +18,10 @@
                                         }
                                     @endphp
                                     <tr class="treatment-row" 
+                                        data-id="{{ $treatment->id }}"
                                         data-name="{{ $treatment->name }}"
                                         data-category="{{ $treatment->category->name ?? '-' }}"
+                                        data-promo-end="{{ $treatment->promo_end_date ? \Carbon\Carbon::parse($treatment->promo_end_date)->format('d F Y') : '' }}"
                                         data-details='@json($treatment->details)'
                                         data-image="{{ $imageUrl }}">
                                         <td class="px-3">

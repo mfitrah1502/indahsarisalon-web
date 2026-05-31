@@ -135,12 +135,12 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="input-group input-group-sm">
+                                    <!-- <div class="input-group input-group-sm">
                                         <span class="input-group-text border-end-0 bg-white"><i
                                                 class="ti ti-plus text-muted"></i></span>
                                         <input type="text" name="category" class="form-control border-start-0 ps-0"
                                             placeholder="Atau tambah kategori baru...">
-                                    </div>
+                                    </div> -->
                                 </div>
                             </div>
                         </div>

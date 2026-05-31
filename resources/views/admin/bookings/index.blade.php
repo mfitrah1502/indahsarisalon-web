@@ -245,9 +245,9 @@
                                             ][$booking->payment_status] ?? 'bg-secondary';
                                         @endphp
                                         <div class="d-flex flex-column align-items-center">
-                                            <!-- <span class="badge {{ $payBadge }} rounded-pill px-3 mb-1" style="font-size: 0.7rem;">
+                                            <span class="badge {{ $payBadge }} rounded-pill px-3 mb-1" style="font-size: 0.7rem;">
                                                 {{ $booking->payment_status === 'unpaid' ? 'BELUM BAYAR' : strtoupper($booking->payment_status) }}
-                                            </span> -->
+                                            </span>
                                             <small class="text-muted" style="font-size: 0.65rem;">
                                                 <i class="ti ti-{{ strtolower($booking->payment_method) == 'transfer' ? 'credit-card' : (strtolower($booking->payment_method) == 'qris' ? 'qrcode' : 'wallet') }} me-1"></i>{{ ucfirst($booking->payment_method) }}
                                             </small>
@@ -641,8 +641,13 @@
             const id = $('#bookingDetailModal').data('id');
             const totalPrice = $('#bookingDetailModal').data('total-price') || 0;
             
-            // Disable Bootstrap's focus trap temporarily to allow typing in SweetAlert2 input
-            $(document).off('focusin.bs.modal');
+            // Prevent Bootstrap modal from hijacking focus when SweetAlert2 is open
+            const stopFocusTrap = (e) => {
+                if (e.target && e.target.closest && e.target.closest('.swal2-container')) {
+                    e.stopImmediatePropagation();
+                }
+            };
+            window.addEventListener('focusin', stopFocusTrap, true);
             
             Swal.fire({
                 title: 'Input Nominal Pembayaran',
@@ -681,6 +686,7 @@
                     });
                 }
             }).then((result) => {
+                window.removeEventListener('focusin', stopFocusTrap, true);
                 if (result.isConfirmed) {
                     const nominal = result.value.replace(/\D/g, '');
                     window.open(`/admin/bookings/${id}/print?nominal=${nominal}`, '_blank');

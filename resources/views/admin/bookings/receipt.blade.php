@@ -238,12 +238,12 @@
                 <td class="label">Metode Bayar</td>
                 <td class="value">{{ strtoupper($booking->payment_method ?? '-') }}</td>
             </tr>
-            <tr>
+            <!-- <tr>
                 <td class="label">Status Bayar</td>
                 <td class="value" style="color: {{ $booking->payment_status === 'paid' ? '#2e7d32' : '#c62828' }}">
                     {{ $booking->payment_status === 'paid' ? 'LUNAS' : 'BELUM BAYAR' }}
                 </td>
-            </tr>
+            </tr> -->
             @if($booking->cashier)
             <tr>
                 <td class="label">Kasir</td>
